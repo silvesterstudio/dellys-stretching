@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { LOCALES, DEFAULT_LOCALE } from "@/lib/constants";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 function hasLocalePrefix(pathname: string): boolean {
   return LOCALES.some(
@@ -28,6 +29,12 @@ export async function middleware(req: NextRequest) {
 
   // 2. Refresh the Supabase auth session and propagate cookies.
   let response = NextResponse.next({ request: req });
+
+  // Skip the auth round-trip entirely when Supabase isn't configured, so a
+  // missing/placeholder host can't make every request hang.
+  if (!isSupabaseConfigured()) {
+    return response;
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

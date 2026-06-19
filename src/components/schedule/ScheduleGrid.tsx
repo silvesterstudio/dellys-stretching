@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { SessionWithType } from "@/lib/queries";
 import type { Locale } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
@@ -31,6 +32,7 @@ export function ScheduleGrid({
 
   // Live occupancy: patch booked_count / capacity / status as bookings happen.
   useEffect(() => {
+    if (!isSupabaseConfigured()) return;
     const supabase = createClient();
     const channel = supabase
       .channel("sessions-occupancy")

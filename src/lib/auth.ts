@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { Database } from "@/lib/types";
 
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
@@ -6,6 +7,7 @@ export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 // Returns the current user's profile (or null if signed out). Use in Server
 // Components / Server Actions to gate UI and authorize admin actions.
 export async function getCurrentProfile(): Promise<Profile | null> {
+  if (!isSupabaseConfigured()) return null;
   const supabase = await createClient();
   const {
     data: { user },

@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export interface SessionWithType {
   id: string;
@@ -22,6 +23,7 @@ export interface SessionWithType {
 export async function fetchSessionById(
   id: string,
 ): Promise<SessionWithType | null> {
+  if (!isSupabaseConfigured()) return null;
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("sessions")
@@ -44,6 +46,7 @@ export async function fetchSessions(
   start: Date,
   end: Date,
 ): Promise<SessionWithType[]> {
+  if (!isSupabaseConfigured()) return [];
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("sessions")
