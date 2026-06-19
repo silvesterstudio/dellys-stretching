@@ -5,7 +5,6 @@ import { getDictionary } from "@/i18n/get-dictionary";
 import { getWeekRange } from "@/lib/week";
 import { fetchSessions } from "@/lib/queries";
 import { formatDateShort } from "@/lib/format";
-import { createClient } from "@/lib/supabase/server";
 import { ScheduleGrid } from "@/components/schedule/ScheduleGrid";
 
 export const dynamic = "force-dynamic";
@@ -29,11 +28,6 @@ export default async function SchedulePage({
   const range = getWeekRange(offset);
   const sessions = await fetchSessions(range.start, range.end);
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const days = range.days.map((d) => d.toISOString());
   const weekLabel = `${formatDateShort(range.days[0].toISOString(), locale)} – ${formatDateShort(
     range.days[6].toISOString(),
@@ -41,30 +35,36 @@ export default async function SchedulePage({
   )}`;
 
   return (
-    <div>
-      <div className="mb-6 text-center">
-        <h1 className="font-display text-3xl font-bold text-mauve-900">
+    <div className="space-y-7">
+      <section className="text-center">
+        <p className="eyebrow">{dict.brand} · Studio</p>
+        <h1 className="mt-2 font-display text-4xl font-bold tracking-tight text-mauve-900 sm:text-5xl">
           {dict.schedule.title}
         </h1>
-        <p className="mt-1 text-mauve-500">{dict.schedule.subtitle}</p>
-      </div>
+        <p className="mx-auto mt-3 max-w-md text-mauve-500">{dict.schedule.subtitle}</p>
+      </section>
 
-      <div className="mb-5 flex items-center justify-center gap-3">
-        {offset > 0 ? (
-          <Link href={`/${locale}?week=${offset - 1}`} className="btn-secondary">
-            ← {dict.schedule.prevWeek}
-          </Link>
-        ) : (
-          <span className="btn-secondary pointer-events-none opacity-40">
-            ← {dict.schedule.prevWeek}
+      <div className="sticky top-[68px] z-20 -mx-4 bg-sand-50/60 px-4 py-2 backdrop-blur sm:mx-0 sm:rounded-full sm:px-2">
+        <div className="flex items-center justify-between gap-2 sm:justify-center sm:gap-4">
+          {offset > 0 ? (
+            <Link href={`/${locale}?week=${offset - 1}`} className="btn-secondary px-3" aria-label={dict.schedule.prevWeek}>
+              ←
+            </Link>
+          ) : (
+            <span className="btn-secondary pointer-events-none px-3 opacity-30">←</span>
+          )}
+          <span className="text-center text-sm font-semibold text-mauve-700">
+            {offset === 0 && (
+              <span className="mr-1.5 rounded-full bg-brand-100 px-2 py-0.5 text-[11px] text-brand-700">
+                {dict.common.today}
+              </span>
+            )}
+            {weekLabel}
           </span>
-        )}
-        <span className="min-w-40 text-center text-sm font-medium text-mauve-700">
-          {dict.schedule.weekOf} {weekLabel}
-        </span>
-        <Link href={`/${locale}?week=${offset + 1}`} className="btn-secondary">
-          {dict.schedule.nextWeek} →
-        </Link>
+          <Link href={`/${locale}?week=${offset + 1}`} className="btn-secondary px-3" aria-label={dict.schedule.nextWeek}>
+            →
+          </Link>
+        </div>
       </div>
 
       <ScheduleGrid
@@ -72,7 +72,6 @@ export default async function SchedulePage({
         dict={dict}
         days={days}
         initialSessions={sessions}
-        loggedIn={!!user}
       />
     </div>
   );

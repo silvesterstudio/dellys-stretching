@@ -9,24 +9,37 @@ export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export async function getCurrentProfile(): Promise<Profile | null> {
   if (!isSupabaseConfigured()) return null;
   const supabase = await createClient();
+
+  // Fast path: read the session from cookies (no network). Anonymous visitors —
+  // most ad-landing traffic — bail out here without a single Supabase round-trip.
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.user) return null;
 
   const { data } = await supabase
     .from("profiles")
     .select("*")
-    .eq("id", user.id)
+    .eq("id", session.user.id)
     .single();
 
   return data ?? null;
 }
 
+// Securely resolve the current admin: validates the JWT over the network
+// (getUser), not just the cookie. Use for authorization (admin pages/actions).
 export async function requireAdmin(): Promise<Profile> {
-  const profile = await getCurrentProfile();
-  if (!profile || profile.role !== "admin") {
-    throw new Error("Forbidden: admin only");
-  }
-  return profile;
+  if (!isSupabaseConfigured()) throw new Error("Forbidden");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Forbidden");
+  const { data } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+  if (!data || data.role !== "admin") throw new Error("Forbidden: admin only");
+  return data;
 }

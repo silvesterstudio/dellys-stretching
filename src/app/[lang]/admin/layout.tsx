@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Locale } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
-import { getCurrentProfile } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -18,9 +18,11 @@ export default async function AdminLayout({
   const locale = (isLocale(lang) ? lang : "ro") as Locale;
   const dict = getDictionary(locale);
 
-  const profile = await getCurrentProfile();
-  if (!profile) redirect(`/${locale}/login`);
-  if (profile.role !== "admin") redirect(`/${locale}`);
+  try {
+    await requireAdmin();
+  } catch {
+    redirect(`/${locale}/staff`);
+  }
 
   const base = `/${locale}/admin`;
   const tabs = [

@@ -3,41 +3,107 @@
 @tailwind utilities;
 
 :root {
+  /* font vars are injected by next/font in the layout */
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-display: Georgia, "Times New Roman", serif;
 }
 
 html {
   scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
-  @apply bg-sand-50 text-mauve-900 antialiased;
+  @apply text-mauve-900 antialiased;
+  background:
+    radial-gradient(1200px 600px at 100% -10%, #fce7ef 0%, rgba(252, 231, 239, 0) 55%),
+    radial-gradient(1000px 500px at -10% 0%, #f3eaf3 0%, rgba(243, 234, 243, 0) 50%),
+    #faf8f5;
+  min-height: 100dvh;
+}
+
+/* Respect iOS safe areas */
+@supports (padding: max(0px)) {
+  .safe-x {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
 }
 
 @layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
+  }
+
+  /* Buttons */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 disabled:opacity-50 disabled:pointer-events-none;
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none active:scale-[0.98];
   }
   .btn-primary {
-    @apply btn bg-brand-500 text-white hover:bg-brand-600;
+    @apply btn bg-brand-500 text-white shadow-sm shadow-brand-500/30 hover:bg-brand-600 hover:shadow-md hover:shadow-brand-500/30;
   }
   .btn-secondary {
-    @apply btn bg-white text-mauve-800 border border-mauve-200 hover:bg-mauve-50;
+    @apply btn border border-mauve-200 bg-white/80 text-mauve-800 backdrop-blur hover:border-mauve-300 hover:bg-white;
   }
   .btn-ghost {
-    @apply btn text-mauve-700 hover:bg-mauve-100;
+    @apply btn text-mauve-700 hover:bg-mauve-100/70;
   }
+
+  /* Surfaces */
   .card {
-    @apply rounded-2xl bg-white border border-mauve-100 shadow-sm;
+    @apply rounded-3xl border border-white/70 bg-white/80 shadow-[0_1px_2px_rgba(80,58,91,0.04),0_12px_30px_-18px_rgba(80,58,91,0.25)] backdrop-blur;
   }
+  .card-hover {
+    @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(80,58,91,0.06),0_18px_40px_-20px_rgba(212,47,107,0.35)];
+  }
+
+  /* Forms */
   .input {
-    @apply w-full rounded-xl border border-mauve-200 bg-white px-3.5 py-2.5 text-sm text-mauve-900 placeholder:text-mauve-400 focus:outline-none focus:ring-2 focus:ring-brand-400;
+    @apply w-full rounded-2xl border border-mauve-200 bg-white px-4 py-3 text-[15px] text-mauve-900 shadow-sm transition placeholder:text-mauve-300 focus:border-brand-300 focus:outline-none focus:ring-2 focus:ring-brand-200;
   }
   .label {
-    @apply block text-sm font-medium text-mauve-700 mb-1.5;
+    @apply mb-1.5 block text-sm font-medium text-mauve-700;
   }
+  select.input {
+    @apply appearance-none bg-[length:1rem] bg-[right_0.9rem_center] bg-no-repeat pr-10;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23a589b9' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  }
+
+  /* Bits */
   .badge {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+    @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold;
+  }
+  .section-title {
+    @apply text-lg font-semibold tracking-tight text-mauve-800;
+  }
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.18em] text-brand-500;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+  .animate-rise {
+    animation: rise 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  /* Hide scrollbar for horizontal day strips */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }

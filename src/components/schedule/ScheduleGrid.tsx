@@ -16,21 +16,16 @@ export function ScheduleGrid({
   dict,
   days,
   initialSessions,
-  loggedIn,
 }: {
   lang: Locale;
   dict: Dictionary;
-  days: string[]; // ISO day starts (Mon..Sun)
+  days: string[];
   initialSessions: SessionWithType[];
-  loggedIn: boolean;
 }) {
   const [sessions, setSessions] = useState(initialSessions);
 
-  useEffect(() => {
-    setSessions(initialSessions);
-  }, [initialSessions]);
+  useEffect(() => setSessions(initialSessions), [initialSessions]);
 
-  // Live occupancy: patch booked_count / capacity / status as bookings happen.
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
     const supabase = createClient();
@@ -40,7 +35,7 @@ export function ScheduleGrid({
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "sessions" },
         (payload) => {
-          const next = payload.new as {
+          const n = payload.new as {
             id: string;
             booked_count: number;
             capacity: number;
@@ -49,8 +44,8 @@ export function ScheduleGrid({
           setSessions((prev) =>
             prev
               .map((s) =>
-                s.id === next.id
-                  ? { ...s, booked_count: next.booked_count, capacity: next.capacity, status: next.status }
+                s.id === n.id
+                  ? { ...s, booked_count: n.booked_count, capacity: n.capacity, status: n.status }
                   : s,
               )
               .filter((s) => s.status === "scheduled"),
@@ -66,58 +61,61 @@ export function ScheduleGrid({
   const byDay = new Map<string, SessionWithType[]>();
   for (const s of sessions) {
     const k = dayKey(s.starts_at);
-    (byDay.get(k) ?? byDay.set(k, []).get(k)!).push(s);
+    const arr = byDay.get(k) ?? [];
+    arr.push(s);
+    byDay.set(k, arr);
   }
 
-  const hasAny = sessions.length > 0;
+  if (sessions.length === 0) {
+    return (
+      <div className="card animate-rise p-12 text-center">
+        <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-mauve-100 text-2xl">
+          🗓️
+        </div>
+        <p className="text-mauve-500">{dict.schedule.noSessions}</p>
+      </div>
+    );
+  }
+
+  const fmt = (iso: string, opts: Intl.DateTimeFormatOptions) =>
+    new Intl.DateTimeFormat(lang === "ru" ? "ru-RU" : "ro-RO", {
+      ...opts,
+      timeZone: "Europe/Bucharest",
+    }).format(new Date(iso));
 
   return (
-    <div>
-      {!hasAny && (
-        <p className="rounded-2xl bg-white p-10 text-center text-mauve-400">
-          {dict.schedule.noSessions}
-        </p>
-      )}
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-7">
-        {days.map((dISO) => {
-          const k = dayKey(dISO);
-          const dayDate = new Date(dISO);
-          const weekday = new Intl.DateTimeFormat(lang === "ru" ? "ru-RU" : "ro-RO", {
-            weekday: "short",
-            timeZone: "Europe/Bucharest",
-          }).format(dayDate);
-          const dayNum = new Intl.DateTimeFormat(lang === "ru" ? "ru-RU" : "ro-RO", {
-            day: "2-digit",
-            month: "2-digit",
-            timeZone: "Europe/Bucharest",
-          }).format(dayDate);
-          const daySessions = byDay.get(k) ?? [];
-          if (!hasAny) return null;
-          return (
-            <div key={k} className="min-w-0">
-              <div className="mb-2 text-center">
-                <div className="text-sm font-semibold capitalize text-mauve-800">{weekday}</div>
-                <div className="text-xs text-mauve-400">{dayNum}</div>
-              </div>
-              <div className="space-y-2">
-                {daySessions.length === 0 && (
-                  <div className="rounded-xl border border-dashed border-mauve-100 py-4" />
-                )}
-                {daySessions.map((s) => (
-                  <SessionCard
-                    key={s.id}
-                    s={s}
-                    lang={lang}
-                    dict={dict}
-                    loggedIn={loggedIn}
-                  />
-                ))}
-              </div>
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-7">
+      {days.map((dISO) => {
+        const k = dayKey(dISO);
+        const daySessions = byDay.get(k) ?? [];
+        const empty = daySessions.length === 0;
+        return (
+          <div
+            key={k}
+            className={`min-w-0 ${empty ? "hidden lg:block" : ""}`}
+          >
+            <div className="mb-2 flex items-baseline justify-between border-b border-mauve-100 pb-1.5 lg:justify-center lg:gap-1.5">
+              <span className="text-sm font-semibold capitalize text-mauve-800">
+                {fmt(dISO, { weekday: "short" })}
+              </span>
+              <span className="text-xs text-mauve-400">
+                {fmt(dISO, { day: "2-digit", month: "2-digit" })}
+              </span>
             </div>
-          );
-        })}
-      </div>
+            <div className="space-y-2.5">
+              {empty ? (
+                <div className="rounded-2xl border border-dashed border-mauve-100 py-6 text-center text-[11px] text-mauve-300">
+                  —
+                </div>
+              ) : (
+                daySessions.map((s) => (
+                  <SessionCard key={s.id} s={s} lang={lang} dict={dict} time={formatTime(s.starts_at, lang)} />
+                ))
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -126,54 +124,64 @@ function SessionCard({
   s,
   lang,
   dict,
-  loggedIn,
+  time,
 }: {
   s: SessionWithType;
   lang: Locale;
   dict: Dictionary;
-  loggedIn: boolean;
+  time: string;
 }) {
   const left = Math.max(0, s.capacity - s.booked_count);
   const full = left <= 0;
   const isPast = new Date(s.starts_at).getTime() <= Date.now();
   const name = localized(s.class_type, "name", lang);
-  const bookHref = loggedIn
-    ? `/${lang}/book/${s.id}`
-    : `/${lang}/login?session=${s.id}`;
+  const pct = Math.min(100, Math.round((s.booked_count / Math.max(1, s.capacity)) * 100));
 
   return (
-    <div
-      className="card overflow-hidden p-3"
-      style={{ borderLeft: `4px solid ${s.class_type.color}` }}
-    >
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-semibold text-mauve-900">
-          {formatTime(s.starts_at, lang)}
+    <div className="card card-hover animate-rise overflow-hidden p-3.5">
+      <div className="flex items-start justify-between gap-2">
+        <span className="font-display text-lg font-bold leading-none text-mauve-900">
+          {time}
         </span>
-        {s.class_type.audience === "child" && (
-          <span className="badge bg-mauve-100 text-mauve-700">{dict.audience.child}</span>
-        )}
-      </div>
-      <div className="mt-0.5 truncate text-sm text-mauve-800">{name}</div>
-      {s.instructor && (
-        <div className="truncate text-xs text-mauve-400">{s.instructor}</div>
-      )}
-      <div className="mt-2 flex items-center justify-between gap-2">
         <span
-          className={
-            full
-              ? "badge bg-mauve-100 text-mauve-500"
-              : "badge bg-brand-50 text-brand-700"
-          }
-        >
-          {full ? dict.common.full : `${left} ${dict.common.spotsLeft}`}
-        </span>
-        <span className="text-[11px] text-mauve-400">
-          {s.booked_count}/{s.capacity}
-        </span>
+          className="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full"
+          style={{ backgroundColor: s.class_type.color }}
+        />
       </div>
+
+      <div className="mt-1.5 truncate text-sm font-semibold text-mauve-800">{name}</div>
+      <div className="flex items-center gap-1.5 text-[11px] text-mauve-400">
+        {s.class_type.audience === "child" && (
+          <span className="badge bg-mauve-100 px-1.5 py-0 text-mauve-600">
+            {dict.audience.child}
+          </span>
+        )}
+        {s.instructor && <span className="truncate">{s.instructor}</span>}
+      </div>
+
+      {/* occupancy bar */}
+      <div className="mt-2.5">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-mauve-100">
+          <div
+            className={`h-full rounded-full ${full ? "bg-mauve-300" : "bg-brand-400"}`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <div className="mt-1.5 flex items-center justify-between">
+          <span className={`text-[11px] font-medium ${full ? "text-mauve-400" : "text-brand-600"}`}>
+            {full ? dict.common.full : `${left} ${dict.common.spotsLeft}`}
+          </span>
+          <span className="text-[10px] text-mauve-300">
+            {s.booked_count}/{s.capacity}
+          </span>
+        </div>
+      </div>
+
       {!isPast && !full && (
-        <Link href={bookHref} className="btn-primary mt-2 w-full py-1.5 text-xs">
+        <Link
+          href={`/${lang}/book/${s.id}`}
+          className="btn-primary mt-3 w-full px-3 py-2 text-xs"
+        >
           {dict.schedule.bookCta}
         </Link>
       )}
