@@ -105,7 +105,8 @@ create table public.membership_plans (
   validity_days int  not null default 30 check (validity_days > 0),
   active        boolean not null default true,
   sort_order    int  not null default 0,
-  created_at    timestamptz not null default now()
+  created_at    timestamptz not null default now(),
+  unique (audience, name_ro)
 );
 
 -- ---------------------------------------------------------------------------

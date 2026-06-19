@@ -67,7 +67,13 @@
     "resend": "Отправить код снова",
     "checkEmail": "Проверьте почту — мы отправили код.",
     "invalidCode": "Неверный или просроченный код.",
-    "back": "Изменить email"
+    "back": "Изменить email",
+    "staffTitle": "Вход для персонала",
+    "username": "Логин",
+    "password": "Пароль",
+    "staffLogin": "Войти",
+    "staffLink": "Персонал",
+    "invalidLogin": "Неверный логин или пароль."
   },
   "booking": {
     "confirmTitle": "Подтвердите бронирование",

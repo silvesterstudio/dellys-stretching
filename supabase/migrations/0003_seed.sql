@@ -19,4 +19,4 @@ values
   ('adult', '8 ședințe',  '8 занятий',  8,  280, 'RON', 30, 2),
   ('adult', '12 ședințe', '12 занятий', 12, 360, 'RON', 45, 3),
   ('child', '8 ședințe (copii)', '8 занятий (дети)', 8, 240, 'RON', 30, 4)
-on conflict do nothing;
+on conflict (audience, name_ro) do nothing;

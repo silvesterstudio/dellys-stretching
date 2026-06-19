@@ -67,7 +67,13 @@
     "resend": "Retrimite codul",
     "checkEmail": "Verifică-ți emailul pentru cod.",
     "invalidCode": "Cod invalid sau expirat.",
-    "back": "Schimbă adresa de email"
+    "back": "Schimbă adresa de email",
+    "staffTitle": "Autentificare personal",
+    "username": "Utilizator",
+    "password": "Parolă",
+    "staffLogin": "Intră",
+    "staffLink": "Personal",
+    "invalidLogin": "Utilizator sau parolă incorecte."
   },
   "booking": {
     "confirmTitle": "Confirmă rezervarea",

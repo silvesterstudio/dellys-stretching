@@ -39,7 +39,11 @@ set search_path = public
 as $$
 begin
   if new.role is distinct from old.role then
-    if not exists (select 1 from public.profiles where id = auth.uid() and role = 'admin') then
+    -- Allow service-role / direct SQL (no JWT, auth.uid() is null) to manage
+    -- roles for provisioning; block authenticated non-admins from escalating.
+    if auth.uid() is not null and not exists (
+      select 1 from public.profiles where id = auth.uid() and role = 'admin'
+    ) then
       raise exception 'FORBIDDEN: only an admin can change roles';
     end if;
   end if;

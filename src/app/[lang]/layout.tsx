@@ -37,6 +37,10 @@ export default async function LangLayout({
         <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
         <footer className="mx-auto max-w-6xl px-4 py-10 text-center text-xs text-mauve-400">
           © {dict.brand}
+          {" · "}
+          <a href={`/${locale}/staff`} className="hover:text-mauve-600">
+            {dict.auth.staffLink}
+          </a>
         </footer>
       </body>
     </html>
