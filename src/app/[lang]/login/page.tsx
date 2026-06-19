@@ -12,10 +12,10 @@ export default async function LoginPage({
   searchParams,
 }: {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{ session?: string }>;
+  searchParams: Promise<{ session?: string; error?: string }>;
 }) {
   const { lang } = await params;
-  const { session } = await searchParams;
+  const { session, error } = await searchParams;
   const locale = (isLocale(lang) ? lang : "ro") as Locale;
   const dict = getDictionary(locale);
 
@@ -35,6 +35,11 @@ export default async function LoginPage({
           {dict.auth.title}
         </h1>
         <p className="mt-1 text-sm text-mauve-500">{dict.auth.subtitle}</p>
+        {error && (
+          <div className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
+            {dict.auth.linkError}
+          </div>
+        )}
         <LoginForm lang={locale} dict={dict} nextSession={session ?? null} />
       </div>
     </div>
