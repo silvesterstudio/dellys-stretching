@@ -1,0 +1,96 @@
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import type { Locale } from "@/lib/constants";
+import { isLocale } from "@/i18n/config";
+import { getDictionary } from "@/i18n/get-dictionary";
+import { createClient } from "@/lib/supabase/server";
+import { fetchSessionById } from "@/lib/queries";
+import { formatDate, formatTime } from "@/lib/format";
+import { localized } from "@/lib/i18n-data";
+import { BookingForm } from "@/components/booking/BookingForm";
+
+export const dynamic = "force-dynamic";
+
+export default async function BookPage({
+  params,
+}: {
+  params: Promise<{ lang: string; sessionId: string }>;
+}) {
+  const { lang, sessionId } = await params;
+  const locale = (isLocale(lang) ? lang : "ro") as Locale;
+  const dict = getDictionary(locale);
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect(`/${locale}/login?session=${sessionId}`);
+  }
+
+  const session = await fetchSessionById(sessionId);
+
+  const notBookable =
+    !session ||
+    session.status !== "scheduled" ||
+    new Date(session.starts_at).getTime() <= Date.now();
+
+  if (notBookable) {
+    return (
+      <div className="mx-auto max-w-md py-10 text-center">
+        <p className="text-mauve-600">{dict.booking.pastSession}</p>
+        <Link href={`/${locale}`} className="btn-primary mt-4">
+          {dict.common.back}
+        </Link>
+      </div>
+    );
+  }
+
+  const isChild = session.class_type.audience === "child";
+  let children: { id: string; name: string }[] = [];
+  if (isChild) {
+    const { data } = await supabase
+      .from("children")
+      .select("id, name")
+      .order("created_at", { ascending: true });
+    children = data ?? [];
+  }
+
+  const name = localized(session.class_type, "name", locale);
+
+  return (
+    <div className="mx-auto max-w-md py-8">
+      <div className="card p-6">
+        <h1 className="font-display text-2xl font-bold text-mauve-900">
+          {dict.booking.confirmTitle}
+        </h1>
+
+        <div
+          className="mt-4 rounded-xl bg-sand-50 p-4"
+          style={{ borderLeft: `4px solid ${session.class_type.color}` }}
+        >
+          <div className="text-lg font-semibold text-mauve-900">{name}</div>
+          <div className="text-sm text-mauve-600">
+            {formatDate(session.starts_at, locale)} · {formatTime(session.starts_at, locale)}
+          </div>
+          {session.instructor && (
+            <div className="text-xs text-mauve-400">
+              {dict.schedule.instructor}: {session.instructor}
+            </div>
+          )}
+          <div className="mt-1 text-xs text-mauve-400">
+            {Math.max(0, session.capacity - session.booked_count)} {dict.common.spotsLeft}
+          </div>
+        </div>
+
+        <BookingForm
+          lang={locale}
+          dict={dict}
+          sessionId={session.id}
+          isChild={isChild}
+          initialChildren={children}
+        />
+      </div>
+    </div>
+  );
+}
