@@ -101,7 +101,7 @@ create table public.membership_plans (
   name_ru       text not null,
   session_count int  not null check (session_count > 0),
   price         numeric(10,2) not null check (price >= 0),
-  currency      text not null default 'RON',
+  currency      text not null default 'MDL',
   validity_days int  not null default 30 check (validity_days > 0),
   active        boolean not null default true,
   sort_order    int  not null default 0,

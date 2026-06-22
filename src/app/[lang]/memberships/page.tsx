@@ -2,21 +2,10 @@ import type { Locale } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { createClient } from "@/lib/supabase/server";
-import { formatPrice } from "@/lib/format";
-import { localized } from "@/lib/i18n-data";
+import { getCurrentUserId } from "@/lib/auth";
+import { MembershipPlans, type PlanCard } from "@/components/memberships/MembershipPlans";
 
 export const dynamic = "force-dynamic";
-
-type Plan = {
-  id: string;
-  audience: "adult" | "child";
-  name_ro: string;
-  name_ru: string;
-  session_count: number;
-  price: number;
-  currency: string;
-  validity_days: number;
-};
 
 export default async function MembershipsPage({
   params,
@@ -30,15 +19,25 @@ export default async function MembershipsPage({
   const supabase = await createClient();
   const { data } = await supabase
     .from("membership_plans")
-    .select("id, audience, name_ro, name_ru, session_count, price, currency, validity_days")
+    .select(
+      "id, audience, name_ro, name_ru, session_count, price, currency, validity_days, featured",
+    )
     .eq("active", true)
     .order("sort_order", { ascending: true });
 
-  const plans = (data ?? []) as Plan[];
-  const groups: { audience: "adult" | "child"; items: Plan[] }[] = [
-    { audience: "adult", items: plans.filter((p) => p.audience === "adult") },
-    { audience: "child", items: plans.filter((p) => p.audience === "child") },
-  ];
+  const plans = (data ?? []) as PlanCard[];
+
+  // Reflect the signed-in user's already-pending requests so the buttons show
+  // the right state on first paint.
+  const userId = await getCurrentUserId();
+  let pendingPlanIds: string[] = [];
+  if (userId) {
+    const { data: reqs } = await supabase
+      .from("membership_requests")
+      .select("plan_id")
+      .eq("status", "pending");
+    pendingPlanIds = (reqs ?? []).map((r) => r.plan_id as string);
+  }
 
   return (
     <div className="space-y-8">
@@ -49,40 +48,14 @@ export default async function MembershipsPage({
         <p className="mt-1 text-mauve-500">{dict.memberships.subtitle}</p>
       </div>
 
-      {groups.map(
-        (g) =>
-          g.items.length > 0 && (
-            <section key={g.audience}>
-              <h2 className="mb-3 text-lg font-semibold text-mauve-800">
-                {dict.audience[g.audience]}
-              </h2>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {g.items.map((p) => (
-                  <div key={p.id} className="card flex flex-col p-5">
-                    <div className="text-lg font-semibold text-mauve-900">
-                      {localized(p, "name", locale)}
-                    </div>
-                    <div className="mt-2 text-3xl font-bold text-brand-600">
-                      {formatPrice(p.price, p.currency, locale)}
-                    </div>
-                    <div className="mt-2 space-y-1 text-sm text-mauve-500">
-                      <div>
-                        {p.session_count} {dict.memberships.sessions}
-                      </div>
-                      <div>
-                        {dict.memberships.validity}: {p.validity_days}{" "}
-                        {dict.memberships.days}
-                      </div>
-                    </div>
-                    <p className="mt-4 rounded-xl bg-mauve-50 px-3 py-2 text-xs text-mauve-600">
-                      {dict.memberships.buyNote}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ),
-      )}
+      <MembershipPlans
+        lang={locale}
+        dict={dict}
+        plans={plans}
+        loggedIn={!!userId}
+        loginHref={`/${locale}/login`}
+        initialPending={pendingPlanIds}
+      />
     </div>
   );
 }

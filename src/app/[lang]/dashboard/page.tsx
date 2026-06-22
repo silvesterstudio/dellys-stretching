@@ -9,11 +9,13 @@ import {
   fetchMyBookings,
   fetchMyMemberships,
   fetchMyChildren,
+  fetchMyRequests,
   type MyBooking,
 } from "@/lib/dashboard-queries";
 import { formatDate, formatTime } from "@/lib/format";
 import { localized } from "@/lib/i18n-data";
 import { CancelButton } from "@/components/dashboard/CancelButton";
+import { CancelRequestButton } from "@/components/dashboard/CancelRequestButton";
 
 export const dynamic = "force-dynamic";
 
@@ -35,15 +37,23 @@ export default async function DashboardPage({
   const dict = getDictionary(locale);
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect(`/${locale}/login`);
+  let userId: string | null = null;
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    userId = user?.id ?? null;
+  } catch {
+    userId = null;
+  }
+  // redirect() throws internally — keep it outside the try/catch above.
+  if (!userId) redirect(`/${locale}/login`);
 
-  const [bookings, memberships, children] = await Promise.all([
+  const [bookings, memberships, children, requests] = await Promise.all([
     fetchMyBookings(),
     fetchMyMemberships(),
     fetchMyChildren(),
+    fetchMyRequests(),
   ]);
 
   const now = Date.now();
@@ -122,6 +132,36 @@ export default async function DashboardPage({
           </div>
         )}
       </section>
+
+      {/* Pending membership requests */}
+      {requests.length > 0 && (
+        <section>
+          <h2 className="mb-3 text-lg font-semibold text-mauve-800">
+            {dict.dashboard.pendingRequests}
+          </h2>
+          <div className="space-y-2">
+            {requests.map((r) => (
+              <div
+                key={r.id}
+                className="card flex items-center justify-between gap-3 p-4"
+              >
+                <div className="min-w-0">
+                  <div className="font-medium text-mauve-900">
+                    {r.plan ? localized(r.plan, "name", locale) : "—"}
+                  </div>
+                  <div className="text-xs text-mauve-400">
+                    {dict.dashboard.requestPendingNote}
+                  </div>
+                </div>
+                <CancelRequestButton
+                  requestId={r.id}
+                  label={dict.dashboard.cancelRequest}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Upcoming bookings */}
       <section>

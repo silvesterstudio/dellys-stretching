@@ -82,6 +82,28 @@ export async function fetchMyMemberships(): Promise<MyMembership[]> {
   }));
 }
 
+export interface MyRequest {
+  id: string;
+  created_at: string;
+  plan: { name_ro: string; name_ru: string } | null;
+}
+
+export async function fetchMyRequests(): Promise<MyRequest[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("membership_requests")
+    .select(`id, created_at, plan:membership_plans ( name_ro, name_ru )`)
+    .eq("status", "pending")
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+  return data.map((r: Record<string, unknown>) => ({
+    id: r.id as string,
+    created_at: r.created_at as string,
+    plan: one(r.plan as never) as MyRequest["plan"],
+  }));
+}
+
 export async function fetchMyChildren(): Promise<{ id: string; name: string }[]> {
   const supabase = await createClient();
   const { data } = await supabase

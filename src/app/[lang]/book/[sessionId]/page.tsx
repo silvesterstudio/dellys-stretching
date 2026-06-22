@@ -21,10 +21,17 @@ export default async function BookPage({
   const dict = getDictionary(locale);
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  let userId: string | null = null;
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    userId = user?.id ?? null;
+  } catch {
+    userId = null;
+  }
+  // redirect() throws internally, so it must stay outside the try/catch above.
+  if (!userId) {
     redirect(`/${locale}/login?session=${sessionId}`);
   }
 

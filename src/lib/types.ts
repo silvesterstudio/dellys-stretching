@@ -9,6 +9,11 @@ export type BookingStatus =
   | "no_show"
   | "cancelled";
 export type SessionStatus = "scheduled" | "cancelled";
+export type MembershipRequestStatus =
+  | "pending"
+  | "approved"
+  | "rejected"
+  | "cancelled";
 export type UserRole = "client" | "admin";
 export type Locale = "ro" | "ru";
 
@@ -150,6 +155,7 @@ export interface Database {
           currency: string;
           validity_days: number;
           active: boolean;
+          featured: boolean;
           sort_order: number;
           created_at: string;
         };
@@ -163,10 +169,37 @@ export interface Database {
           currency?: string;
           validity_days?: number;
           active?: boolean;
+          featured?: boolean;
           sort_order?: number;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["membership_plans"]["Insert"]>;
+        Relationships: [];
+      };
+      membership_requests: {
+        Row: {
+          id: string;
+          user_id: string;
+          plan_id: string;
+          status: MembershipRequestStatus;
+          note: string | null;
+          created_at: string;
+          decided_at: string | null;
+          decided_by: string | null;
+          membership_id: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          plan_id: string;
+          status?: MembershipRequestStatus;
+          note?: string | null;
+          created_at?: string;
+          decided_at?: string | null;
+          decided_by?: string | null;
+          membership_id?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["membership_requests"]["Insert"]>;
         Relationships: [];
       };
       user_memberships: {
@@ -247,6 +280,18 @@ export interface Database {
       release_stale_pending: {
         Args: Record<string, never>;
         Returns: number;
+      };
+      request_membership: {
+        Args: { p_plan_id: string };
+        Returns: string; // request id
+      };
+      cancel_membership_request: {
+        Args: { p_request_id: string };
+        Returns: boolean;
+      };
+      decide_membership_request: {
+        Args: { p_request_id: string; p_approve: boolean };
+        Returns: string | null; // membership id when approved
       };
     };
     Enums: {

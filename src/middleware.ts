@@ -36,6 +36,16 @@ export async function middleware(req: NextRequest) {
     return response;
   }
 
+  // Perf: anonymous visitors (most ad-landing traffic) carry no Supabase auth
+  // cookie, so there's nothing to refresh — skip the network round-trip and
+  // serve them without ever touching Supabase.
+  const hasAuthCookie = req.cookies
+    .getAll()
+    .some((c) => c.name.startsWith("sb-") && c.name.includes("auth-token"));
+  if (!hasAuthCookie) {
+    return response;
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -59,8 +69,13 @@ export async function middleware(req: NextRequest) {
     },
   );
 
-  // Touch the session so it refreshes if needed.
-  await supabase.auth.getUser();
+  // Touch the session so it refreshes if needed. Guarded: a Supabase outage
+  // must not turn every request into a 500 — just serve the request as-is.
+  try {
+    await supabase.auth.getUser();
+  } catch {
+    // ignore — degrade to the unrefreshed session
+  }
 
   return response;
 }

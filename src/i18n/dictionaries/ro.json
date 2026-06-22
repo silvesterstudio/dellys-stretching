@@ -20,6 +20,7 @@
     "booked": "Rezervat",
     "of": "din",
     "today": "Azi",
+    "processing": "Se procesează...",
     "error": "A apărut o eroare. Încearcă din nou.",
     "language": "Limba"
   },
@@ -99,19 +100,28 @@
     "sessionsRemaining": "sesiuni rămase",
     "expiresOn": "Expiră la",
     "expired": "Expirat",
-    "noMemberships": "Nu ai niciun abonament activ. Cumpără unul la recepție.",
+    "noMemberships": "Nu ai niciun abonament activ.",
     "noBookings": "Nu ai nicio rezervare. Vezi programul.",
     "cancelBooking": "Anulează rezervarea",
     "cancelTooLate": "Anularea gratuită nu mai este posibilă (sub 12 ore).",
-    "children": "Copiii mei"
+    "children": "Copiii mei",
+    "pendingRequests": "Cereri în așteptare",
+    "requestPendingNote": "Va fi activat după confirmarea la recepție.",
+    "cancelRequest": "Anulează cererea"
   },
   "memberships": {
     "title": "Abonamente",
-    "subtitle": "Abonamentele se achiziționează la recepția sălii.",
+    "subtitle": "Alege un abonament și cumpără-l direct din aplicație.",
     "sessions": "sesiuni",
     "validity": "valabilitate",
     "days": "zile",
-    "buyNote": "Vino la recepție pentru a cumpăra acest abonament."
+    "buyNote": "Vino la recepție pentru a cumpăra acest abonament.",
+    "featured": "Cea mai bună ofertă",
+    "buyOnline": "Cumpără abonamentul",
+    "requestPending": "În așteptarea confirmării",
+    "requestSent": "Cerere trimisă! O confirmăm în curând la recepție.",
+    "loginToBuy": "Autentifică-te pentru a cumpăra",
+    "reception": "Plata se face la recepție. Locul tău e rezervat după confirmare."
   },
   "admin": {
     "title": "Panou de administrare",
@@ -156,6 +166,11 @@
     "alreadyDone": "Finalizat",
     "noMembershipDeduct": "Fără abonament (nu se scade)",
     "upcomingSessions": "Sesiuni viitoare",
-    "participants": "participanți"
+    "participants": "participanți",
+    "pendingRequests": "Cereri de abonament",
+    "noRequests": "Nicio cerere nouă.",
+    "approve": "Confirmă",
+    "reject": "Respinge",
+    "requestedOn": "Solicitat"
   }
 }

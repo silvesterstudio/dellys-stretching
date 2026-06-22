@@ -66,6 +66,21 @@ export async function assignMembershipAction(
   return { error: error?.message ?? null };
 }
 
+// Admin confirms (creates the membership) or rejects a pending purchase request.
+export async function decideMembershipRequestAction(
+  requestId: string,
+  approve: boolean,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("decide_membership_request", {
+    p_request_id: requestId,
+    p_approve: approve,
+  });
+  revalidatePath("/[lang]/admin/members", "page");
+  return { error: error?.message ?? null };
+}
+
 export async function createTemplateAction(input: {
   classTypeId: string;
   weekday: number;
