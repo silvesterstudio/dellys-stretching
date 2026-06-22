@@ -5,7 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { SessionWithType } from "@/lib/queries";
-import type { Locale } from "@/lib/constants";
+import { TIMEZONE, type Locale } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { formatTime } from "@/lib/format";
 import { dayKey } from "@/lib/week";
@@ -80,7 +80,7 @@ export function ScheduleGrid({
   const fmt = (iso: string, opts: Intl.DateTimeFormatOptions) =>
     new Intl.DateTimeFormat(lang === "ru" ? "ru-RU" : "ro-RO", {
       ...opts,
-      timeZone: "Europe/Bucharest",
+      timeZone: TIMEZONE,
     }).format(new Date(iso));
 
   return (

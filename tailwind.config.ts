@@ -7,35 +7,38 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Soft feminine palette — rose/mauve with warm neutrals.
+        // Minimalist palette: one muted-rose accent over a warm-neutral ink
+        // scale and near-white surfaces. (Palette names kept stable so existing
+        // class usages don't need touching.)
         brand: {
-          50: "#fdf2f6",
-          100: "#fce7ef",
-          200: "#fbcfe0",
-          300: "#f8a8c6",
-          400: "#f272a3",
-          500: "#e84d86",
-          600: "#d42f6b",
-          700: "#b21f54",
-          800: "#931d48",
-          900: "#7b1c40",
+          50: "#fdf2f5",
+          100: "#fbe6ec",
+          200: "#f6ccd8",
+          300: "#eea7bd",
+          400: "#e27a9c",
+          500: "#d4517f",
+          600: "#bd3a68",
+          700: "#9e2b54",
+          800: "#822548",
+          900: "#6d2240",
         },
+        // "mauve" is now a warm-neutral ink scale (text + soft surfaces).
         mauve: {
-          50: "#f8f6fa",
-          100: "#efeaf3",
-          200: "#ddd3e6",
-          300: "#c3b1d2",
-          400: "#a589b9",
-          500: "#8b69a1",
-          600: "#735386",
-          700: "#5f446e",
-          800: "#503a5b",
-          900: "#45334e",
+          50: "#f7f6f4",
+          100: "#ecebe7",
+          200: "#dcdad4",
+          300: "#c2bfb6",
+          400: "#9d9890",
+          500: "#79746c",
+          600: "#5c5851",
+          700: "#46423c",
+          800: "#322f2a",
+          900: "#1f1d1a",
         },
         sand: {
-          50: "#faf8f5",
-          100: "#f3ede5",
-          200: "#e7dacb",
+          50: "#faf9f7",
+          100: "#f3f1ed",
+          200: "#e8e5df",
         },
       },
       fontFamily: {

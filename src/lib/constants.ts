@@ -1,6 +1,9 @@
 // App-wide constants. Keep business rules here so they're easy to audit/tune.
 
-export const TIMEZONE = "Europe/Bucharest";
+// The studio is in Moldova (prices in MDL). Chișinău shares Bucharest's UTC
+// offset and DST rules, so display is unchanged — this is the semantically
+// correct zone and future-proofs against any divergence in DST policy.
+export const TIMEZONE = "Europe/Chisinau";
 
 export const LOCALES = ["ro", "ru"] as const;
 export type Locale = (typeof LOCALES)[number];

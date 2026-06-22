@@ -36,12 +36,12 @@ export default async function SchedulePage({
 
   return (
     <div className="space-y-7">
-      <section className="text-center">
-        <p className="eyebrow">{dict.brand} · Studio</p>
-        <h1 className="mt-2 font-display text-4xl font-bold tracking-tight text-mauve-900 sm:text-5xl">
+      <section className="pt-1 text-center">
+        <p className="eyebrow">{dict.brand}</p>
+        <h1 className="mt-2 font-display text-3xl font-medium tracking-tight text-mauve-900 sm:text-4xl">
           {dict.schedule.title}
         </h1>
-        <p className="mx-auto mt-3 max-w-md text-mauve-500">{dict.schedule.subtitle}</p>
+        <p className="mx-auto mt-2 max-w-md text-sm text-mauve-500">{dict.schedule.subtitle}</p>
       </section>
 
       <div className="sticky top-[68px] z-20 -mx-4 bg-sand-50/60 px-4 py-2 backdrop-blur sm:mx-0 sm:rounded-full sm:px-2">
