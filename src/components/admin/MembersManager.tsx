@@ -20,6 +20,7 @@ interface Member {
   id: string;
   email: string;
   full_name: string | null;
+  phone: string | null;
 }
 interface Mem {
   id: string;
@@ -32,13 +33,15 @@ export function MembersManager({
   lang,
   dict,
   plans,
+  initialMembers = [],
 }: {
   lang: Locale;
   dict: Dictionary;
   plans: Plan[];
+  initialMembers?: Member[];
 }) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<Member[]>([]);
+  const [results, setResults] = useState<Member[]>(initialMembers);
   const [selected, setSelected] = useState<Member | null>(null);
   const [mems, setMems] = useState<Mem[]>([]);
   const [planId, setPlanId] = useState(plans[0]?.id ?? "");
@@ -52,12 +55,13 @@ export function MembersManager({
     setBusy(true);
     setMsg(null);
     const supabase = createClient();
-    const { data } = await supabase
-      .from("profiles")
-      .select("id, email, full_name")
-      .ilike("email", `%${query.trim()}%`)
-      .order("email")
-      .limit(20);
+    const q = query.trim();
+    let req = supabase.from("profiles").select("id, email, full_name, phone");
+    // Search across email, name and phone; empty query lists recent members.
+    if (q) req = req.or(`email.ilike.%${q}%,full_name.ilike.%${q}%,phone.ilike.%${q}%`);
+    const { data } = await req
+      .order("created_at", { ascending: false })
+      .limit(40);
     setBusy(false);
     setResults((data ?? []) as Member[]);
   }
@@ -129,9 +133,10 @@ export function MembersManager({
                 <div className="font-medium text-mauve-900">
                   {m.full_name || m.email}
                 </div>
-                {m.full_name && (
-                  <div className="text-xs text-mauve-400">{m.email}</div>
-                )}
+                <div className="text-xs text-mauve-400">
+                  {m.full_name ? m.email : ""}
+                  {m.phone ? `${m.full_name ? " · " : ""}${m.phone}` : ""}
+                </div>
               </button>
             ))
           )}
@@ -146,6 +151,9 @@ export function MembersManager({
                 {selected.full_name || selected.email}
               </div>
               <div className="text-xs text-mauve-400">{selected.email}</div>
+              {selected.phone && (
+                <div className="text-xs text-mauve-400">{selected.phone}</div>
+              )}
             </div>
 
             <div className="card p-4">

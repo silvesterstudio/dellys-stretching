@@ -85,6 +85,8 @@
     "addChild": "Adaugă un copil",
     "childName": "Numele copilului",
     "noMembershipNote": "Poți rezerva acum și plăti abonamentul la recepție. Locul este reținut.",
+    "sessionsAvailable": "ședințe disponibile în abonament",
+    "deductHint": "se scade 1 la prezență",
     "success": "Rezervare confirmată!",
     "alreadyBooked": "Ai deja o rezervare la această sesiune.",
     "sessionFull": "Ne pare rău, sesiunea este completă.",
@@ -107,7 +109,11 @@
     "children": "Copiii mei",
     "pendingRequests": "Cereri în așteptare",
     "requestPendingNote": "Va fi activat după confirmarea la recepție.",
-    "cancelRequest": "Anulează cererea"
+    "cancelRequest": "Anulează cererea",
+    "myDetails": "Datele mele",
+    "yourName": "Nume complet",
+    "yourPhone": "Telefon",
+    "saved": "Salvat"
   },
   "memberships": {
     "title": "Abonamente",
@@ -171,6 +177,14 @@
     "noRequests": "Nicio cerere nouă.",
     "approve": "Confirmă",
     "reject": "Respinge",
-    "requestedOn": "Solicitat"
+    "requestedOn": "Solicitat",
+    "plansTab": "Prețuri",
+    "plansTitle": "Abonamente și prețuri",
+    "plansHint": "Editează prețurile, marchează oferte și activează/dezactivează abonamente. Modificările apar imediat pe pagina de abonamente.",
+    "newPlan": "Abonament nou",
+    "planNameRo": "Denumire (RO)",
+    "planNameRu": "Denumire (RU)",
+    "planPrice": "Preț (MDL)",
+    "sortOrder": "Ordine"
   }
 }

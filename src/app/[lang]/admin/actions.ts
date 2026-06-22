@@ -81,6 +81,55 @@ export async function decideMembershipRequestAction(
   return { error: error?.message ?? null };
 }
 
+// --- Membership plan management (prices / offers) --------------------------
+
+export type PlanInput = {
+  audience: "adult" | "child";
+  name_ro: string;
+  name_ru: string;
+  session_count: number;
+  price: number;
+  currency: string;
+  validity_days: number;
+  featured: boolean;
+  active: boolean;
+  sort_order: number;
+};
+
+export async function upsertPlanAction(
+  id: string | null,
+  data: PlanInput,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const supabase = await createClient();
+  const { error } = id
+    ? await supabase.from("membership_plans").update(data).eq("id", id)
+    : await supabase.from("membership_plans").insert(data);
+  revalidatePath("/[lang]/admin/plans", "page");
+  revalidatePath("/[lang]/memberships", "page");
+  return { error: error?.message ?? null };
+}
+
+export async function deletePlanAction(id: string): Promise<ActionResult> {
+  await requireAdmin();
+  const supabase = await createClient();
+  // Plans referenced by sold memberships can't be hard-deleted (FK restrict);
+  // fall back to deactivating so history stays intact.
+  const { error } = await supabase.from("membership_plans").delete().eq("id", id);
+  if (error) {
+    const { error: e2 } = await supabase
+      .from("membership_plans")
+      .update({ active: false })
+      .eq("id", id);
+    revalidatePath("/[lang]/admin/plans", "page");
+    revalidatePath("/[lang]/memberships", "page");
+    return { error: e2?.message ?? null };
+  }
+  revalidatePath("/[lang]/admin/plans", "page");
+  revalidatePath("/[lang]/memberships", "page");
+  return { error: null };
+}
+
 export async function createTemplateAction(input: {
   classTypeId: string;
   weekday: number;

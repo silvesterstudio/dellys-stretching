@@ -18,12 +18,14 @@ export function BookingForm({
   sessionId,
   isChild,
   initialChildren,
+  balance,
 }: {
   lang: Locale;
   dict: Dictionary;
   sessionId: string;
   isChild: boolean;
   initialChildren: Child[];
+  balance: number;
 }) {
   const router = useRouter();
   const [children, setChildren] = useState<Child[]>(initialChildren);
@@ -158,9 +160,15 @@ export function BookingForm({
         </div>
       )}
 
-      <p className="mb-3 rounded-xl bg-mauve-50 px-3 py-2 text-xs text-mauve-600">
-        {dict.booking.noMembershipNote}
-      </p>
+      {balance > 0 ? (
+        <p className="mb-3 rounded-xl bg-brand-50 px-3 py-2 text-xs text-brand-700">
+          {balance} {dict.booking.sessionsAvailable} · {dict.booking.deductHint}
+        </p>
+      ) : (
+        <p className="mb-3 rounded-xl bg-mauve-50 px-3 py-2 text-xs text-mauve-600">
+          {dict.booking.noMembershipNote}
+        </p>
+      )}
 
       <button
         onClick={confirm}

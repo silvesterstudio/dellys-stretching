@@ -20,7 +20,7 @@ export default async function MembersPage({
   const dict = getDictionary(locale);
   const supabase = await createClient();
 
-  const [{ data: plans }, { data: reqs }] = await Promise.all([
+  const [{ data: plans }, { data: reqs }, { data: members }] = await Promise.all([
     supabase
       .from("membership_plans")
       .select("id, name_ro, name_ru, audience, session_count, validity_days")
@@ -35,6 +35,11 @@ export default async function MembersPage({
       )
       .eq("status", "pending")
       .order("created_at", { ascending: true }),
+    supabase
+      .from("profiles")
+      .select("id, email, full_name, phone")
+      .order("created_at", { ascending: false })
+      .limit(40),
   ]);
 
   const requests: RequestRow[] = (reqs ?? []).map((r: Record<string, unknown>) => {
@@ -65,7 +70,12 @@ export default async function MembersPage({
   return (
     <div className="space-y-8">
       <PendingRequests lang={locale} dict={dict} initial={requests} />
-      <MembersManager lang={locale} dict={dict} plans={(plans ?? []) as never} />
+      <MembersManager
+        lang={locale}
+        dict={dict}
+        plans={(plans ?? []) as never}
+        initialMembers={(members ?? []) as never}
+      />
     </div>
   );
 }

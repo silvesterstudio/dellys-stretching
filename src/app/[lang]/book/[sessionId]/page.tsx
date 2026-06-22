@@ -63,6 +63,17 @@ export default async function BookPage({
     children = data ?? [];
   }
 
+  // Sessions left across the user's active (non-expired) memberships.
+  const { data: mems } = await supabase
+    .from("user_memberships")
+    .select("sessions_remaining, expires_at")
+    .gt("sessions_remaining", 0)
+    .gt("expires_at", new Date().toISOString());
+  const balance = (mems ?? []).reduce(
+    (sum, m) => sum + ((m.sessions_remaining as number) ?? 0),
+    0,
+  );
+
   const name = localized(session.class_type, "name", locale);
 
   return (
@@ -96,6 +107,7 @@ export default async function BookPage({
           sessionId={session.id}
           isChild={isChild}
           initialChildren={children}
+          balance={balance}
         />
       </div>
     </div>

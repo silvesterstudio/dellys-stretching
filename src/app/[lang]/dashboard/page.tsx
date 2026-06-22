@@ -16,6 +16,7 @@ import { formatDate, formatTime } from "@/lib/format";
 import { localized } from "@/lib/i18n-data";
 import { CancelButton } from "@/components/dashboard/CancelButton";
 import { CancelRequestButton } from "@/components/dashboard/CancelRequestButton";
+import { ProfileForm } from "@/components/dashboard/ProfileForm";
 
 export const dynamic = "force-dynamic";
 
@@ -49,12 +50,18 @@ export default async function DashboardPage({
   // redirect() throws internally — keep it outside the try/catch above.
   if (!userId) redirect(`/${locale}/login`);
 
-  const [bookings, memberships, children, requests] = await Promise.all([
-    fetchMyBookings(),
-    fetchMyMemberships(),
-    fetchMyChildren(),
-    fetchMyRequests(),
-  ]);
+  const [bookings, memberships, children, requests, { data: profile }] =
+    await Promise.all([
+      fetchMyBookings(),
+      fetchMyMemberships(),
+      fetchMyChildren(),
+      fetchMyRequests(),
+      supabase
+        .from("profiles")
+        .select("full_name, phone")
+        .eq("id", userId)
+        .maybeSingle(),
+    ]);
 
   const now = Date.now();
   const isUpcoming = (b: MyBooking) =>
@@ -261,6 +268,18 @@ export default async function DashboardPage({
           </div>
         </section>
       )}
+
+      {/* Account details */}
+      <section>
+        <h2 className="mb-3 text-lg font-semibold text-mauve-800">
+          {dict.dashboard.myDetails}
+        </h2>
+        <ProfileForm
+          dict={dict}
+          initialName={profile?.full_name ?? null}
+          initialPhone={profile?.phone ?? null}
+        />
+      </section>
     </div>
   );
 }
