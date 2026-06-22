@@ -4,6 +4,7 @@ import type { Locale } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { createClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { fetchSessionById } from "@/lib/queries";
 import { formatDate, formatTime } from "@/lib/format";
 import { localized } from "@/lib/i18n-data";
@@ -20,18 +21,21 @@ export default async function BookPage({
   const locale = (isLocale(lang) ? lang : "ro") as Locale;
   const dict = getDictionary(locale);
 
-  const supabase = await createClient();
+  let supabase: Awaited<ReturnType<typeof createClient>> | null = null;
   let userId: string | null = null;
-  try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    userId = user?.id ?? null;
-  } catch {
-    userId = null;
+  if (isSupabaseConfigured()) {
+    try {
+      supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      userId = user?.id ?? null;
+    } catch {
+      userId = null;
+    }
   }
   // redirect() throws internally, so it must stay outside the try/catch above.
-  if (!userId) {
+  if (!userId || !supabase) {
     redirect(`/${locale}/login?session=${sessionId}`);
   }
 

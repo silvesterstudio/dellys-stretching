@@ -5,6 +5,7 @@ import { CANCEL_WINDOW_HOURS } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { createClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
   fetchMyBookings,
   fetchMyMemberships,
@@ -37,18 +38,21 @@ export default async function DashboardPage({
   const locale = (isLocale(lang) ? lang : "ro") as Locale;
   const dict = getDictionary(locale);
 
-  const supabase = await createClient();
+  let supabase: Awaited<ReturnType<typeof createClient>> | null = null;
   let userId: string | null = null;
-  try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    userId = user?.id ?? null;
-  } catch {
-    userId = null;
+  if (isSupabaseConfigured()) {
+    try {
+      supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      userId = user?.id ?? null;
+    } catch {
+      userId = null;
+    }
   }
   // redirect() throws internally — keep it outside the try/catch above.
-  if (!userId) redirect(`/${locale}/login`);
+  if (!userId || !supabase) redirect(`/${locale}/login`);
 
   const [bookings, memberships, children, requests, { data: profile }] =
     await Promise.all([

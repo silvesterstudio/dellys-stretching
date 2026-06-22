@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { isLocale } from "@/i18n/config";
 
 // Completes a magic-link sign-in: exchanges the ?code for a session, then
@@ -14,11 +15,15 @@ export async function GET(
   const code = searchParams.get("code");
   const next = searchParams.get("next") || `/${locale}/dashboard`;
 
-  if (code) {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+  if (code && isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      if (!error) {
+        return NextResponse.redirect(`${origin}${next}`);
+      }
+    } catch {
+      // fall through to the error redirect below
     }
   }
 

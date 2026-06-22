@@ -3,6 +3,7 @@ import type { Locale } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { createClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { LoginForm } from "@/components/auth/LoginForm";
 
 export const dynamic = "force-dynamic";
@@ -19,12 +20,22 @@ export default async function LoginPage({
   const locale = (isLocale(lang) ? lang : "ro") as Locale;
   const dict = getDictionary(locale);
 
-  // Already signed in — skip straight to the destination.
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user) {
+  // Already signed in — skip straight to the destination. Guarded so a missing
+  // Supabase config or auth outage shows the login form instead of crashing.
+  let signedIn = false;
+  if (isSupabaseConfigured()) {
+    try {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      signedIn = !!user;
+    } catch {
+      signedIn = false;
+    }
+  }
+  // redirect() throws internally — keep it outside the try/catch above.
+  if (signedIn) {
     redirect(session ? `/${locale}/book/${session}` : `/${locale}/dashboard`);
   }
 
