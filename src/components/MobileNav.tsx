@@ -15,6 +15,8 @@ export function MobileNav({
   loggedIn,
   loginHref,
   loginLabel,
+  signupHref,
+  signupLabel,
   logoutLabel,
   menuLabel,
 }: {
@@ -22,6 +24,8 @@ export function MobileNav({
   loggedIn: boolean;
   loginHref: string;
   loginLabel: string;
+  signupHref: string;
+  signupLabel: string;
   logoutLabel: string;
   menuLabel: string;
 }) {
@@ -98,13 +102,22 @@ export function MobileNav({
                   {logoutLabel}
                 </button>
               ) : (
-                <Link
-                  href={loginHref}
-                  onClick={() => setOpen(false)}
-                  className="btn-primary w-full"
-                >
-                  {loginLabel}
-                </Link>
+                <div className="space-y-2">
+                  <Link
+                    href={signupHref}
+                    onClick={() => setOpen(false)}
+                    className="btn-primary w-full"
+                  >
+                    {signupLabel}
+                  </Link>
+                  <Link
+                    href={loginHref}
+                    onClick={() => setOpen(false)}
+                    className="btn-secondary w-full"
+                  >
+                    {loginLabel}
+                  </Link>
+                </div>
               )}
             </div>
           </div>

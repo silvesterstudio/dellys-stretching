@@ -59,9 +59,14 @@ export function Header({
             {profile ? (
               <LogoutButton label={dict.nav.logout} />
             ) : (
-              <Link href={`${base}/login`} className="btn-primary">
-                {dict.nav.login}
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link href={`${base}/login`} className="btn-ghost">
+                  {dict.nav.login}
+                </Link>
+                <Link href={`${base}/login`} className="btn-primary">
+                  {dict.nav.signup}
+                </Link>
+              </div>
             )}
           </div>
           <MobileNav
@@ -69,6 +74,8 @@ export function Header({
             loggedIn={!!profile}
             loginHref={`${base}/login`}
             loginLabel={dict.nav.login}
+            signupHref={`${base}/login`}
+            signupLabel={dict.nav.signup}
             logoutLabel={dict.nav.logout}
             menuLabel={dict.common.menu}
           />
