@@ -11,10 +11,13 @@ export function LoginForm({
   lang,
   dict,
   nextSession,
+  mode = "login",
 }: {
   lang: Locale;
   dict: Dictionary;
   nextSession: string | null;
+  // "login" asks only for email; "signup" also collects name + phone.
+  mode?: "login" | "signup";
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -28,6 +31,8 @@ export function LoginForm({
   // Typing "admin" in the email field reveals the password box and switches to
   // staff login — the only entry point for admins (no separate /staff link).
   const adminMode = email.trim().toLowerCase() === "admin";
+  // Name + phone are collected only when signing up (and never for admin login).
+  const showProfileFields = mode === "signup" && !adminMode;
 
   function nextPath() {
     return nextSession ? `/${lang}/book/${nextSession}` : `/${lang}/dashboard`;
@@ -115,7 +120,7 @@ export function LoginForm({
         />
       </div>
 
-      {adminMode ? (
+      {adminMode && (
         <div>
           <label className="label" htmlFor="password">
             {dict.auth.adminPasswordLabel}
@@ -130,7 +135,9 @@ export function LoginForm({
             onChange={(e) => setPassword(e.target.value)}
           />
         </div>
-      ) : (
+      )}
+
+      {showProfileFields && (
         <>
           <div>
             <label className="label" htmlFor="fullName">
@@ -167,7 +174,11 @@ export function LoginForm({
 
       <button
         type="submit"
-        disabled={busy || !email || (adminMode ? !password : !fullName || !phone)}
+        disabled={
+          busy ||
+          !email ||
+          (adminMode ? !password : showProfileFields && (!fullName || !phone))
+        }
         className="btn-primary w-full"
       >
         {busy ? dict.common.loading : adminMode ? dict.auth.staffLogin : dict.auth.sendLink}

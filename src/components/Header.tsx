@@ -63,7 +63,7 @@ export function Header({
                 <Link href={`${base}/login`} className="btn-ghost">
                   {dict.nav.login}
                 </Link>
-                <Link href={`${base}/login`} className="btn-primary">
+                <Link href={`${base}/login?mode=signup`} className="btn-primary">
                   {dict.nav.signup}
                 </Link>
               </div>
@@ -74,7 +74,7 @@ export function Header({
             loggedIn={!!profile}
             loginHref={`${base}/login`}
             loginLabel={dict.nav.login}
-            signupHref={`${base}/login`}
+            signupHref={`${base}/login?mode=signup`}
             signupLabel={dict.nav.signup}
             logoutLabel={dict.nav.logout}
             menuLabel={dict.common.menu}

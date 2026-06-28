@@ -86,7 +86,9 @@
     "phoneLabel": "Телефон",
     "phonePlaceholder": "+373 ...",
     "adminPasswordLabel": "Пароль администратора",
-    "createAccount": "Новый аккаунт? Заполните данные ниже."
+    "createAccount": "Новый аккаунт? Заполните данные ниже.",
+    "noAccount": "Нет аккаунта? Зарегистрируйтесь",
+    "haveAccount": "Уже есть аккаунт? Войдите"
   },
   "booking": {
     "confirmTitle": "Подтвердите бронирование",

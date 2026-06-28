@@ -3,6 +3,7 @@ import Image from "next/image";
 import type { Locale } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { LoginForm } from "@/components/auth/LoginForm";
@@ -14,12 +15,14 @@ export default async function LoginPage({
   searchParams,
 }: {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{ session?: string; error?: string }>;
+  searchParams: Promise<{ session?: string; error?: string; mode?: string }>;
 }) {
   const { lang } = await params;
-  const { session, error } = await searchParams;
+  const { session, error, mode } = await searchParams;
   const locale = (isLocale(lang) ? lang : "ro") as Locale;
   const dict = getDictionary(locale);
+  const isSignup = mode === "signup";
+  const sessionQ = session ? `?session=${session}` : "";
 
   // Already signed in — skip straight to the destination. Guarded so a missing
   // Supabase config or auth outage shows the login form instead of crashing.
@@ -55,19 +58,33 @@ export default async function LoginPage({
           />
         </div>
         <h1 className="mt-7 text-center font-display text-2xl font-semibold tracking-tight text-mauve-900">
-          {dict.auth.title}
+          {isSignup ? dict.nav.signup : dict.nav.login}
         </h1>
         <p className="mx-auto mt-1.5 max-w-xs text-center text-sm text-mauve-500">
           {dict.auth.subtitle}
         </p>
-        {error && (
-          <div className="mt-4 rounded-2xl bg-red-50 px-3 py-2 text-sm text-red-700">
-            {dict.auth.linkError}
-          </div>
-        )}
-        <LoginForm lang={locale} dict={dict} nextSession={session ?? null} />
+        {error && <div className="alert-error mt-4">{dict.auth.linkError}</div>}
+        <LoginForm
+          lang={locale}
+          dict={dict}
+          nextSession={session ?? null}
+          mode={isSignup ? "signup" : "login"}
+        />
       </div>
-      <p className="mt-4 text-center text-xs text-mauve-400">{dict.auth.createAccount}</p>
+      <p className="mt-4 text-center text-xs text-mauve-400">
+        {isSignup ? (
+          <Link href={`/${locale}/login${sessionQ}`} className="hover:text-mauve-700">
+            {dict.auth.haveAccount}
+          </Link>
+        ) : (
+          <Link
+            href={`/${locale}/login${sessionQ ? sessionQ + "&" : "?"}mode=signup`}
+            className="hover:text-mauve-700"
+          >
+            {dict.auth.noAccount}
+          </Link>
+        )}
+      </p>
     </div>
   );
 }
