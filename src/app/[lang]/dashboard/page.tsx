@@ -114,7 +114,7 @@ export default async function DashboardPage({
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {memberships.map((m) => {
               const expired = new Date(m.expires_at).getTime() <= now;
-              const usable = !expired && m.sessions_remaining > 0;
+              const usable = !expired && m.sessions_remaining > 0 && !m.frozen;
               return (
                 <div key={m.id} className="card p-4">
                   <div className="font-medium text-mauve-900">
@@ -129,8 +129,12 @@ export default async function DashboardPage({
                     </span>
                   </div>
                   <div className="mt-1 text-xs text-mauve-400">
-                    {expired ? (
+                    {m.frozen ? (
+                      <span className="text-mauve-500">{dict.admin.member.frozen}</span>
+                    ) : expired ? (
                       <span className="text-red-500">{dict.dashboard.expired}</span>
+                    ) : m.sessions_remaining <= 0 ? (
+                      <span className="text-red-500">{dict.dashboard.depleted}</span>
                     ) : (
                       <>
                         {dict.dashboard.expiresOn} {formatDate(m.expires_at, locale)}
@@ -167,6 +171,7 @@ export default async function DashboardPage({
                 <CancelRequestButton
                   requestId={r.id}
                   label={dict.dashboard.cancelRequest}
+                  dict={dict}
                 />
               </div>
             ))}
@@ -195,11 +200,13 @@ export default async function DashboardPage({
                 <div
                   key={b.id}
                   className="card flex items-center justify-between gap-3 p-4"
-                  style={{ borderLeft: `4px solid ${b.session!.class_type.color}` }}
+                  style={{ borderLeft: `4px solid ${b.session!.class_type?.color ?? "#cbc4ca"}` }}
                 >
                   <div className="min-w-0">
                     <div className="font-medium text-mauve-900">
-                      {localized(b.session!.class_type, "name", locale)}
+                      {b.session!.class_type
+                        ? localized(b.session!.class_type, "name", locale)
+                        : "—"}
                       {b.child_name && (
                         <span className="ml-2 text-xs text-mauve-400">
                           · {b.child_name}
@@ -236,7 +243,9 @@ export default async function DashboardPage({
                 className="flex items-center justify-between gap-3 rounded-xl bg-white/60 px-4 py-2.5 text-sm"
               >
                 <div className="min-w-0 text-mauve-600">
-                  {b.session ? localized(b.session.class_type, "name", locale) : "—"}
+                  {b.session?.class_type
+                    ? localized(b.session.class_type, "name", locale)
+                    : "—"}
                   {b.child_name && (
                     <span className="ml-2 text-xs text-mauve-400">· {b.child_name}</span>
                   )}

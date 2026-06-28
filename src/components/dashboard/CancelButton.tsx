@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Dictionary } from "@/i18n/get-dictionary";
+import { cancelBookingErrorMessage } from "@/lib/booking-errors";
 
 export function CancelButton({
   bookingId,
@@ -27,7 +28,7 @@ export function CancelButton({
     });
     setBusy(false);
     if (error) {
-      setError(dict.common.error);
+      setError(cancelBookingErrorMessage(error.message, dict));
       return;
     }
     router.refresh();

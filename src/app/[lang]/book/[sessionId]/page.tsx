@@ -67,16 +67,40 @@ export default async function BookPage({
     children = data ?? [];
   }
 
-  // Sessions left across the user's active (non-expired) memberships.
+  // Sessions left across the user's active memberships *for this class's
+  // audience* — an adult bundle must not appear to cover a child class.
   const { data: mems } = await supabase
     .from("user_memberships")
-    .select("sessions_remaining, expires_at")
+    .select("sessions_remaining, plan:membership_plans!inner ( audience )")
+    .eq("plan.audience", session.class_type.audience)
+    .eq("frozen", false)
     .gt("sessions_remaining", 0)
     .gt("expires_at", new Date().toISOString());
   const balance = (mems ?? []).reduce(
     (sum, m) => sum + ((m.sessions_remaining as number) ?? 0),
     0,
   );
+
+  // Free trial: one free session per person, ever. It's "available" only if the
+  // client has no membership for this class, hasn't used their trial, and has no
+  // other open booking in flight (so they can't queue several "free" sessions).
+  let freeSessionAvailable = false;
+  if (balance === 0) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("free_session_used")
+      .eq("id", userId)
+      .maybeSingle();
+    if (profile && !profile.free_session_used) {
+      const { count } = await supabase
+        .from("bookings")
+        .select("id, sessions!inner ( starts_at )", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .in("status", ["booked", "pending"])
+        .gt("sessions.starts_at", new Date().toISOString());
+      freeSessionAvailable = (count ?? 0) === 0;
+    }
+  }
 
   const name = localized(session.class_type, "name", locale);
 
@@ -112,6 +136,7 @@ export default async function BookPage({
           isChild={isChild}
           initialChildren={children}
           balance={balance}
+          freeSessionAvailable={freeSessionAvailable}
         />
       </div>
     </div>

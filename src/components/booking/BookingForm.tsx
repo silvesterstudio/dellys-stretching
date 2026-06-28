@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Locale } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
-import { bookingErrorMessage } from "@/lib/booking-errors";
+import {
+  bookingErrorMessage,
+  isTerminalBookingError,
+  isAlreadyBooked,
+} from "@/lib/booking-errors";
 
 interface Child {
   id: string;
@@ -19,6 +23,7 @@ export function BookingForm({
   isChild,
   initialChildren,
   balance,
+  freeSessionAvailable = false,
 }: {
   lang: Locale;
   dict: Dictionary;
@@ -26,6 +31,7 @@ export function BookingForm({
   isChild: boolean;
   initialChildren: Child[];
   balance: number;
+  freeSessionAvailable?: boolean;
 }) {
   const router = useRouter();
   const [children, setChildren] = useState<Child[]>(initialChildren);
@@ -37,6 +43,9 @@ export function BookingForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [blocked, setBlocked] = useState<{ msg: string; alreadyBooked: boolean } | null>(
+    null,
+  );
 
   async function addChild() {
     const nameTrim = newChild.trim();
@@ -82,6 +91,15 @@ export function BookingForm({
     });
     setBusy(false);
     if (error) {
+      // Full / cancelled / already-booked can't be retried here — show a
+      // terminal state with a way out instead of a dead-end inline error.
+      if (isTerminalBookingError(error.message)) {
+        setBlocked({
+          msg: bookingErrorMessage(error.message, dict),
+          alreadyBooked: isAlreadyBooked(error.message),
+        });
+        return;
+      }
       setError(bookingErrorMessage(error.message, dict));
       return;
     }
@@ -101,6 +119,32 @@ export function BookingForm({
         >
           {dict.nav.dashboard}
         </button>
+      </div>
+    );
+  }
+
+  if (blocked) {
+    return (
+      <div className="mt-5 text-center">
+        <div className="rounded-xl bg-mauve-50 px-4 py-3 text-sm text-mauve-700">
+          {blocked.msg}
+        </div>
+        <div className="mt-4 flex flex-col gap-2">
+          {blocked.alreadyBooked && (
+            <button
+              onClick={() => router.replace(`/${lang}/dashboard`)}
+              className="btn-primary w-full"
+            >
+              {dict.dashboard.viewAccount}
+            </button>
+          )}
+          <button
+            onClick={() => router.replace(`/${lang}`)}
+            className={blocked.alreadyBooked ? "btn-secondary w-full" : "btn-primary w-full"}
+          >
+            ← {dict.nav.schedule}
+          </button>
+        </div>
       </div>
     );
   }
@@ -163,6 +207,10 @@ export function BookingForm({
       {balance > 0 ? (
         <p className="mb-3 rounded-xl bg-brand-50 px-3 py-2 text-xs text-brand-700">
           {balance} {dict.booking.sessionsAvailable} · {dict.booking.deductHint}
+        </p>
+      ) : freeSessionAvailable ? (
+        <p className="mb-3 rounded-xl bg-green-50 px-3 py-2 text-xs text-green-700">
+          {dict.booking.firstFree}
         </p>
       ) : (
         <p className="mb-3 rounded-xl bg-mauve-50 px-3 py-2 text-xs text-mauve-600">

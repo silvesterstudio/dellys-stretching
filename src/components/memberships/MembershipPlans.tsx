@@ -81,7 +81,7 @@ export function MembershipPlans({
                       }`}
                     >
                       {p.featured && (
-                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-brand-500 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm shadow-brand-500/40">
+                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-brand-600 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm shadow-brand-500/40">
                           ★ {dict.memberships.featured}
                         </span>
                       )}

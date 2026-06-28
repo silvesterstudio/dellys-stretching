@@ -41,7 +41,8 @@ export default async function MembershipsPage({
         const { data: reqs } = await supabase
           .from("membership_requests")
           .select("plan_id")
-          .eq("status", "pending");
+          .eq("status", "pending")
+          .eq("user_id", userId); // scope explicitly; don't lean on RLS alone
         pendingPlanIds = (reqs ?? []).map((r) => r.plan_id as string);
       }
     } catch {

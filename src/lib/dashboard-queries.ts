@@ -13,7 +13,7 @@ export interface MyBooking {
       name_ru: string;
       color: string;
       audience: "adult" | "child";
-    };
+    } | null;
   } | null;
 }
 
@@ -21,6 +21,7 @@ export interface MyMembership {
   id: string;
   sessions_remaining: number;
   expires_at: string;
+  frozen: boolean;
   plan: { name_ro: string; name_ru: string; session_count: number } | null;
 }
 
@@ -68,7 +69,7 @@ export async function fetchMyMemberships(): Promise<MyMembership[]> {
   const { data, error } = await supabase
     .from("user_memberships")
     .select(
-      `id, sessions_remaining, expires_at,
+      `id, sessions_remaining, expires_at, frozen,
        plan:membership_plans ( name_ro, name_ru, session_count )`,
     )
     .order("created_at", { ascending: false });
@@ -78,6 +79,7 @@ export async function fetchMyMemberships(): Promise<MyMembership[]> {
     id: r.id as string,
     sessions_remaining: r.sessions_remaining as number,
     expires_at: r.expires_at as string,
+    frozen: !!r.frozen,
     plan: one(r.plan as never) as MyMembership["plan"],
   }));
 }
