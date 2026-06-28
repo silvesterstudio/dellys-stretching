@@ -17,7 +17,7 @@ if (!TOKEN) {
   process.exit(1);
 }
 
-const FILES = ["0005_currency_mdl.sql", "0006_membership_purchase.sql"];
+const FILES = ["0008_freeze_and_signup.sql"];
 const migDir = path.join(process.cwd(), "supabase", "migrations");
 const H = { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" };
 
@@ -37,11 +37,14 @@ for (const f of FILES) {
   console.log(res.ok ? `✓ applied ${f}` : `✗ ${f}: ${res.status} ${res.body.slice(0, 300)}`);
 }
 
-// Sanity check.
+// Sanity check — confirm the 0008 changes are live in the DB.
 const check = await runSql(
-  `select count(*) as plans,
-          count(*) filter (where featured) as featured,
-          (select count(*) from public.membership_requests) as requests
-   from public.membership_plans;`,
+  `select
+     exists(select 1 from information_schema.columns
+            where table_name='user_memberships' and column_name='frozen') as frozen_col,
+     pg_get_functiondef('public.handle_new_user()'::regprocedure)
+       ilike '%full_name%' as signup_name,
+     pg_get_functiondef('public.book_session(uuid,uuid)'::regprocedure)
+       ilike '%not frozen%' as book_frozen;`,
 );
-console.log("counts:", check.body);
+console.log("verify:", check.body);
