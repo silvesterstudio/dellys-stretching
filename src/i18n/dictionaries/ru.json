@@ -130,7 +130,18 @@
     "cancelNotAllowed": "Запись больше нельзя отменить.",
     "requestNotPending": "Заявка уже обработана.",
     "sessionUnavailable": "Это занятие больше недоступно.",
-    "viewAccount": "Мой аккаунт"
+    "viewAccount": "Мой аккаунт",
+    "freeTrials": "Бесплатные пробные занятия",
+    "freeTrialsHint": "Первое занятие в каждой категории бесплатно — используйте как знакомство.",
+    "freeTrialOne": "1 бесплатное занятие",
+    "freeTrialBadge": "Бесплатно"
+  },
+  "trial": {
+    "categories": {
+      "adult": "Взрослые",
+      "kids_3_7": "Дети 3-7 лет",
+      "kids_8_13": "Дети 8-13 лет"
+    }
   },
   "memberships": {
     "title": "Абонементы",

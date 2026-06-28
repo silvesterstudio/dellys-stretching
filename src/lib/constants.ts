@@ -31,6 +31,11 @@ export const SESSION_GENERATION_WEEKS = 4;
 export const CLASS_AUDIENCES = ["adult", "child"] as const;
 export type ClassAudience = (typeof CLASS_AUDIENCES)[number];
 
+// Free-trial categories: every client gets ONE free introductory session per
+// category (mirrors class_types.category). Order = display order on the account.
+export const TRIAL_CATEGORIES = ["adult", "kids_3_7", "kids_8_13"] as const;
+export type TrialCategory = (typeof TRIAL_CATEGORIES)[number];
+
 export const BOOKING_STATUSES = [
   "pending",
   "booked",

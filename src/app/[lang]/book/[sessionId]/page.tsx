@@ -81,25 +81,19 @@ export default async function BookPage({
     0,
   );
 
-  // Free trial: one free session per person, ever. It's "available" only if the
-  // client has no membership for this class, hasn't used their trial, and has no
-  // other open booking in flight (so they can't queue several "free" sessions).
+  // Free trial: one free introductory session per category (adult / kids 3-7 /
+  // kids 8-13). Available for this class only if the client has no usable
+  // membership for its audience and hasn't yet used this category's trial. The
+  // authoritative consumption happens at check-in.
   let freeSessionAvailable = false;
   if (balance === 0) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("free_session_used")
-      .eq("id", userId)
+    const { data: used } = await supabase
+      .from("free_trial_usage")
+      .select("category")
+      .eq("user_id", userId)
+      .eq("category", session.class_type.category)
       .maybeSingle();
-    if (profile && !profile.free_session_used) {
-      const { count } = await supabase
-        .from("bookings")
-        .select("id, sessions!inner ( starts_at )", { count: "exact", head: true })
-        .eq("user_id", userId)
-        .in("status", ["booked", "pending"])
-        .gt("sessions.starts_at", new Date().toISOString());
-      freeSessionAvailable = (count ?? 0) === 0;
-    }
+    freeSessionAvailable = !used;
   }
 
   const name = localized(session.class_type, "name", locale);

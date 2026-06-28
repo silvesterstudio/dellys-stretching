@@ -30,6 +30,7 @@ export interface Database {
           description_ro: string | null;
           description_ru: string | null;
           color: string;
+          category: string;
           default_capacity: number;
           active: boolean;
           created_at: string;
@@ -43,11 +44,26 @@ export interface Database {
           description_ro?: string | null;
           description_ru?: string | null;
           color?: string;
+          category?: string;
           default_capacity?: number;
           active?: boolean;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["class_types"]["Insert"]>;
+        Relationships: [];
+      };
+      free_trial_usage: {
+        Row: {
+          user_id: string;
+          category: string;
+          used_at: string;
+        };
+        Insert: {
+          user_id: string;
+          category: string;
+          used_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["free_trial_usage"]["Insert"]>;
         Relationships: [];
       };
       weekly_templates: {
@@ -112,7 +128,6 @@ export interface Database {
           phone: string | null;
           preferred_lang: Locale;
           role: UserRole;
-          free_session_used: boolean;
           created_at: string;
         };
         Insert: {
@@ -122,7 +137,6 @@ export interface Database {
           phone?: string | null;
           preferred_lang?: Locale;
           role?: UserRole;
-          free_session_used?: boolean;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;

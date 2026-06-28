@@ -16,6 +16,7 @@ export interface SessionWithType {
     name_ro: string;
     name_ru: string;
     color: string;
+    category: string;
   };
 }
 
@@ -29,7 +30,7 @@ export async function fetchSessionById(
     .from("sessions")
     .select(
       `id, starts_at, duration_min, capacity, booked_count, instructor, status,
-       class_type:class_types!inner ( id, key, audience, name_ro, name_ru, color )`,
+       class_type:class_types!inner ( id, key, audience, name_ro, name_ru, color, category )`,
     )
     .eq("id", id)
     .maybeSingle();
@@ -52,7 +53,7 @@ export async function fetchSessions(
     .from("sessions")
     .select(
       `id, starts_at, duration_min, capacity, booked_count, instructor, status,
-       class_type:class_types!inner ( id, key, audience, name_ro, name_ru, color )`,
+       class_type:class_types!inner ( id, key, audience, name_ro, name_ru, color, category )`,
     )
     .eq("status", "scheduled")
     .gte("starts_at", start.toISOString())

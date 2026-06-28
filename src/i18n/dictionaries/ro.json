@@ -130,7 +130,18 @@
     "cancelNotAllowed": "Rezervarea nu mai poate fi anulată.",
     "requestNotPending": "Cererea a fost deja procesată.",
     "sessionUnavailable": "Această sesiune nu mai este disponibilă.",
-    "viewAccount": "Vezi contul"
+    "viewAccount": "Vezi contul",
+    "freeTrials": "Ședințe gratuite de probă",
+    "freeTrialsHint": "Prima ședință din fiecare categorie este gratuită — folosește-le ca introducere.",
+    "freeTrialOne": "1 ședință gratuită",
+    "freeTrialBadge": "Gratuit"
+  },
+  "trial": {
+    "categories": {
+      "adult": "Adulți",
+      "kids_3_7": "Copii 3-7 ani",
+      "kids_8_13": "Copii 8-13 ani"
+    }
   },
   "memberships": {
     "title": "Abonamente",

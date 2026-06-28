@@ -13,6 +13,7 @@ import {
   fetchMyRequests,
   type MyBooking,
 } from "@/lib/dashboard-queries";
+import { fetchAvailableTrials } from "@/lib/trial";
 import { formatDate, formatTime } from "@/lib/format";
 import { localized } from "@/lib/i18n-data";
 import { CancelButton } from "@/components/dashboard/CancelButton";
@@ -54,18 +55,21 @@ export default async function DashboardPage({
   // redirect() throws internally — keep it outside the try/catch above.
   if (!userId || !supabase) redirect(`/${locale}/login`);
 
-  const [bookings, memberships, children, requests, { data: profile }] =
-    await Promise.all([
-      fetchMyBookings(),
-      fetchMyMemberships(),
-      fetchMyChildren(),
-      fetchMyRequests(),
-      supabase
-        .from("profiles")
-        .select("full_name, phone")
-        .eq("id", userId)
-        .maybeSingle(),
-    ]);
+  const [
+    bookings,
+    memberships,
+    children,
+    requests,
+    { data: profile },
+    availableTrials,
+  ] = await Promise.all([
+    fetchMyBookings(),
+    fetchMyMemberships(),
+    fetchMyChildren(),
+    fetchMyRequests(),
+    supabase.from("profiles").select("full_name, phone").eq("id", userId).maybeSingle(),
+    fetchAvailableTrials(supabase, userId),
+  ]);
 
   const now = Date.now();
   const isUpcoming = (b: MyBooking) =>
@@ -97,6 +101,37 @@ export default async function DashboardPage({
       <h1 className="font-display text-3xl font-bold text-mauve-900">
         {dict.dashboard.title}
       </h1>
+
+      {/* Free introductory sessions — one per category, until first attended. */}
+      {availableTrials.length > 0 && (
+        <section>
+          <h2 className="section-title mb-1">{dict.dashboard.freeTrials}</h2>
+          <p className="mb-3 text-sm text-mauve-500">{dict.dashboard.freeTrialsHint}</p>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {availableTrials.map((c) => (
+              <div
+                key={c}
+                className="card flex items-center gap-3 border-green-200 p-4"
+              >
+                <span className="badge-success shrink-0">
+                  {dict.dashboard.freeTrialBadge}
+                </span>
+                <div className="min-w-0">
+                  <div className="font-medium text-mauve-900">
+                    {dict.trial.categories[c]}
+                  </div>
+                  <div className="text-xs text-mauve-400">
+                    {dict.dashboard.freeTrialOne}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <Link href={`/${locale}`} className="btn-primary mt-3">
+            {dict.schedule.bookCta}
+          </Link>
+        </section>
+      )}
 
       {/* Memberships */}
       <section>

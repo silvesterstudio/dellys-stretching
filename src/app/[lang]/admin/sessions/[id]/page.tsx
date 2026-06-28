@@ -30,7 +30,7 @@ export default async function RosterPage({
     .from("sessions")
     .select(
       `id, starts_at, capacity, booked_count, status, instructor,
-       class_type:class_types ( name_ro, name_ru, color, audience )`,
+       class_type:class_types ( name_ro, name_ru, color, audience, category )`,
     )
     .eq("id", id)
     .maybeSingle();
@@ -50,6 +50,7 @@ export default async function RosterPage({
       name_ru: string;
       color: string;
       audience: "adult" | "child";
+      category: string;
     },
   };
 
@@ -57,7 +58,7 @@ export default async function RosterPage({
     .from("bookings")
     .select(
       `id, status, user_id, child_id,
-       user:profiles ( email, full_name, free_session_used ),
+       user:profiles ( email, full_name ),
        child:children ( name )`,
     )
     .eq("session_id", id)
@@ -65,9 +66,7 @@ export default async function RosterPage({
 
   const one = (v: unknown) => (Array.isArray(v) ? v[0] : v);
   const bookings = (bookingsRaw ?? []).map((b: Record<string, unknown>) => {
-    const u = one(b.user) as
-      | { email: string; full_name: string | null; free_session_used: boolean }
-      | null;
+    const u = one(b.user) as { email: string; full_name: string | null } | null;
     const c = one(b.child) as { name: string } | null;
     return {
       id: b.id as string,
@@ -75,8 +74,6 @@ export default async function RosterPage({
       user_id: b.user_id as string,
       name: u?.full_name || u?.email || "—",
       child_name: c?.name ?? null,
-      // Free trial still available (no membership used yet for any session).
-      freeTrialAvailable: u ? !u.free_session_used : false,
     };
   });
 
@@ -103,6 +100,17 @@ export default async function RosterPage({
         label: `${plan ? localized(plan, "name", locale) : "—"} · ${m.sessions_remaining}`,
       };
     });
+  }
+
+  // Which of these clients have already used THIS session's category trial.
+  const usedTrial = new Set<string>();
+  if (userIds.length > 0) {
+    const { data: usage } = await supabase
+      .from("free_trial_usage")
+      .select("user_id")
+      .eq("category", session.class_type.category)
+      .in("user_id", userIds);
+    for (const r of usage ?? []) usedTrial.add((r as { user_id: string }).user_id);
   }
 
   return (
@@ -144,7 +152,7 @@ export default async function RosterPage({
                 dict={dict}
                 booking={b}
                 memberships={memOpts.filter((m) => m.user_id === b.user_id)}
-                freeTrialAvailable={b.freeTrialAvailable}
+                freeTrialAvailable={!usedTrial.has(b.user_id)}
               />
             ))}
           </div>
