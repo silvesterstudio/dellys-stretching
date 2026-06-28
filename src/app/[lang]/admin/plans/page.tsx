@@ -3,6 +3,7 @@ import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { createClient } from "@/lib/supabase/server";
 import { PlansManager, type AdminPlan } from "@/components/admin/PlansManager";
+import { ResetPanel } from "@/components/admin/ResetPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,7 @@ export default async function AdminPlansPage({
     <div className="space-y-4">
       <p className="text-sm text-mauve-500">{dict.admin.plansHint}</p>
       <PlansManager lang={locale} dict={dict} initial={(data ?? []) as AdminPlan[]} />
+      <ResetPanel kind="plans" dict={dict} />
     </div>
   );
 }

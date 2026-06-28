@@ -48,7 +48,7 @@ export function PendingRequests({
       <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-mauve-800">
         {dict.admin.pendingRequests}
         {rows.length > 0 && (
-          <span className="badge bg-brand-500 text-white">{rows.length}</span>
+          <span className="badge bg-brand-600 text-white">{rows.length}</span>
         )}
       </h2>
 

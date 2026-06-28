@@ -30,7 +30,7 @@ export default async function RosterPage({
     .from("sessions")
     .select(
       `id, starts_at, capacity, booked_count, status, instructor,
-       class_type:class_types ( name_ro, name_ru, color )`,
+       class_type:class_types ( name_ro, name_ru, color, audience )`,
     )
     .eq("id", id)
     .maybeSingle();
@@ -45,14 +45,19 @@ export default async function RosterPage({
     instructor: (sRaw.instructor as string) ?? null,
     class_type: (Array.isArray(sRaw.class_type)
       ? sRaw.class_type[0]
-      : sRaw.class_type) as { name_ro: string; name_ru: string; color: string },
+      : sRaw.class_type) as {
+      name_ro: string;
+      name_ru: string;
+      color: string;
+      audience: "adult" | "child";
+    },
   };
 
   const { data: bookingsRaw } = await supabase
     .from("bookings")
     .select(
       `id, status, user_id, child_id,
-       user:profiles ( email, full_name ),
+       user:profiles ( email, full_name, free_session_used ),
        child:children ( name )`,
     )
     .eq("session_id", id)
@@ -60,7 +65,9 @@ export default async function RosterPage({
 
   const one = (v: unknown) => (Array.isArray(v) ? v[0] : v);
   const bookings = (bookingsRaw ?? []).map((b: Record<string, unknown>) => {
-    const u = one(b.user) as { email: string; full_name: string | null } | null;
+    const u = one(b.user) as
+      | { email: string; full_name: string | null; free_session_used: boolean }
+      | null;
     const c = one(b.child) as { name: string } | null;
     return {
       id: b.id as string,
@@ -68,6 +75,8 @@ export default async function RosterPage({
       user_id: b.user_id as string,
       name: u?.full_name || u?.email || "—",
       child_name: c?.name ?? null,
+      // Free trial still available (no membership used yet for any session).
+      freeTrialAvailable: u ? !u.free_session_used : false,
     };
   });
 
@@ -79,8 +88,10 @@ export default async function RosterPage({
       .from("user_memberships")
       .select(
         `id, user_id, sessions_remaining, expires_at,
-         plan:membership_plans ( name_ro, name_ru )`,
+         plan:membership_plans!inner ( name_ro, name_ru, audience )`,
       )
+      .eq("plan.audience", session.class_type.audience)
+      .eq("frozen", false)
       .in("user_id", userIds)
       .gt("sessions_remaining", 0)
       .gt("expires_at", new Date().toISOString());
@@ -96,8 +107,11 @@ export default async function RosterPage({
 
   return (
     <div className="space-y-5">
-      <Link href={`/${locale}/admin`} className="text-sm text-mauve-500 hover:text-mauve-800">
-        ← {dict.admin.sessions}
+      <Link
+        href={`/${locale}/admin/templates`}
+        className="text-sm text-mauve-500 hover:text-mauve-800"
+      >
+        ← {dict.admin.templates}
       </Link>
 
       <div
@@ -130,6 +144,7 @@ export default async function RosterPage({
                 dict={dict}
                 booking={b}
                 memberships={memOpts.filter((m) => m.user_id === b.user_id)}
+                freeTrialAvailable={b.freeTrialAvailable}
               />
             ))}
           </div>

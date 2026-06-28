@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { checkInAction, markNoShowAction } from "@/app/[lang]/admin/actions";
+import { checkInErrorMessage } from "@/lib/booking-errors";
 
 interface Booking {
   id: string;
@@ -20,10 +21,12 @@ export function CheckInRow({
   dict,
   booking,
   memberships,
+  freeTrialAvailable = false,
 }: {
   dict: Dictionary;
   booking: Booking;
   memberships: MembershipOpt[];
+  freeTrialAvailable?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -43,7 +46,7 @@ export function CheckInRow({
     const { error } = await checkInAction(booking.id, membershipId || null);
     setBusy(false);
     if (error) {
-      setError(error);
+      setError(checkInErrorMessage(error, dict));
       return;
     }
     router.refresh();
@@ -55,7 +58,7 @@ export function CheckInRow({
     const { error } = await markNoShowAction(booking.id);
     setBusy(false);
     if (error) {
-      setError(error);
+      setError(dict.common.error);
       return;
     }
     router.refresh();
@@ -94,6 +97,18 @@ export function CheckInRow({
             <button onClick={noShow} disabled={busy} className="btn-secondary py-1.5 text-sm">
               {dict.admin.markNoShow}
             </button>
+            {/* When no membership is being deducted, tell the admin whether this
+                is the client's one free trial or a pay-at-reception session. */}
+            {membershipId === "" &&
+              (freeTrialAvailable ? (
+                <span className="badge bg-green-50 text-green-700">
+                  {dict.admin.freeTrial}
+                </span>
+              ) : (
+                <span className="badge bg-amber-50 text-amber-700">
+                  {dict.admin.payReception}
+                </span>
+              ))}
           </div>
         )}
       </div>

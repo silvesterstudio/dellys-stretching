@@ -1,9 +1,13 @@
+import { redirect } from "next/navigation";
 import type { Locale } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
-import { createClient } from "@/lib/supabase/server";
-import { MembersManager } from "@/components/admin/MembersManager";
+import { requireAdmin } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { PendingRequests, type RequestRow } from "@/components/admin/PendingRequests";
+import { MembersExplorer } from "@/components/admin/MembersExplorer";
+import { ResetPanel } from "@/components/admin/ResetPanel";
+import type { AdminMemberRow } from "@/app/[lang]/admin/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -18,42 +22,52 @@ export default async function MembersPage({
   const { lang } = await params;
   const locale = (isLocale(lang) ? lang : "ro") as Locale;
   const dict = getDictionary(locale);
-  const supabase = await createClient();
+  try {
+    await requireAdmin();
+  } catch {
+    redirect(`/${locale}/staff`);
+  }
 
-  const [{ data: plans }, { data: reqs }, { data: members }] = await Promise.all([
-    supabase
-      .from("membership_plans")
-      .select("id, name_ro, name_ru, audience, session_count, validity_days")
-      .eq("active", true)
-      .order("sort_order"),
-    supabase
-      .from("membership_requests")
-      .select(
-        `id, created_at,
-         profile:profiles ( email, full_name ),
-         plan:membership_plans ( name_ro, name_ru, session_count, price, currency )`,
-      )
-      .eq("status", "pending")
-      .order("created_at", { ascending: true }),
-    supabase
-      .from("profiles")
-      .select("id, email, full_name, phone")
-      .order("created_at", { ascending: false })
-      .limit(40),
-  ]);
+  let plans: Record<string, unknown>[] = [];
+  let reqs: Record<string, unknown>[] = [];
+  let members: AdminMemberRow[] = [];
+  try {
+    const admin = createAdminClient();
+    const [p, r, mem] = await Promise.all([
+      admin
+        .from("membership_plans")
+        .select("id, name_ro, name_ru, audience, session_count, validity_days")
+        .eq("active", true)
+        .order("sort_order"),
+      admin
+        .from("membership_requests")
+        .select(
+          `id, created_at,
+           profile:profiles ( email, full_name ),
+           plan:membership_plans ( name_ro, name_ru, session_count, price, currency )`,
+        )
+        .eq("status", "pending")
+        .order("created_at", { ascending: true }),
+      admin
+        .from("profiles")
+        .select("id, email, full_name, phone, created_at")
+        .eq("role", "client")
+        .order("created_at", { ascending: false })
+        .limit(50),
+    ]);
+    plans = (p.data ?? []) as Record<string, unknown>[];
+    reqs = (r.data ?? []) as Record<string, unknown>[];
+    members = (mem.data ?? []) as AdminMemberRow[];
+  } catch {
+    // Missing service key / Supabase blip → render the page empty, not a 500.
+  }
 
-  const requests: RequestRow[] = (reqs ?? []).map((r: Record<string, unknown>) => {
+  const requests: RequestRow[] = reqs.map((r) => {
     const profile = one(r.profile as never) as
       | { email: string; full_name: string | null }
       | null;
     const plan = one(r.plan as never) as
-      | {
-          name_ro: string;
-          name_ru: string;
-          session_count: number;
-          price: number;
-          currency: string;
-        }
+      | { name_ro: string; name_ru: string; session_count: number; price: number; currency: string }
       | null;
     return {
       id: r.id as string,
@@ -70,12 +84,13 @@ export default async function MembersPage({
   return (
     <div className="space-y-8">
       <PendingRequests lang={locale} dict={dict} initial={requests} />
-      <MembersManager
+      <MembersExplorer
         lang={locale}
         dict={dict}
-        plans={(plans ?? []) as never}
-        initialMembers={(members ?? []) as never}
+        plans={plans as never}
+        initialMembers={members}
       />
+      <ResetPanel kind="members" dict={dict} />
     </div>
   );
 }
