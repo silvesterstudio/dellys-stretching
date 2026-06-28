@@ -486,7 +486,7 @@ function MembershipRow({
             if (window.confirm(m.deleteConfirm)) run(() => deleteMembershipAction(mem.id));
           }}
           disabled={disabled}
-          className="btn-ghost px-3 py-1.5 text-xs text-red-600"
+          className="btn-ghost-danger px-3 py-1.5 text-xs"
         >
           {dict.admin.delete}
         </button>

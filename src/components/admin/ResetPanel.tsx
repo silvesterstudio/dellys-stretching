@@ -74,7 +74,7 @@ export function ResetPanel({ kind, dict }: { kind: ResetKind; dict: Dictionary }
       <p className="mt-1 max-w-prose text-sm text-red-900/75">{copy.desc}</p>
 
       {result === "ok" && (
-        <p className="mt-3 rounded-xl bg-green-50 px-3 py-2 text-sm text-green-700">
+        <p className="alert-success mt-3">
           {t.success}
           {deleted !== null && (
             <span className="ml-1">{t.removed.replace("{n}", String(deleted))}</span>
@@ -82,10 +82,10 @@ export function ResetPanel({ kind, dict }: { kind: ResetKind; dict: Dictionary }
         </p>
       )}
       {result === "err" && (
-        <p className="mt-3 rounded-xl bg-red-100 px-3 py-2 text-sm text-red-700">
+        <p className="alert-error mt-3">
           {dict.common.error}
           {errDetail && (
-            <span className="mt-1 block font-mono text-xs text-red-500">{errDetail}</span>
+            <span className="mt-1 block font-mono text-xs text-red-600">{errDetail}</span>
           )}
         </p>
       )}
@@ -97,7 +97,7 @@ export function ResetPanel({ kind, dict }: { kind: ResetKind; dict: Dictionary }
             setResult(null);
             setOpen(true);
           }}
-          className="mt-3 rounded-xl border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-600 hover:text-white"
+          className="btn-secondary mt-3 text-sm text-red-700"
         >
           {copy.button}
         </button>
@@ -111,14 +111,14 @@ export function ResetPanel({ kind, dict }: { kind: ResetKind; dict: Dictionary }
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
             placeholder={t.keyword}
-            className="w-full max-w-xs rounded-xl border border-red-300 px-3 py-2 text-sm outline-none focus:border-red-500"
+            className="input max-w-xs"
           />
           <div className="flex gap-2">
             <button
               type="button"
               onClick={run}
               disabled={!armed || pending}
-              className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+              className="btn-danger text-sm"
             >
               {pending ? dict.common.processing : t.confirm}
             </button>
@@ -126,7 +126,7 @@ export function ResetPanel({ kind, dict }: { kind: ResetKind; dict: Dictionary }
               type="button"
               onClick={close}
               disabled={pending}
-              className="btn-secondary px-4 py-2 text-sm"
+              className="btn-secondary text-sm"
             >
               {dict.common.cancel}
             </button>

@@ -110,9 +110,7 @@ export function BookingForm({
   if (done) {
     return (
       <div className="mt-5 text-center">
-        <div className="rounded-xl bg-green-50 px-4 py-3 text-green-700">
-          {dict.booking.success}
-        </div>
+        <div className="alert-success">{dict.booking.success}</div>
         <button
           onClick={() => router.replace(`/${lang}/dashboard`)}
           className="btn-primary mt-4 w-full"
@@ -126,9 +124,7 @@ export function BookingForm({
   if (blocked) {
     return (
       <div className="mt-5 text-center">
-        <div className="rounded-xl bg-mauve-50 px-4 py-3 text-sm text-mauve-700">
-          {blocked.msg}
-        </div>
+        <div className="alert-muted">{blocked.msg}</div>
         <div className="mt-4 flex flex-col gap-2">
           {blocked.alreadyBooked && (
             <button
@@ -151,11 +147,7 @@ export function BookingForm({
 
   return (
     <div className="mt-5">
-      {error && (
-        <div className="mb-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+      {error && <div className="alert-error mb-3">{error}</div>}
 
       {isChild && (
         <div className="mb-4">
@@ -205,17 +197,13 @@ export function BookingForm({
       )}
 
       {balance > 0 ? (
-        <p className="mb-3 rounded-xl bg-brand-50 px-3 py-2 text-xs text-brand-700">
+        <p className="alert-brand mb-3">
           {balance} {dict.booking.sessionsAvailable} · {dict.booking.deductHint}
         </p>
       ) : freeSessionAvailable ? (
-        <p className="mb-3 rounded-xl bg-green-50 px-3 py-2 text-xs text-green-700">
-          {dict.booking.firstFree}
-        </p>
+        <p className="alert-success mb-3">{dict.booking.firstFree}</p>
       ) : (
-        <p className="mb-3 rounded-xl bg-mauve-50 px-3 py-2 text-xs text-mauve-600">
-          {dict.booking.noMembershipNote}
-        </p>
+        <p className="alert-muted mb-3">{dict.booking.noMembershipNote}</p>
       )}
 
       <button

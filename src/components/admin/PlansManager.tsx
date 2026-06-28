@@ -40,9 +40,7 @@ export function PlansManager({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-mauve-900">
-          {dict.admin.plansTitle}
-        </h2>
+        <h2 className="section-title">{dict.admin.plansTitle}</h2>
         {!adding && (
           <button onClick={() => setAdding(true)} className="btn-secondary text-sm">
             + {dict.admin.newPlan}
@@ -206,9 +204,9 @@ function PlanRow({
         </label>
 
         <div className="ml-auto flex items-center gap-2">
-          {error && <span className="text-xs text-red-600">{error}</span>}
+          {error && <span className="text-xs text-red-700">{error}</span>}
           {id && (
-            <button onClick={remove} disabled={busy} className="btn-ghost text-sm text-red-600">
+            <button onClick={remove} disabled={busy} className="btn-ghost-danger text-sm">
               {dict.admin.delete}
             </button>
           )}

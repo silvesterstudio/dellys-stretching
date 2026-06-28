@@ -60,6 +60,13 @@ body {
   .btn-ghost {
     @apply btn text-mauve-600 hover:bg-mauve-100;
   }
+  /* Destructive: solid for a confirmed destroy, ghost for an inline delete. */
+  .btn-danger {
+    @apply btn bg-red-600 text-white shadow-sm shadow-red-500/25 hover:bg-red-700;
+  }
+  .btn-ghost-danger {
+    @apply btn text-mauve-600 hover:bg-red-50 hover:text-red-700;
+  }
 
   /* Surfaces — solid white on a white page, so they lean on a hairline border
      and a soft, faintly-pink shadow to lift off the canvas. */
@@ -82,9 +89,45 @@ body {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239d9890' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
   }
 
+  /* Inline status notices — one consistent shape, semantic tint per state. */
+  .alert {
+    @apply rounded-xl px-3 py-2 text-sm;
+  }
+  .alert-success {
+    @apply alert bg-green-50 text-green-700;
+  }
+  .alert-error {
+    @apply alert bg-red-50 text-red-700;
+  }
+  .alert-warning {
+    @apply alert bg-amber-50 text-amber-700;
+  }
+  .alert-brand {
+    @apply alert bg-brand-50 text-brand-700;
+  }
+  .alert-muted {
+    @apply alert bg-mauve-50 text-mauve-600;
+  }
+
   /* Bits */
   .badge {
     @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+  /* Status badge tints (compose with .badge). */
+  .badge-success {
+    @apply badge bg-green-50 text-green-700;
+  }
+  .badge-warning {
+    @apply badge bg-amber-50 text-amber-700;
+  }
+  .badge-danger {
+    @apply badge bg-red-50 text-red-700;
+  }
+  .badge-brand {
+    @apply badge bg-brand-100 text-brand-700;
+  }
+  .badge-muted {
+    @apply badge bg-mauve-100 text-mauve-600;
   }
   .section-title {
     @apply text-lg font-semibold tracking-tight text-mauve-900;

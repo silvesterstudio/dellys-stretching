@@ -64,9 +64,7 @@ export function MembershipPlans({
         (g) =>
           g.items.length > 0 && (
             <section key={g.audience}>
-              <h2 className="mb-4 text-lg font-semibold text-mauve-800">
-                {dict.audience[g.audience]}
-              </h2>
+              <h2 className="section-title mb-4">{dict.audience[g.audience]}</h2>
               <div className="grid items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {g.items.map((p) => {
                   const isPending = pending.has(p.id);
@@ -109,14 +107,10 @@ export function MembershipPlans({
                       <div className="mt-4 flex-1" />
 
                       {sent && (
-                        <p className="mb-2 rounded-xl bg-green-50 px-3 py-2 text-xs text-green-700">
-                          {dict.memberships.requestSent}
-                        </p>
+                        <p className="alert-success mb-2">{dict.memberships.requestSent}</p>
                       )}
                       {errorId === p.id && (
-                        <p className="mb-2 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700">
-                          {dict.common.error}
-                        </p>
+                        <p className="alert-error mb-2">{dict.common.error}</p>
                       )}
 
                       {!loggedIn ? (

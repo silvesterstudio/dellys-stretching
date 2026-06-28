@@ -39,16 +39,16 @@ export function CancelButton({
       <button
         onClick={cancel}
         disabled={busy}
-        className="text-xs text-mauve-500 underline hover:text-red-600"
+        className="btn-ghost-danger px-3 py-1.5 text-sm"
       >
         {busy ? dict.common.loading : dict.dashboard.cancelBooking}
       </button>
       {withinWindow && (
-        <div className="mt-0.5 text-[11px] text-amber-600">
+        <div className="mt-0.5 text-xs text-amber-700">
           {dict.dashboard.cancelTooLate}
         </div>
       )}
-      {error && <div className="mt-0.5 text-[11px] text-red-600">{error}</div>}
+      {error && <div className="mt-0.5 text-xs text-red-700">{error}</div>}
     </div>
   );
 }

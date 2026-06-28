@@ -96,9 +96,7 @@ export function LoginForm({
 
   return (
     <form onSubmit={submit} className="mt-6 space-y-3">
-      {error && (
-        <div className="rounded-2xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
-      )}
+      {error && <div className="alert-error">{error}</div>}
 
       <div>
         <label className="label" htmlFor="email">

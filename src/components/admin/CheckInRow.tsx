@@ -101,30 +101,26 @@ export function CheckInRow({
                 is the client's one free trial or a pay-at-reception session. */}
             {membershipId === "" &&
               (freeTrialAvailable ? (
-                <span className="badge bg-green-50 text-green-700">
-                  {dict.admin.freeTrial}
-                </span>
+                <span className="badge-success">{dict.admin.freeTrial}</span>
               ) : (
-                <span className="badge bg-amber-50 text-amber-700">
-                  {dict.admin.payReception}
-                </span>
+                <span className="badge-warning">{dict.admin.payReception}</span>
               ))}
           </div>
         )}
       </div>
-      {error && <div className="mt-1 text-xs text-red-600">{error}</div>}
+      {error && <div className="mt-1 text-xs text-red-700">{error}</div>}
     </div>
   );
 }
 
 function StatusBadge({ status, dict }: { status: string; dict: Dictionary }) {
   const map: Record<string, { cls: string; label: string }> = {
-    booked: { cls: "bg-brand-50 text-brand-700", label: dict.common.booked },
-    pending: { cls: "bg-amber-50 text-amber-700", label: dict.common.booked },
-    attended: { cls: "bg-green-50 text-green-700", label: dict.admin.attended },
-    no_show: { cls: "bg-mauve-100 text-mauve-500", label: dict.admin.noShow },
-    cancelled: { cls: "bg-mauve-100 text-mauve-400", label: dict.common.cancel },
+    booked: { cls: "badge-brand", label: dict.common.booked },
+    pending: { cls: "badge-warning", label: dict.common.booked },
+    attended: { cls: "badge-success", label: dict.admin.attended },
+    no_show: { cls: "badge-muted", label: dict.admin.noShow },
+    cancelled: { cls: "badge-muted", label: dict.common.cancel },
   };
   const m = map[status] ?? map.booked;
-  return <span className={`badge mt-1 ${m.cls}`}>{m.label}</span>;
+  return <span className={`${m.cls} mt-1`}>{m.label}</span>;
 }

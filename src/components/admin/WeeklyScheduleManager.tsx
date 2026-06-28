@@ -99,7 +99,7 @@ export function WeeklyScheduleManager({
           </Link>
           <span className="text-sm font-semibold text-mauve-800">
             {isCurrentWeek && (
-              <span className="mr-1.5 rounded-full bg-brand-100 px-2 py-0.5 text-[11px] text-brand-700">
+              <span className="badge mr-1.5 bg-brand-100 text-brand-700">
                 {dict.common.today}
               </span>
             )}
@@ -196,7 +196,7 @@ function DayEditor({
         </h3>
         <button
           onClick={() => setOpen((o) => !o)}
-          className="text-xs font-medium text-brand-600 hover:text-brand-700"
+          className="btn-ghost px-2.5 py-1 text-sm text-brand-600 hover:bg-brand-50 hover:text-brand-700"
         >
           + {dict.admin.createSession}
         </button>
@@ -211,28 +211,36 @@ function DayEditor({
           <div
             key={s.id}
             className="card flex items-center justify-between gap-3 p-3"
-            style={{ borderLeft: `4px solid ${s.class_type.color}` }}
           >
-            <div className="min-w-0 text-sm">
-              <span className="font-semibold text-mauve-900">{formatTime(s.starts_at, lang)}</span>{" "}
-              · {localized(s.class_type, "name", lang)}
-              <span className="text-mauve-400">
-                {" "}
-                · {s.booked_count}/{s.capacity}
-                {s.instructor ? ` · ${s.instructor}` : ""}
+            <div className="flex min-w-0 items-center gap-2.5 text-sm">
+              <span
+                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                style={{ background: s.class_type.color }}
+                aria-hidden
+              />
+              <span className="min-w-0 truncate">
+                <span className="font-semibold text-mauve-900">
+                  {formatTime(s.starts_at, lang)}
+                </span>{" "}
+                · {localized(s.class_type, "name", lang)}
+                <span className="text-mauve-400">
+                  {" "}
+                  · {s.booked_count}/{s.capacity}
+                  {s.instructor ? ` · ${s.instructor}` : ""}
+                </span>
               </span>
             </div>
-            <div className="flex shrink-0 items-center gap-3">
+            <div className="flex shrink-0 items-center gap-2">
               <Link
                 href={`/${lang}/admin/sessions/${s.id}`}
-                className="text-xs text-mauve-500 underline hover:text-mauve-800"
+                className="btn-secondary py-1.5 text-sm"
               >
                 {dict.admin.checkIn}
               </Link>
               <button
                 onClick={() => remove(s.id)}
                 disabled={busy}
-                className="text-xs text-red-500 underline hover:text-red-700"
+                className="btn-ghost-danger py-1.5 text-sm"
               >
                 {dict.admin.delete}
               </button>

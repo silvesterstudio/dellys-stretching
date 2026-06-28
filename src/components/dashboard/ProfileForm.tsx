@@ -67,8 +67,8 @@ export function ProfileForm({
         <button type="submit" disabled={busy} className="btn-primary">
           {busy ? dict.common.processing : dict.common.save}
         </button>
-        {saved && <span className="text-sm text-green-600">{dict.dashboard.saved}</span>}
-        {error && <span className="text-sm text-red-600">{error}</span>}
+        {saved && <span className="text-sm text-green-700">{dict.dashboard.saved}</span>}
+        {error && <span className="text-sm text-red-700">{error}</span>}
       </div>
     </form>
   );
