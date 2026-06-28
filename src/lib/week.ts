@@ -73,32 +73,41 @@ export interface WeekRange {
   days: Date[]; // 7 instants: Mon..Sun at 00:00 Bucharest
 }
 
+// Add n calendar days to a Y-M-D triple. Pure calendar math (via UTC date
+// components) so it never drifts across a DST transition the way millisecond
+// stepping does.
+function addCalendarDays(
+  y: number,
+  m: number,
+  d: number,
+  n: number,
+): { y: number; m: number; d: number } {
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + n);
+  return { y: dt.getUTCFullYear(), m: dt.getUTCMonth() + 1, d: dt.getUTCDate() };
+}
+
 // offsetWeeks: 0 = current week, 1 = next, -1 = previous.
 export function getWeekRange(offsetWeeks: number, now: Date = new Date()): WeekRange {
   const today = partsInTz(now, TIMEZONE);
-  // JS weekday (0=Sun..6=Sat) of "today" in Bucharest.
+  // JS weekday (0=Sun..6=Sat) of "today" in the studio timezone.
   const jsDow = new Date(Date.UTC(today.y, today.m - 1, today.d)).getUTCDay();
   // Days back to Monday (treat Sunday as 7).
   const backToMon = (jsDow === 0 ? 7 : jsDow) - 1;
 
-  const todayMidnight = zonedWallToUtc(today.y, today.m, today.d, 0, TIMEZONE);
-  // Shift to the correct Monday accounting for offset weeks.
-  const mondayStart = new Date(
-    todayMidnight.getTime() - backToMon * 86400000 + offsetWeeks * 7 * 86400000,
-  );
-  // Re-resolve to a clean Bucharest midnight (handles DST shift within the week).
-  const mp = partsInTz(mondayStart, TIMEZONE);
-  const start = zonedWallToUtc(mp.y, mp.m, mp.d, 0, TIMEZONE);
+  // The Monday of the target week, in calendar days — then resolve each day from
+  // its own date so the DST fall-back/spring-forward week can't duplicate or
+  // skip a day (which fixed-ms stepping would).
+  const mon = addCalendarDays(today.y, today.m, today.d, -backToMon + offsetWeeks * 7);
+  const start = zonedWallToUtc(mon.y, mon.m, mon.d, 0, TIMEZONE);
 
   const days: Date[] = [];
   for (let i = 0; i < 7; i++) {
-    const dayGuess = new Date(start.getTime() + i * 86400000);
-    const dp = partsInTz(dayGuess, TIMEZONE);
-    days.push(zonedWallToUtc(dp.y, dp.m, dp.d, 0, TIMEZONE));
+    const dd = addCalendarDays(mon.y, mon.m, mon.d, i);
+    days.push(zonedWallToUtc(dd.y, dd.m, dd.d, 0, TIMEZONE));
   }
-  const endGuess = new Date(start.getTime() + 7 * 86400000);
-  const ep = partsInTz(endGuess, TIMEZONE);
-  const end = zonedWallToUtc(ep.y, ep.m, ep.d, 0, TIMEZONE);
+  const e = addCalendarDays(mon.y, mon.m, mon.d, 7);
+  const end = zonedWallToUtc(e.y, e.m, e.d, 0, TIMEZONE);
 
   return { start, end, days };
 }

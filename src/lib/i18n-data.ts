@@ -6,6 +6,9 @@ export function localized<T extends Record<string, unknown>>(
   field: string,
   locale: Locale,
 ): string {
-  const key = `${field}_${locale}`;
-  return (row[key] as string) ?? (row[`${field}_ro`] as string) ?? "";
+  // Treat an empty string as "missing" so an untranslated *_ru row falls back
+  // to *_ro instead of rendering blank.
+  const value = row[`${field}_${locale}`] as string | undefined;
+  if (value) return value;
+  return (row[`${field}_ro`] as string) ?? "";
 }

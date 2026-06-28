@@ -22,7 +22,8 @@
     "today": "Azi",
     "processing": "Se procesează...",
     "error": "A apărut o eroare. Încearcă din nou.",
-    "language": "Limba"
+    "language": "Limba",
+    "menu": "Meniu"
   },
   "audience": {
     "adult": "Adulți",
@@ -36,7 +37,8 @@
     "nextWeek": "Săptămâna viitoare",
     "noSessions": "Nicio sesiune programată în această săptămână.",
     "bookCta": "Rezervă",
-    "instructor": "Instructor"
+    "instructor": "Instructor",
+    "noSessionsDay": "Nicio sesiune disponibilă"
   },
   "weekdays": {
     "0": "Duminică",
@@ -77,7 +79,13 @@
     "password": "Parolă",
     "staffLogin": "Intră",
     "staffLink": "Personal",
-    "invalidLogin": "Utilizator sau parolă incorecte."
+    "invalidLogin": "Utilizator sau parolă incorecte.",
+    "fullNameLabel": "Nume complet",
+    "namePlaceholder": "Nume Prenume",
+    "phoneLabel": "Telefon",
+    "phonePlaceholder": "+373 ...",
+    "adminPasswordLabel": "Parolă administrator",
+    "createAccount": "Cont nou? Completează datele de mai jos."
   },
   "booking": {
     "confirmTitle": "Confirmă rezervarea",
@@ -85,6 +93,7 @@
     "addChild": "Adaugă un copil",
     "childName": "Numele copilului",
     "noMembershipNote": "Poți rezerva acum și plăti abonamentul la recepție. Locul este reținut.",
+    "firstFree": "Prima ședință de probă este gratuită. Locul este reținut.",
     "sessionsAvailable": "ședințe disponibile în abonament",
     "deductHint": "se scade 1 la prezență",
     "success": "Rezervare confirmată!",
@@ -102,6 +111,7 @@
     "sessionsRemaining": "sesiuni rămase",
     "expiresOn": "Expiră la",
     "expired": "Expirat",
+    "depleted": "Fără ședințe rămase",
     "noMemberships": "Nu ai niciun abonament activ.",
     "noBookings": "Nu ai nicio rezervare. Vezi programul.",
     "cancelBooking": "Anulează rezervarea",
@@ -113,7 +123,11 @@
     "myDetails": "Datele mele",
     "yourName": "Nume complet",
     "yourPhone": "Telefon",
-    "saved": "Salvat"
+    "saved": "Salvat",
+    "cancelNotAllowed": "Rezervarea nu mai poate fi anulată.",
+    "requestNotPending": "Cererea a fost deja procesată.",
+    "sessionUnavailable": "Această sesiune nu mai este disponibilă.",
+    "viewAccount": "Vezi contul"
   },
   "memberships": {
     "title": "Abonamente",
@@ -164,6 +178,11 @@
     "generate": "Generează sesiuni",
     "generateWeeks": "Generează programul pentru următoarele 4 săptămâni",
     "generated": "Sesiuni generate.",
+    "saveAsDefault": "Salvează ca implicit",
+    "savedDefault": "Săptămână salvată ca implicită",
+    "saveAsDefaultConfirm": "Salvezi această săptămână ca program implicit? Înlocuiește programul implicit curent.",
+    "weekSessions": "Sesiunile săptămânii",
+    "deleteSessionConfirm": "Ștergi această sesiune din program?",
     "active": "Activ",
     "inactive": "Inactiv",
     "add": "Adaugă",
@@ -171,6 +190,8 @@
     "noShowDone": "Marcat absent",
     "alreadyDone": "Finalizat",
     "noMembershipDeduct": "Fără abonament (nu se scade)",
+    "freeTrial": "Ședință gratuită (probă)",
+    "payReception": "Plată la recepție",
     "upcomingSessions": "Sesiuni viitoare",
     "participants": "participanți",
     "pendingRequests": "Cereri de abonament",
@@ -185,6 +206,107 @@
     "planNameRo": "Denumire (RO)",
     "planNameRu": "Denumire (RU)",
     "planPrice": "Preț (MDL)",
-    "sortOrder": "Ordine"
+    "sortOrder": "Ordine",
+    "dashboardTab": "Statistici",
+    "stats": {
+      "title": "Statistici",
+      "overview": "Privire de ansamblu",
+      "revenue": "Încasări",
+      "membershipsSold": "Abonamente vândute",
+      "sessionsHeld": "Sesiuni",
+      "attendance": "Prezențe",
+      "newMembers": "Membri noi",
+      "bookings": "Rezervări",
+      "activeMemberships": "Abonamente active",
+      "totalMembers": "Total membri",
+      "outstandingSessions": "Ședințe rămase",
+      "todaySessions": "Sesiuni azi",
+      "period": "Perioadă",
+      "today": "Azi",
+      "yesterday": "Ieri",
+      "last7": "7 zile",
+      "last30": "30 zile",
+      "last365": "1 an",
+      "custom": "Personalizat",
+      "from": "De la",
+      "to": "Până la",
+      "apply": "Aplică",
+      "inPeriod": "în perioada selectată"
+    },
+    "member": {
+      "members": "Membri",
+      "profile": "Profil",
+      "joined": "Membru din",
+      "totalSpent": "Total cheltuit",
+      "sessionsAttended": "Prezențe",
+      "activeMemberships": "Abonamente active",
+      "upcoming": "Rezervări viitoare",
+      "memberships": "Abonamente",
+      "history": "Istoric rezervări",
+      "noHistory": "Nicio rezervare.",
+      "children": "Copii",
+      "noChildren": "Niciun copil.",
+      "requests": "Cereri abonament",
+      "noRequests": "Nicio cerere.",
+      "active": "Activ",
+      "expired": "Expirat",
+      "activate": "Activează abonament",
+      "select": "Selectează un membru pentru a vedea toate detaliile.",
+      "searchPlaceholder": "Caută după nume, email sau telefon",
+      "noPhone": "Fără telefon",
+      "sessionsShort": "ședințe",
+      "freeze": "Îngheață",
+      "unfreeze": "Dezgheață",
+      "frozen": "Înghețat",
+      "addSessions": "Adaugă ședințe",
+      "editExpiry": "Schimbă expirarea",
+      "deleteConfirm": "Sigur ștergi acest abonament?"
+    },
+    "bookingStatus": {
+      "pending": "În așteptare",
+      "booked": "Rezervat",
+      "attended": "Prezent",
+      "no_show": "Absent",
+      "cancelled": "Anulat"
+    },
+    "requestStatus": {
+      "pending": "În așteptare",
+      "approved": "Aprobat",
+      "rejected": "Respins",
+      "cancelled": "Anulat"
+    },
+    "checkInError": {
+      "frozen": "Abonament înghețat — dezgheață-l înainte de check-in.",
+      "expired": "Abonament expirat — nu se poate scădea o ședință.",
+      "empty": "Nu mai sunt ședințe în acest abonament.",
+      "wrongAudience": "Abonamentul nu corespunde tipului clasei (adulți/copii).",
+      "wrongUser": "Abonamentul aparține altui membru.",
+      "notFound": "Abonamentul nu a fost găsit.",
+      "notCheckinable": "Rezervarea nu poate fi finalizată."
+    },
+    "reset": {
+      "dangerZone": "Zonă periculoasă",
+      "keyword": "RESET",
+      "confirmPrompt": "Scrie {word} pentru a confirma. Acțiunea este ireversibilă.",
+      "confirm": "Confirmă resetarea",
+      "success": "Resetare finalizată.",
+      "removed": "({n} elemente șterse)",
+      "stats": {
+        "button": "Resetează tot",
+        "desc": "Resetare completă: șterge toate conturile clienților, abonamentele, cererile, rezervările, sesiunile și programul. Toate statisticile revin la zero. Contul de administrator, tipurile de clase și prețurile rămân."
+      },
+      "schedule": {
+        "button": "Resetează programul",
+        "desc": "Șterge toate sesiunile și șabloanele săptămânale (împreună cu rezervările lor). Conturile și abonamentele rămân."
+      },
+      "members": {
+        "button": "Resetează membrii",
+        "desc": "Șterge toate conturile clienților și datele lor: abonamente, cereri, copii și rezervări. Conturile de administrator rămân."
+      },
+      "plans": {
+        "button": "Resetează abonamentele",
+        "desc": "Șterge toate abonamentele și prețurile, inclusiv abonamentele active ale membrilor."
+      }
+    }
   }
 }

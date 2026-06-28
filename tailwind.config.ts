@@ -7,38 +7,41 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Minimalist palette: one muted-rose accent over a warm-neutral ink
-        // scale and near-white surfaces. (Palette names kept stable so existing
-        // class usages don't need touching.)
+        // Minimalist white + pink identity. "brand" is anchored on the Dellys
+        // logo's hot magenta-pink (#fd0267 = brand-500); 600 is tuned for
+        // accessible white button text (~4.9:1). (Palette names kept stable so
+        // existing class usages don't need touching.)
         brand: {
-          50: "#fdf2f5",
-          100: "#fbe6ec",
-          200: "#f6ccd8",
-          300: "#eea7bd",
-          400: "#e27a9c",
-          500: "#d4517f",
-          600: "#bd3a68",
-          700: "#9e2b54",
-          800: "#822548",
-          900: "#6d2240",
+          50: "#fff1f6",
+          100: "#ffe3ee",
+          200: "#ffc6dd",
+          300: "#ff97bf",
+          400: "#fb5894",
+          500: "#fd0267",
+          600: "#de0058",
+          700: "#b9004a",
+          800: "#98033e",
+          900: "#7e0a37",
         },
-        // "mauve" is now a warm-neutral ink scale (text + soft surfaces).
+        // "mauve" is a clean, faintly-rosy neutral ink scale (text + hairlines).
         mauve: {
-          50: "#f7f6f4",
-          100: "#ecebe7",
-          200: "#dcdad4",
-          300: "#c2bfb6",
-          400: "#9d9890",
-          500: "#79746c",
-          600: "#5c5851",
-          700: "#46423c",
-          800: "#322f2a",
-          900: "#1f1d1a",
+          50: "#f9f7f8",
+          100: "#f1eef0",
+          200: "#e5e0e4",
+          300: "#cbc4ca",
+          400: "#9d959c",
+          500: "#756c74",
+          600: "#554e54",
+          700: "#3f3940",
+          800: "#292429",
+          900: "#181518",
         },
+        // "sand" is now a whisper-pink for soft secondary surfaces, sitting
+        // just off the pure-white page so it reads as warm, not grey.
         sand: {
-          50: "#faf9f7",
-          100: "#f3f1ed",
-          200: "#e8e5df",
+          50: "#fff5fa",
+          100: "#ffe9f1",
+          200: "#ffd6e6",
         },
       },
       fontFamily: {

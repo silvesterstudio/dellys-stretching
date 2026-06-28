@@ -46,3 +46,14 @@ export function weekdayInTz(iso: string): number {
   }).format(new Date(iso));
   return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(wd);
 }
+
+// Wall-clock "HH:MM" (24h) of an instant in the gym timezone — for deriving a
+// recurring template's start_time from a concrete session.
+export function wallTimeInTz(iso: string): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: TIMEZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).format(new Date(iso));
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -16,15 +16,29 @@ export function MobileNav({
   loginHref,
   loginLabel,
   logoutLabel,
+  menuLabel,
 }: {
   links: NavLink[];
   loggedIn: boolean;
   loginHref: string;
   loginLabel: string;
   logoutLabel: string;
+  menuLabel: string;
 }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    // Move focus into the menu so keyboard / screen-reader users land inside it.
+    panelRef.current?.querySelector<HTMLElement>("a, button")?.focus();
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
 
   async function logout() {
     const supabase = createClient();
@@ -37,7 +51,7 @@ export function MobileNav({
   return (
     <div className="md:hidden">
       <button
-        aria-label="Menu"
+        aria-label={menuLabel}
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
         className="flex h-10 w-10 items-center justify-center rounded-full border border-mauve-200 bg-white/80 text-mauve-700"
@@ -61,7 +75,10 @@ export function MobileNav({
             className="fixed inset-0 z-40 bg-mauve-900/10 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute left-0 right-0 top-full z-50 mx-3 mt-2 animate-rise rounded-3xl border border-mauve-100 bg-white p-2 shadow-xl">
+          <div
+            ref={panelRef}
+            className="absolute left-0 right-0 top-full z-50 mx-3 mt-2 animate-rise rounded-3xl border border-mauve-100 bg-white p-2 shadow-xl"
+          >
             {links.map((l) => (
               <Link
                 key={l.href}

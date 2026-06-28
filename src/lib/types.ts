@@ -112,6 +112,7 @@ export interface Database {
           phone: string | null;
           preferred_lang: Locale;
           role: UserRole;
+          free_session_used: boolean;
           created_at: string;
         };
         Insert: {
@@ -121,6 +122,7 @@ export interface Database {
           phone?: string | null;
           preferred_lang?: Locale;
           role?: UserRole;
+          free_session_used?: boolean;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
@@ -211,6 +213,7 @@ export interface Database {
           expires_at: string;
           assigned_by: string | null;
           note: string | null;
+          frozen: boolean;
           created_at: string;
         };
         Insert: {
@@ -221,6 +224,7 @@ export interface Database {
           expires_at: string;
           assigned_by?: string | null;
           note?: string | null;
+          frozen?: boolean;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["user_memberships"]["Insert"]>;

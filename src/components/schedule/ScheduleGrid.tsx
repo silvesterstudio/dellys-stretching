@@ -10,53 +10,61 @@ import type { Dictionary } from "@/i18n/get-dictionary";
 import { formatTime } from "@/lib/format";
 import { dayKey } from "@/lib/week";
 import { localized } from "@/lib/i18n-data";
+import { refreshScheduleAction } from "@/app/[lang]/actions";
 
 export function ScheduleGrid({
   lang,
   dict,
   days,
   initialSessions,
+  weekStartISO,
+  weekEndISO,
+  loggedIn,
 }: {
   lang: Locale;
   dict: Dictionary;
   days: string[];
   initialSessions: SessionWithType[];
+  weekStartISO: string;
+  weekEndISO: string;
+  loggedIn: boolean;
 }) {
   const [sessions, setSessions] = useState(initialSessions);
+  // `now` stays null on the server and the first client paint so time-relative
+  // UI (the Book CTA) renders identically on both, avoiding hydration mismatch.
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => setNow(Date.now()), []);
 
   useEffect(() => setSessions(initialSessions), [initialSessions]);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
     const supabase = createClient();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    // Any change to the sessions table (new class, cancellation, occupancy)
+    // triggers a debounced re-fetch of the whole visible week. Re-fetching
+    // (rather than patching one row) is the only way INSERTs/DELETEs show up,
+    // and it carries the joined class_type the realtime payload lacks.
+    const refetch = () => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        const fresh = await refreshScheduleAction(weekStartISO, weekEndISO);
+        if (Array.isArray(fresh)) setSessions(fresh);
+      }, 300);
+    };
     const channel = supabase
       .channel("sessions-occupancy")
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "sessions" },
-        (payload) => {
-          const n = payload.new as {
-            id: string;
-            booked_count: number;
-            capacity: number;
-            status: string;
-          };
-          setSessions((prev) =>
-            prev
-              .map((s) =>
-                s.id === n.id
-                  ? { ...s, booked_count: n.booked_count, capacity: n.capacity, status: n.status }
-                  : s,
-              )
-              .filter((s) => s.status === "scheduled"),
-          );
-        },
+        { event: "*", schema: "public", table: "sessions" },
+        refetch,
       )
       .subscribe();
     return () => {
+      clearTimeout(timer);
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [weekStartISO, weekEndISO]);
 
   const byDay = new Map<string, SessionWithType[]>();
   for (const s of sessions) {
@@ -66,53 +74,49 @@ export function ScheduleGrid({
     byDay.set(k, arr);
   }
 
-  if (sessions.length === 0) {
-    return (
-      <div className="card animate-rise p-12 text-center">
-        <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-mauve-100 text-2xl">
-          🗓️
-        </div>
-        <p className="text-mauve-500">{dict.schedule.noSessions}</p>
-      </div>
-    );
-  }
-
   const fmt = (iso: string, opts: Intl.DateTimeFormatOptions) =>
     new Intl.DateTimeFormat(lang === "ru" ? "ru-RU" : "ro-RO", {
       ...opts,
       timeZone: TIMEZONE,
     }).format(new Date(iso));
 
+  // One card per day, Monday–Saturday. Always render all six so the week reads
+  // as a complete grid even where a day has no sessions yet.
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-7">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {days.map((dISO) => {
         const k = dayKey(dISO);
         const daySessions = byDay.get(k) ?? [];
         const empty = daySessions.length === 0;
         return (
-          <div
-            key={k}
-            className={`min-w-0 ${empty ? "hidden lg:block" : ""}`}
-          >
-            <div className="mb-2 flex items-baseline justify-between border-b border-mauve-100 pb-1.5 lg:justify-center lg:gap-1.5">
-              <span className="text-sm font-semibold capitalize text-mauve-800">
-                {fmt(dISO, { weekday: "short" })}
+          <div key={k} className="card animate-rise flex flex-col p-4">
+            <div className="mb-3 flex items-baseline justify-between border-b border-mauve-100 pb-2">
+              <span className="font-display text-base font-semibold capitalize text-mauve-900">
+                {fmt(dISO, { weekday: "long" })}
               </span>
-              <span className="text-xs text-mauve-400">
+              <span className="text-xs font-medium text-mauve-400">
                 {fmt(dISO, { day: "2-digit", month: "2-digit" })}
               </span>
             </div>
-            <div className="space-y-2.5">
-              {empty ? (
-                <div className="rounded-2xl border border-dashed border-mauve-100 py-6 text-center text-[11px] text-mauve-300">
-                  —
-                </div>
-              ) : (
-                daySessions.map((s) => (
-                  <SessionCard key={s.id} s={s} lang={lang} dict={dict} time={formatTime(s.starts_at, lang)} />
-                ))
-              )}
-            </div>
+            {empty ? (
+              <p className="grid flex-1 place-items-center py-6 text-center text-xs text-mauve-400">
+                {dict.schedule.noSessionsDay}
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {daySessions.map((s) => (
+                  <SessionRow
+                    key={s.id}
+                    s={s}
+                    lang={lang}
+                    dict={dict}
+                    now={now}
+                    loggedIn={loggedIn}
+                    time={formatTime(s.starts_at, lang)}
+                  />
+                ))}
+              </ul>
+            )}
           </div>
         );
       })}
@@ -120,43 +124,46 @@ export function ScheduleGrid({
   );
 }
 
-function SessionCard({
+function SessionRow({
   s,
   lang,
   dict,
+  now,
+  loggedIn,
   time,
 }: {
   s: SessionWithType;
   lang: Locale;
   dict: Dictionary;
+  now: number | null;
+  loggedIn: boolean;
   time: string;
 }) {
   const left = Math.max(0, s.capacity - s.booked_count);
   const full = left <= 0;
-  const isPast = new Date(s.starts_at).getTime() <= Date.now();
+  // null until mounted (see ScheduleGrid) — treat as "not past" so the server
+  // and first client render agree.
+  const isPast = now !== null && new Date(s.starts_at).getTime() <= now;
   const name = localized(s.class_type, "name", lang);
   const pct = Math.min(100, Math.round((s.booked_count / Math.max(1, s.capacity)) * 100));
 
   return (
-    <div className="card card-hover animate-rise overflow-hidden p-3.5">
+    <li className="border-t border-mauve-100 pt-3 first:border-t-0 first:pt-0">
       <div className="flex items-start justify-between gap-2">
-        <span className="font-display text-lg font-bold leading-none text-mauve-900">
-          {time}
-        </span>
+        <div className="min-w-0">
+          <span className="font-display text-lg font-bold leading-none text-mauve-900">{time}</span>
+          <div className="mt-1 truncate text-sm font-semibold text-mauve-800">{name}</div>
+          <div className="flex items-center gap-1.5 text-[11px] text-mauve-400">
+            {s.class_type.audience === "child" && (
+              <span className="badge bg-mauve-100 px-1.5 py-0 text-mauve-600">{dict.audience.child}</span>
+            )}
+            {s.instructor && <span className="truncate">{s.instructor}</span>}
+          </div>
+        </div>
         <span
-          className="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full"
+          className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
           style={{ backgroundColor: s.class_type.color }}
         />
-      </div>
-
-      <div className="mt-1.5 truncate text-sm font-semibold text-mauve-800">{name}</div>
-      <div className="flex items-center gap-1.5 text-[11px] text-mauve-400">
-        {s.class_type.audience === "child" && (
-          <span className="badge bg-mauve-100 px-1.5 py-0 text-mauve-600">
-            {dict.audience.child}
-          </span>
-        )}
-        {s.instructor && <span className="truncate">{s.instructor}</span>}
       </div>
 
       {/* occupancy bar */}
@@ -171,7 +178,7 @@ function SessionCard({
           <span className={`text-[11px] font-medium ${full ? "text-mauve-400" : "text-brand-600"}`}>
             {full ? dict.common.full : `${left} ${dict.common.spotsLeft}`}
           </span>
-          <span className="text-[10px] text-mauve-300">
+          <span className="text-[10px] text-mauve-500">
             {s.booked_count}/{s.capacity}
           </span>
         </div>
@@ -179,12 +186,12 @@ function SessionCard({
 
       {!isPast && !full && (
         <Link
-          href={`/${lang}/book/${s.id}`}
+          href={loggedIn ? `/${lang}/book/${s.id}` : `/${lang}/login?session=${s.id}`}
           className="btn-primary mt-3 w-full px-3 py-2 text-xs"
         >
           {dict.schedule.bookCta}
         </Link>
       )}
-    </div>
+    </li>
   );
 }

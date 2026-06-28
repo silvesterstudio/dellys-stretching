@@ -13,7 +13,13 @@ export async function GET(
   const locale = isLocale(lang) ? lang : "ro";
   const { searchParams, origin } = new URL(req.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") || `/${locale}/dashboard`;
+  // Only allow same-origin in-app paths as the post-login target (no open
+  // redirect): must start with a single "/" and not "//".
+  const rawNext = searchParams.get("next");
+  const next =
+    rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")
+      ? rawNext
+      : `/${locale}/dashboard`;
 
   if (code && isSupabaseConfigured()) {
     try {

@@ -13,10 +13,24 @@ html {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Respect users who ask for less motion: neutralize the pulse/rise animations
+   and smooth scrolling instead of running them unconditionally. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 body {
   @apply text-mauve-900 antialiased;
-  /* Minimalist: one flat, warm near-white. No competing gradients. */
-  background: #faf9f7;
+  /* Minimalist white + pink: a clean white canvas. Pink lives in the accents,
+     the logo, and the whisper-pink "sand" surfaces — never the whole page. */
+  background: #ffffff;
   min-height: 100dvh;
 }
 
@@ -35,10 +49,10 @@ body {
 
   /* Buttons — flat, quiet, one accent */
   .btn {
-    @apply inline-flex select-none items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 focus-visible:ring-offset-sand-50 disabled:opacity-40 disabled:pointer-events-none;
+    @apply inline-flex select-none items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:opacity-40 disabled:pointer-events-none;
   }
   .btn-primary {
-    @apply btn bg-brand-500 text-white hover:bg-brand-600;
+    @apply btn bg-brand-600 text-white shadow-sm shadow-brand-500/25 hover:bg-brand-700;
   }
   .btn-secondary {
     @apply btn border border-mauve-200 bg-white text-mauve-800 hover:bg-mauve-50;
@@ -47,12 +61,13 @@ body {
     @apply btn text-mauve-600 hover:bg-mauve-100;
   }
 
-  /* Surfaces — solid white, hairline border, whisper of shadow */
+  /* Surfaces — solid white on a white page, so they lean on a hairline border
+     and a soft, faintly-pink shadow to lift off the canvas. */
   .card {
-    @apply rounded-2xl border border-mauve-200/70 bg-white shadow-[0_1px_2px_rgba(31,29,26,0.04)];
+    @apply rounded-2xl border border-mauve-200/70 bg-white shadow-[0_1px_3px_rgba(125,10,55,0.05),0_6px_24px_-12px_rgba(125,10,55,0.10)];
   }
   .card-hover {
-    @apply transition-colors duration-150 hover:border-mauve-300;
+    @apply transition-all duration-200 hover:border-brand-200 hover:shadow-[0_2px_6px_rgba(125,10,55,0.07),0_12px_32px_-14px_rgba(125,10,55,0.16)];
   }
 
   /* Forms */

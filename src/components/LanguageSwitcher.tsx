@@ -1,18 +1,24 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { LOCALES, type Locale } from "@/lib/constants";
+
+// Built from LOCALES so adding a locale doesn't require touching this regex.
+const LOCALE_PREFIX = new RegExp(`^/(${LOCALES.join("|")})(?=/|$)`);
 
 export function LanguageSwitcher({ current }: { current: Locale }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
 
   function switchTo(next: Locale) {
     if (next === current) return;
     document.cookie = `NEXT_LOCALE=${next}; path=/; max-age=31536000`;
-    // Replace the leading /<locale> segment with the new locale.
-    const rest = pathname.replace(/^\/(ro|ru)(?=\/|$)/, "");
-    router.push(`/${next}${rest || ""}`);
+    // Replace the leading /<locale> segment, preserving the rest AND the query
+    // string (e.g. /ro/login?session=… must keep ?session when switching).
+    const rest = pathname.replace(LOCALE_PREFIX, "");
+    const qs = searchParams.toString();
+    router.push(`/${next}${rest || ""}${qs ? `?${qs}` : ""}`);
     router.refresh();
   }
 
@@ -24,7 +30,7 @@ export function LanguageSwitcher({ current }: { current: Locale }) {
           onClick={() => switchTo(l)}
           className={
             l === current
-              ? "rounded-full bg-brand-500 px-3 py-1 text-white"
+              ? "rounded-full bg-brand-600 px-3 py-1 text-white"
               : "rounded-full px-3 py-1 text-mauve-600 hover:text-mauve-900"
           }
           aria-current={l === current}

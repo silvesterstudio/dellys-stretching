@@ -24,6 +24,7 @@ const sans = Manrope({
 export const metadata: Metadata = {
   title: "Dellys — Studio",
   description: "Rezervă-ți locul la următoarea sesiune. Pilates, stretching, gimnastică.",
+  icons: { icon: "/dellys-logo.webp", apple: "/dellys-logo.webp" },
 };
 
 export function generateStaticParams() {
@@ -49,13 +50,6 @@ export default async function LangLayout({
       <body className="font-sans">
         <Header lang={locale} dict={dict} profile={profile} />
         <main className="container-page safe-x py-6 sm:py-10">{children}</main>
-        <footer className="container-page safe-x border-t border-mauve-100/70 py-8 text-center text-xs text-mauve-400">
-          <span className="font-display text-sm text-mauve-500">{dict.brand}</span>
-          <span className="mx-2">·</span>
-          <a href={`/${locale}/staff`} className="hover:text-mauve-600">
-            {dict.auth.staffLink}
-          </a>
-        </footer>
       </body>
     </html>
   );
