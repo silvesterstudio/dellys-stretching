@@ -73,7 +73,12 @@ export function LoginForm({
     });
     setBusy(false);
     if (error) {
-      setError(dict.common.error);
+      // Supabase throttles the built-in mailer (and without custom SMTP it's
+      // only a couple of emails/hour) — say so instead of a generic error.
+      const m = `${error.message ?? ""} ${(error as { code?: string }).code ?? ""}`.toLowerCase();
+      const rateLimited =
+        error.status === 429 || m.includes("rate limit") || m.includes("over_email_send");
+      setError(rateLimited ? dict.auth.rateLimited : dict.common.error);
       return;
     }
     setSent(true);

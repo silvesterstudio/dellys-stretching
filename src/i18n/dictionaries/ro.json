@@ -88,7 +88,8 @@
     "adminPasswordLabel": "Parolă administrator",
     "createAccount": "Cont nou? Completează datele de mai jos.",
     "noAccount": "Nu ai cont? Înregistrează-te",
-    "haveAccount": "Ai deja cont? Autentifică-te"
+    "haveAccount": "Ai deja cont? Autentifică-te",
+    "rateLimited": "Prea multe cereri de email acum. Așteaptă câteva minute și încearcă din nou."
   },
   "booking": {
     "confirmTitle": "Confirmă rezervarea",
