@@ -190,53 +190,55 @@ function SessionRow({
   // and first client render agree.
   const isPast = now !== null && new Date(s.starts_at).getTime() <= now;
   const name = localized(s.class_type, "name", lang);
-  const pct = Math.min(100, Math.round((s.booked_count / Math.max(1, s.capacity)) * 100));
+  const audienceLabel =
+    s.class_type.audience === "child" ? dict.audience.child : dict.audience.adult;
 
   return (
     <li className="border-t border-mauve-100 pt-3 first:border-t-0 first:pt-0">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <span className="font-display text-lg font-bold leading-none text-mauve-900">{time}</span>
-          <div className="mt-1 truncate text-sm font-semibold text-mauve-800">{name}</div>
-          <div className="flex items-center gap-1.5 text-[11px] text-mauve-400">
-            {s.class_type.audience === "child" && (
-              <span className="badge bg-mauve-100 px-1.5 py-0 text-mauve-600">{dict.audience.child}</span>
-            )}
-            {s.instructor && <span className="truncate">{s.instructor}</span>}
-          </div>
-        </div>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="font-display text-lg font-bold leading-none text-mauve-900">{time}</span>
+        <span className="inline-flex items-center gap-1 text-[11px] font-medium">
+          {full ? (
+            <span className="text-mauve-400">{dict.common.full}</span>
+          ) : (
+            <>
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
+              <span className="text-mauve-500">
+                {left} {dict.common.spotsLeft}
+              </span>
+            </>
+          )}
+        </span>
+      </div>
+
+      <div className="mt-1.5 flex items-center gap-1.5">
         <span
-          className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
+          className="h-2 w-2 shrink-0 rounded-full"
           style={{ backgroundColor: s.class_type.color }}
         />
+        <span className="truncate text-sm font-semibold text-mauve-800">{name}</span>
+      </div>
+      <div className="mt-0.5 truncate text-xs text-mauve-400">
+        {audienceLabel}
+        {s.instructor ? ` · ${s.instructor}` : ""}
       </div>
 
-      {/* occupancy bar */}
-      <div className="mt-2.5">
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-mauve-100">
-          <div
-            className={`h-full rounded-full ${full ? "bg-mauve-300" : "bg-brand-400"}`}
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-        <div className="mt-1.5 flex items-center justify-between">
-          <span className={`text-[11px] font-medium ${full ? "text-mauve-400" : "text-brand-600"}`}>
-            {full ? dict.common.full : `${left} ${dict.common.spotsLeft}`}
-          </span>
-          <span className="text-[10px] text-mauve-500">
-            {s.booked_count}/{s.capacity}
-          </span>
-        </div>
-      </div>
-
-      {!isPast && !full && (
-        <Link
-          href={loggedIn ? `/${lang}/book/${s.id}` : `/${lang}/login?session=${s.id}`}
-          className="btn-primary mt-3 w-full px-3 py-2 text-xs"
-        >
-          {dict.schedule.bookCta}
-        </Link>
-      )}
+      {!isPast &&
+        (full ? (
+          <button
+            disabled
+            className="btn-secondary mt-3 w-full cursor-not-allowed px-3 py-2 text-xs opacity-60"
+          >
+            {dict.common.full}
+          </button>
+        ) : (
+          <Link
+            href={loggedIn ? `/${lang}/book/${s.id}` : `/${lang}/login?session=${s.id}`}
+            className="btn-primary mt-3 w-full px-3 py-2 text-xs"
+          >
+            {dict.schedule.bookCta}
+          </Link>
+        ))}
     </li>
   );
 }

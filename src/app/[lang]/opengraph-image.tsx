@@ -33,7 +33,7 @@ export default async function OgImage({
         }}
       >
         {/* pink accent bar */}
-        <div style={{ display: "flex", width: "120px", height: "10px", borderRadius: "9999px", background: "#fd0267" }} />
+        <div style={{ display: "flex", width: "120px", height: "10px", borderRadius: "9999px", background: "#e0115f" }} />
 
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ fontSize: "128px", fontWeight: 700, color: "#181518", letterSpacing: "-2px" }}>
@@ -45,7 +45,7 @@ export default async function OgImage({
         </div>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "30px" }}>
-          <span style={{ color: "#de0058", fontWeight: 700 }}>{dict.home.location.city}</span>
+          <span style={{ color: "#cc0f56", fontWeight: 700 }}>{dict.home.location.city}</span>
           <span style={{ color: "#9d959c" }}>dellys.md</span>
         </div>
       </div>

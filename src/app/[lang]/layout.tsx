@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Montserrat, Manrope } from "next/font/google";
+import { Space_Grotesk, Manrope } from "next/font/google";
 import "../globals.css";
 import { LOCALES, SITE_URL, type Locale } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
@@ -8,15 +8,17 @@ import { getDictionary } from "@/i18n/get-dictionary";
 import { getCurrentProfile } from "@/lib/auth";
 import { Header } from "@/components/Header";
 
-// Display = Montserrat (geometric, modern, boutique). latin-ext covers Romanian
-// diacritics (ă â î ș ț); cyrillic covers Russian.
-const display = Montserrat({
-  subsets: ["latin", "latin-ext", "cyrillic"],
+// Display = Space Grotesk (geometric, modern — from the Dellys mockup). It has
+// no Cyrillic, so Russian headings fall back per-glyph to Manrope via the
+// Tailwind `display` stack. latin-ext covers Romanian diacritics.
+const display = Space_Grotesk({
+  subsets: ["latin", "latin-ext"],
   weight: ["500", "600", "700"],
   variable: "--font-display",
   display: "swap",
 });
 
+// Body = Manrope (also carries Cyrillic for Russian).
 const sans = Manrope({
   subsets: ["latin", "latin-ext", "cyrillic"],
   variable: "--font-sans",

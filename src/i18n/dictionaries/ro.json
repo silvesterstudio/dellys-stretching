@@ -7,7 +7,9 @@
     "admin": "Administrare",
     "login": "Autentificare",
     "signup": "Înregistrare",
-    "logout": "Ieșire"
+    "logout": "Ieșire",
+    "prices": "Prețuri",
+    "faq": "Întrebări"
   },
   "common": {
     "loading": "Se încarcă...",
@@ -176,36 +178,75 @@
       "subtitle": "Pilates, stretching, gimnastică și Fit Ball pentru adulți și copii. Grupe mici, instructori atenți și rezervare online în câteva secunde.",
       "ctaPrimary": "Rezervă o ședință",
       "ctaSecondary": "Vezi abonamentele",
-      "trust": "Prima ședință de probă este gratuită pentru fiecare categorie."
+      "trust": "Prima ședință de probă este gratuită pentru fiecare categorie.",
+      "badgeSub": "Pentru fiecare categorie de vârstă"
     },
     "stats": {
       "items": [
-        { "value": "4+", "label": "Tipuri de clase" },
-        { "value": "3", "label": "Grupe de vârstă" },
-        { "value": "Gratuit", "label": "Prima ședință de probă" },
-        { "value": "Online", "label": "Rezervare rapidă" }
+        {
+          "value": "4+",
+          "label": "Tipuri de clase"
+        },
+        {
+          "value": "3",
+          "label": "Grupe de vârstă"
+        },
+        {
+          "value": "Gratuit",
+          "label": "Prima ședință de probă"
+        },
+        {
+          "value": "Online",
+          "label": "Rezervare rapidă"
+        }
       ]
     },
     "categories": {
-      "title": "Clase pentru fiecare vârstă",
-      "subtitle": "De la adulți la cei mici — găsești locul potrivit.",
+      "title": "De la cei mici la adulți",
+      "subtitle": "Grupe separate pe vârste, ca fiecare să progreseze în ritmul lui.",
       "freeBadge": "Prima ședință gratuită",
       "cta": "Vezi programul",
       "items": [
-        { "title": "Adulți", "tag": "Pilates · Stretching · Gimnastică · Fit Ball", "desc": "Tonifiere, flexibilitate și postură într-o atmosferă relaxată, cu instructori atenți la fiecare mișcare." },
-        { "title": "Copii 3–7 ani", "tag": "Gimnastică pentru cei mici", "desc": "Gimnastică jucăușă care dezvoltă coordonarea, echilibrul și încrederea celor mici." },
-        { "title": "Copii 8–13 ani", "tag": "Gimnastică pentru copii mari", "desc": "Antrenamente care construiesc forță, disciplină și mișcare corectă pentru copiii mai mari." }
-      ]
+        {
+          "title": "Adulți",
+          "tag": "Pilates · Stretching · Gimnastică · Fit Ball",
+          "desc": "Tonifiere, flexibilitate și postură într-o atmosferă relaxată, cu instructori atenți la fiecare mișcare."
+        },
+        {
+          "title": "Copii 3–7 ani",
+          "tag": "Gimnastică pentru cei mici",
+          "desc": "Gimnastică jucăușă care dezvoltă coordonarea, echilibrul și încrederea celor mici."
+        },
+        {
+          "title": "Copii 8–13 ani",
+          "tag": "Gimnastică pentru copii mari",
+          "desc": "Antrenamente care construiesc forță, disciplină și mișcare corectă pentru copiii mai mari."
+        }
+      ],
+      "eyebrow": "Clase pentru fiecare vârstă"
     },
     "disciplines": {
-      "title": "Ce antrenăm",
-      "subtitle": "Patru discipline, un singur loc.",
+      "title": "Patru discipline, un singur loc",
+      "subtitle": "Alege ce ți se potrivește azi — le poți combina oricând.",
       "items": [
-        { "title": "Pilates", "desc": "Control, respirație și forța centrului. Corpul devine mai stabil și mai puternic din interior." },
-        { "title": "Stretching", "desc": "Flexibilitate și mobilitate lucrate în siguranță — pentru un corp suplu și fără tensiuni." },
-        { "title": "Gimnastică", "desc": "Coordonare, echilibru și mișcare corectă, pentru adulți și copii de toate vârstele." },
-        { "title": "Fit Ball", "desc": "Antrenament dinamic cu mingea: tonifiere, postură și un plus de energie." }
-      ]
+        {
+          "title": "Pilates",
+          "desc": "Control, respirație și forța centrului. Corpul devine mai stabil și mai puternic din interior."
+        },
+        {
+          "title": "Stretching",
+          "desc": "Flexibilitate și mobilitate lucrate în siguranță — pentru un corp suplu și fără tensiuni."
+        },
+        {
+          "title": "Gimnastică",
+          "desc": "Coordonare, echilibru și mișcare corectă, pentru adulți și copii de toate vârstele."
+        },
+        {
+          "title": "Fit Ball",
+          "desc": "Antrenament dinamic cu mingea: tonifiere, postură și un plus de energie."
+        }
+      ],
+      "eyebrow": "Ce antrenăm"
     },
     "plans": {
       "title": "Abonamente simple, prețuri clare",
@@ -213,45 +254,85 @@
       "from": "de la",
       "sessions": "ședințe",
       "cta": "Vezi toate abonamentele",
-      "empty": "Abonamentele apar în curând."
+      "empty": "Abonamentele apar în curând.",
+      "eyebrow": "Prețuri"
     },
     "benefits": {
       "title": "De ce Dellys",
       "items": [
-        { "title": "Grupe mici", "desc": "Locuri limitate per grupă — atenție reală pentru fiecare participant." },
-        { "title": "Rezervare online", "desc": "Vezi programul săptămânii și rezervă-ți locul în câteva secunde, de pe telefon." },
-        { "title": "Abonamente flexibile", "desc": "Pachete pentru orice ritm, cu ședințe care se potrivesc programului tău." },
-        { "title": "Prima ședință gratuită", "desc": "Încearcă fără nicio obligație — o ședință de probă pentru fiecare categorie." }
+        {
+          "title": "Grupe mici",
+          "desc": "Locuri limitate per grupă — atenție reală pentru fiecare participant."
+        },
+        {
+          "title": "Rezervare online",
+          "desc": "Vezi programul săptămânii și rezervă-ți locul în câteva secunde, de pe telefon."
+        },
+        {
+          "title": "Abonamente flexibile",
+          "desc": "Pachete pentru orice ritm, cu ședințe care se potrivesc programului tău."
+        },
+        {
+          "title": "Prima ședință gratuită",
+          "desc": "Încearcă fără nicio obligație — o ședință de probă pentru fiecare categorie."
+        }
       ]
     },
     "steps": {
-      "title": "Cum funcționează",
-      "subtitle": "Trei pași până la primul antrenament.",
+      "title": "Trei pași până la primul antrenament",
+      "subtitle": "",
       "items": [
-        { "title": "Alege o ședință", "desc": "Deschide programul săptămânii și alege ziua și ora potrivite." },
-        { "title": "Rezervă online", "desc": "Creează cont și confirmă locul. Prima ședință de probă este gratuită." },
-        { "title": "Vino la antrenament", "desc": "Te așteptăm la studio. Restul îl facem împreună." }
-      ]
+        {
+          "title": "Alege o ședință",
+          "desc": "Deschide programul săptămânii și alege ziua și ora potrivite."
+        },
+        {
+          "title": "Rezervă online",
+          "desc": "Creează cont și confirmă locul. Prima ședință de probă este gratuită."
+        },
+        {
+          "title": "Vino la antrenament",
+          "desc": "Te așteptăm la studio. Restul îl facem împreună."
+        }
+      ],
+      "eyebrow": "Cum funcționează"
     },
     "trial": {
       "eyebrow": "Ofertă de bun venit",
       "title": "Începe cu o ședință gratuită",
       "desc": "Fiecare client nou primește o ședință de probă gratuită pentru fiecare categorie — adulți, copii 3–7 și copii 8–13 ani. Fără plată, fără obligații.",
-      "cta": "Creează cont gratuit"
+      "cta": "Rezervă ședința gratuită"
     },
     "scheduleSection": {
       "title": "Rezervă locul tău săptămâna aceasta",
-      "subtitle": "Programul actual, actualizat în timp real. Alege o sesiune și rezervă."
+      "subtitle": "Programul actual, actualizat în timp real. Alege o sesiune și rezervă.",
+      "eyebrow": "Program"
     },
     "faq": {
       "title": "Întrebări frecvente",
       "items": [
-        { "q": "Cum rezerv o ședință?", "a": "Creează-ți un cont, deschide programul săptămânii și apasă „Rezervă” la sesiunea dorită. Primești confirmarea imediat." },
-        { "q": "Chiar este prima ședință gratuită?", "a": "Da. Fiecare client nou are o ședință de probă gratuită pentru fiecare categorie: adulți, copii 3–7 ani și copii 8–13 ani." },
-        { "q": "Ce clase oferiți?", "a": "Pilates, stretching, gimnastică și Fit Ball pentru adulți, plus clase de gimnastică pentru copii de 3–7 și 8–13 ani." },
-        { "q": "Cum funcționează abonamentele?", "a": "Alegi un pachet de ședințe, iar plata se face la recepție. Locul tău este rezervat după confirmare." },
-        { "q": "Pot anula o rezervare?", "a": "Da, poți anula gratuit cu până la 12 ore înainte de începerea ședinței, direct din contul tău." }
-      ]
+        {
+          "q": "Cum rezerv o ședință?",
+          "a": "Creează-ți un cont, deschide programul săptămânii și apasă „Rezervă” la sesiunea dorită. Primești confirmarea imediat."
+        },
+        {
+          "q": "Chiar este prima ședință gratuită?",
+          "a": "Da. Fiecare client nou are o ședință de probă gratuită pentru fiecare categorie: adulți, copii 3–7 ani și copii 8–13 ani."
+        },
+        {
+          "q": "Ce clase oferiți?",
+          "a": "Pilates, stretching, gimnastică și Fit Ball pentru adulți, plus clase de gimnastică pentru copii de 3–7 și 8–13 ani."
+        },
+        {
+          "q": "Cum funcționează abonamentele?",
+          "a": "Alegi un pachet de ședințe, iar plata se face la recepție. Locul tău este rezervat după confirmare."
+        },
+        {
+          "q": "Pot anula o rezervare?",
+          "a": "Da, poți anula gratuit cu până la 12 ore înainte de începerea ședinței, direct din contul tău."
+        }
+      ],
+      "eyebrow": "Întrebări"
     },
     "finalCta": {
       "title": "Gata să începi?",
@@ -295,7 +376,35 @@
     "assign": "Atribuie",
     "search": "Caută membru (email)",
     "noResults": "Niciun rezultat.",
-    "member": "Membru",
+    "member": {
+      "members": "Membri",
+      "profile": "Profil",
+      "joined": "Membru din",
+      "totalSpent": "Total cheltuit",
+      "sessionsAttended": "Prezențe",
+      "activeMemberships": "Abonamente active",
+      "upcoming": "Rezervări viitoare",
+      "memberships": "Abonamente",
+      "history": "Istoric rezervări",
+      "noHistory": "Nicio rezervare.",
+      "children": "Copii",
+      "noChildren": "Niciun copil.",
+      "requests": "Cereri abonament",
+      "noRequests": "Nicio cerere.",
+      "active": "Activ",
+      "expired": "Expirat",
+      "activate": "Activează abonament",
+      "select": "Selectează un membru pentru a vedea toate detaliile.",
+      "searchPlaceholder": "Caută după nume, email sau telefon",
+      "noPhone": "Fără telefon",
+      "sessionsShort": "ședințe",
+      "freeze": "Îngheață",
+      "unfreeze": "Dezgheață",
+      "frozen": "Înghețat",
+      "addSessions": "Adaugă ședințe",
+      "editExpiry": "Schimbă expirarea",
+      "deleteConfirm": "Sigur ștergi acest abonament?"
+    },
     "currentMemberships": "Abonamente active",
     "noSessionsToday": "Nicio sesiune.",
     "generate": "Generează sesiuni",
@@ -355,35 +464,6 @@
       "to": "Până la",
       "apply": "Aplică",
       "inPeriod": "în perioada selectată"
-    },
-    "member": {
-      "members": "Membri",
-      "profile": "Profil",
-      "joined": "Membru din",
-      "totalSpent": "Total cheltuit",
-      "sessionsAttended": "Prezențe",
-      "activeMemberships": "Abonamente active",
-      "upcoming": "Rezervări viitoare",
-      "memberships": "Abonamente",
-      "history": "Istoric rezervări",
-      "noHistory": "Nicio rezervare.",
-      "children": "Copii",
-      "noChildren": "Niciun copil.",
-      "requests": "Cereri abonament",
-      "noRequests": "Nicio cerere.",
-      "active": "Activ",
-      "expired": "Expirat",
-      "activate": "Activează abonament",
-      "select": "Selectează un membru pentru a vedea toate detaliile.",
-      "searchPlaceholder": "Caută după nume, email sau telefon",
-      "noPhone": "Fără telefon",
-      "sessionsShort": "ședințe",
-      "freeze": "Îngheață",
-      "unfreeze": "Dezgheață",
-      "frozen": "Înghețat",
-      "addSessions": "Adaugă ședințe",
-      "editExpiry": "Schimbă expirarea",
-      "deleteConfirm": "Sigur ștergi acest abonament?"
     },
     "bookingStatus": {
       "pending": "În așteptare",

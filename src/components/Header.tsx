@@ -18,21 +18,22 @@ export function Header({
 }) {
   const base = `/${lang}`;
   const isAdmin = profile?.role === "admin";
-  // Role-aware nav: everyone sees the schedule. Memberships + "my account" are
-  // client-facing, so they're hidden for admins; the admin panel link only shows
-  // for admins. (Login/logout is handled separately below.)
-  const links = [
-    // The live schedule lives as an anchored section on the home/landing page.
-    { href: isAdmin ? base : `${base}#schedule`, label: dict.nav.schedule },
-    ...(!isAdmin ? [{ href: `${base}/memberships`, label: dict.nav.memberships }] : []),
-    ...(profile && !isAdmin
-      ? [{ href: `${base}/dashboard`, label: dict.nav.dashboard }]
-      : []),
-    ...(isAdmin ? [{ href: `${base}/admin`, label: dict.nav.admin }] : []),
-  ];
+  const ctaHref = `${base}#schedule`;
+  const ctaLabel = dict.home.hero.ctaPrimary;
+
+  // Clients see marketing anchors (the landing sections) + their account; admins
+  // just get the admin panel. Booking CTA is client-facing only.
+  const links = isAdmin
+    ? [{ href: `${base}/admin`, label: dict.nav.admin }]
+    : [
+        { href: `${base}#schedule`, label: dict.nav.schedule },
+        { href: `${base}#plans`, label: dict.nav.prices },
+        { href: `${base}#faq`, label: dict.nav.faq },
+        ...(profile ? [{ href: `${base}/dashboard`, label: dict.nav.dashboard }] : []),
+      ];
 
   return (
-    <header className="sticky top-0 z-30 border-b border-mauve-100 bg-white">
+    <header className="sticky top-0 z-30 border-b border-mauve-100 bg-white/85 backdrop-blur">
       <div className="container-page relative flex items-center justify-between gap-3 py-3">
         <Link href={base} className="flex items-center" aria-label={dict.brand}>
           <Image
@@ -48,7 +49,7 @@ export function Header({
 
         <nav className="hidden items-center gap-1 md:flex">
           {links.map((l) => (
-            <Link key={l.href} href={l.href} className="btn-ghost">
+            <Link key={l.href} href={l.href} className="btn-ghost px-3 py-2 text-sm">
               {l.label}
             </Link>
           ))}
@@ -56,18 +57,25 @@ export function Header({
 
         <div className="flex items-center gap-2">
           <LanguageSwitcher current={lang} />
-          <div className="hidden md:block">
+          <div className="hidden items-center gap-2 md:flex">
             {profile ? (
-              <LogoutButton label={dict.nav.logout} />
+              <>
+                {!isAdmin && (
+                  <Link href={ctaHref} className="btn-primary py-2 text-sm">
+                    {ctaLabel}
+                  </Link>
+                )}
+                <LogoutButton label={dict.nav.logout} />
+              </>
             ) : (
-              <div className="flex items-center gap-2">
-                <Link href={`${base}/login`} className="btn-ghost">
+              <>
+                <Link href={`${base}/login`} className="btn-ghost px-3 py-2 text-sm">
                   {dict.nav.login}
                 </Link>
-                <Link href={`${base}/login?mode=signup`} className="btn-primary">
-                  {dict.nav.signup}
+                <Link href={ctaHref} className="btn-primary py-2 text-sm">
+                  {ctaLabel}
                 </Link>
-              </div>
+              </>
             )}
           </div>
           <MobileNav
@@ -75,8 +83,8 @@ export function Header({
             loggedIn={!!profile}
             loginHref={`${base}/login`}
             loginLabel={dict.nav.login}
-            signupHref={`${base}/login?mode=signup`}
-            signupLabel={dict.nav.signup}
+            signupHref={ctaHref}
+            signupLabel={ctaLabel}
             logoutLabel={dict.nav.logout}
             menuLabel={dict.common.menu}
           />

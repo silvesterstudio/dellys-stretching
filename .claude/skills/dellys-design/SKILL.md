@@ -5,52 +5,53 @@ description: The Dellys design system — tokens, components, and UI/UX patterns
 
 # Dellys design system
 
-Minimalist **white + pink**. A clean white canvas; pink lives only in accents, the logo, and whisper-pink "sand" surfaces — **never** flood the page with color. One accent, quiet chrome, generous whitespace.
+Modern, editorial **white + ruby**. A clean white canvas with cool-neutral ink; ruby pink lives in accents, CTAs, icon tiles, and soft pink "sand" bands — **never** flood the page with color. One accent, quiet chrome, generous whitespace. Extracted from the "Dellys Home" mockup.
 
-Source of truth: `src/app/globals.css` (`@layer components`) and `tailwind.config.ts`. **Always reuse the token classes below — never hand-roll an equivalent.** If a needed pattern doesn't exist as a token, add it to `globals.css` rather than inlining ad-hoc styles in one component.
-
-## Palette (the only colors for UI chrome)
-- `brand` — pink identity (`brand-500 #fd0267`; use **`brand-600`** for white-text buttons, `brand-50/100` for tints, `brand-700` hover).
-- `mauve` — neutral ink + hairlines. Text: `mauve-900` (primary), `mauve-600` (secondary), `mauve-400` (muted/meta), `mauve-300` (disabled/placeholder). Borders: `mauve-200` / `mauve-100`.
-- `sand` — whisper-pink soft surfaces (`sand-50/100/200`) for callouts that should read warm, not grey.
-
-Never use raw `gray/slate/zinc/neutral` (use `mauve`), and never introduce new hues for chrome.
-
-### Semantic state colors (the ONLY exceptions, used sparingly)
-Status feedback only — never as decoration or brand. **Use the token classes** (don't inline the shades):
-- Inline notices: `.alert-success`, `.alert-error`, `.alert-warning`, `.alert-brand`, `.alert-muted` (all share `.alert` = `rounded-xl px-3 py-2 text-sm`).
-- Status badges: `.badge-success`, `.badge-warning`, `.badge-danger`, `.badge-brand`, `.badge-muted` (compose with `.badge`).
-- Destructive buttons: `.btn-danger` (solid red, for a confirmed destroy) and `.btn-ghost-danger` (quiet inline delete — mauve, red on hover).
-Keep semantic color small (badges / one-line notices), not large fills. A confirmed "danger zone" may use a soft `border-red-200 bg-red-50/50` card — red there is intentional, not a violation.
+Source of truth: `src/app/globals.css` (`@layer components`) and `tailwind.config.ts`. **Always reuse the token classes below — never hand-roll an equivalent.** If a needed pattern doesn't exist as a token, add it to `globals.css` rather than inlining ad-hoc styles in one component. Because the whole app is tokenized, changing a token re-skins every page.
 
 ## Typography
-- Body & UI: sans (default).
-- **Big page headings** (page `<h1>`): `font-display` (serif Georgia) + `text-2xl/3xl font-bold text-mauve-900`.
-- Section heads: `.section-title` (`text-lg font-semibold tracking-tight`). Small overlines: `.eyebrow` (uppercase, tracked, `mauve-400`).
-- Meta/secondary: `text-xs`/`text-sm text-mauve-400/500`.
+- **Display / headings: Space Grotesk** (geometric, modern) via `font-display`. Use for page `<h1>`, section `<h2>`, card titles, stat values, numerals, session times. Space Grotesk has **no Cyrillic**, so Russian headings fall back per-glyph to Manrope — this is wired in the Tailwind `display` stack; just use `font-display`.
+- **Body / UI: Manrope** (default `font-sans`). Also carries Cyrillic.
+- Scale: page `<h1>` `font-display text-[2.6rem]→text-6xl font-bold -tracking-[0.03em]`; section `<h2>` `font-display text-3xl→text-[2.5rem] font-bold -tracking-[0.02em]`; card title `font-display text-xl font-bold`. Body `text-mauve-600`, meta `text-mauve-400`.
+
+## Palette (the only colors for UI chrome)
+- `brand` — ruby identity (`brand-500 #e0115f`; use **`brand-600`** for white-text buttons, `brand-50/100` for tints/icon-tiles, `brand-700` hover, `brand-400` light accents). Section overlines and accent words use `brand-500`.
+- `mauve` — cool neutral ink + hairlines. Text: `mauve-900 #16151b` (primary), `mauve-600` (secondary), `mauve-400` (muted/meta), `mauve-300` (disabled/placeholder). Borders: `mauve-200` / `mauve-100`. Soft surfaces/section bands: `mauve-50`. Dark CTA band: `bg-mauve-900` with white text.
+- `sand` — whisper-pink soft surfaces (`sand-50/100`) for the offer band and warm callouts.
+
+Never use raw `gray/slate/zinc/neutral` (use `mauve`), never a raw hex for chrome, and never introduce new hues.
+
+### Semantic state colors (the ONLY exceptions, used sparingly)
+Status feedback only. Use the token classes:
+- Inline notices: `.alert-success/-error/-warning/-brand/-muted` (all `.alert`).
+- Status badges: `.badge-success/-warning/-danger/-brand/-muted` (compose `.badge`).
+- Availability: a small `bg-green-500` dot + count for open seats.
+- Destructive: `.btn-danger` (confirmed destroy), `.btn-ghost-danger` (quiet inline delete). A "danger zone" card may use `border-red-200 bg-red-50/50`.
 
 ## Components (token classes — use verbatim)
-- Buttons (all `rounded-full`): `.btn-primary` (pink, primary action), `.btn-secondary` (white + hairline, secondary), `.btn-ghost` (text-only, tertiary). Size down with `py-1.5 text-sm` in dense rows; icon-only nav buttons use `.btn-secondary px-3`.
-- Surfaces: `.card` (rounded-2xl, hairline, soft pink shadow). Add `.card-hover` for interactive cards.
-- Forms: `.input` (text/number/time/select), `.label`. Selects automatically get the chevron via `select.input`.
-- `.badge` (rounded-full pill) for status. `.container-page` for page width. `.eyebrow`, `.section-title` for headings.
+- Buttons (`rounded-full` pills): `.btn-primary` (ruby), `.btn-secondary` (white + hairline), `.btn-ghost` (text). Header/hero CTAs size up with `px-7 py-3 text-base`; dense rows use `py-1.5 text-sm`.
+- Surfaces: `.card` (rounded-2xl, hairline, soft neutral shadow) + `.card-hover` for interactive cards.
+- `.icon-tile` — ruby rounded square (`bg-brand-50 text-brand-600`) holding a 24px stroke icon; used in disciplines/benefits. Icons live in `src/components/home/HomeIcons.tsx`.
+- `.chip` — outlined pill for hero discipline tags / meta.
+- `.eyebrow` — muted uppercase overline (hero). `.eyebrow-brand` — **ruby** uppercase overline above section titles ("CE ANTRENĂM", "PROGRAM").
+- Forms: `.input`, `.label`; `select.input` gets the chevron. `.badge` pill for status.
+- `PhotoSlot` (`src/components/home/PhotoSlot.tsx`) — branded gradient placeholder for real studio photos; pass `src` when photos exist, else it shows the Dellys mark. Used in the hero (portrait `aspect-[4/5]`) and category cards (`aspect-[16/10]`).
 
 ## Patterns (do it this way for consistency)
-- **Actions are buttons, not underlined text.** A row's primary action = `.btn-primary py-1.5 text-sm`; secondary = `.btn-secondary py-1.5 text-sm`; low-emphasis/destructive = `.btn-ghost py-1.5 text-sm` (destructive turns red on hover: `hover:bg-red-50 hover:text-red-700`). Never use `underline` text-links as buttons. The one allowed text-link is inline navigation inside prose (e.g. "see the schedule").
-- **List rows** (sessions, members, requests): a `.card` with `flex items-center justify-between gap-3 p-3/p-4`; left = content, right = `flex shrink-0 gap-2` of small buttons.
-- **Per-class color** (`class_type.color` is real data): show it as a **small dot** `<span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{background: color}}/>` in dense list rows; use a 4px left-accent border (`borderLeft: 4px solid color`) only on a single prominent "hero" session card (booking confirm, roster header). Pick one per context — don't mix bar + dot in the same list.
-- **Status badges**: `.badge` + a semantic tint (e.g. attended → green, cancelled → mauve, frozen → mauve, free trial → green, pay-at-reception → amber).
-- **Empty states**: a muted line `text-sm text-mauve-400` (optionally inside a `.card p-4/p-5`), not bare text crammed against a border.
-- **Forms**: `.label` above each `.input`; group in `grid gap-3 sm:grid-cols-2`; action row of `.btn-primary` + `.btn-ghost` (cancel) at the end, `sm:col-span-2`.
-- **Feedback**: inline notice rows — success `rounded-xl bg-green-50 px-3 py-2 text-sm text-green-700`; error `bg-red-50 ... text-red-700`. Prefer real messages over silent state.
-- **Spacing rhythm**: page sections `space-y-8`; items within a section `space-y-2/3`; card padding `p-4`/`p-5`. Keep it consistent between sibling components.
-- **Motion**: `.animate-rise` for entrances; respect `prefers-reduced-motion` (already handled globally). Transitions `duration-150/200`.
-- **Accessibility**: every icon-only button needs `aria-label`; focus rings come free with `.btn`; maintain ≥4.5:1 text contrast (that's why buttons use `brand-600`, not `500`).
+- **Section rhythm**: page sections `space-y-24 sm:space-y-32`. Centered `SectionHead` = `.eyebrow-brand` + `font-display` `<h2>` + muted subtitle. Alternate a section onto a soft band: `rounded-[2rem] bg-mauve-50` (neutral) or `bg-gradient-to-br from-sand-100 via-sand-50 to-brand-50` (pink offer band). Final CTA on `bg-mauve-900`.
+- **Actions are buttons, not underlined text.** Row primary = `.btn-primary py-1.5 text-sm`; the one allowed text-link is a `text-brand-600` "Vezi programul →" style inline link or in prose.
+- **List rows** (sessions, members): a `.card` `flex items-center justify-between gap-3 p-3/p-4`; left = content, right = small buttons.
+- **Session rows**: `font-display` time + green-dot availability (`N locuri libere`) or muted `Complet`; class name with a small `class_type.color` dot; full-width `.btn-primary` "Rezervă" (or disabled `.btn-secondary` "Complet").
+- **Per-class color** (`class_type.color`): small dot in dense rows; a 4px left-accent border only on a single hero card (booking confirm).
+- **Empty states**: a muted `text-sm text-mauve-400` line, optionally in a `.card`.
+- **Forms**: `.label` above `.input`; `grid gap-3 sm:grid-cols-2`; action row `.btn-primary` + `.btn-ghost`.
+- **Motion**: `.animate-rise` for entrances; `prefers-reduced-motion` handled globally. `html { overflow-x: hidden }` guards decorative blur/gradient bands from creating horizontal scroll.
+- **Accessibility**: icon-only buttons need `aria-label`; focus rings come with `.btn`; keep ≥4.5:1 text contrast (buttons use `brand-600`).
 
 ## Checklist before finishing any UI change
-1. No raw `gray/slate/zinc`, no new hues, no off-palette color except the defined semantic states.
+1. No raw `gray/slate/zinc`, no new hues, no raw hex for chrome — only `brand`/`mauve`/`sand` + defined semantic states.
 2. Every button/action uses a `.btn-*` token (no underlined-text actions).
-3. Cards use `.card`; inputs use `.input`/`.label`.
-4. Headings follow the type scale (`font-display` h1, `.section-title`, `.eyebrow`).
-5. Per-class color shown as dot (lists) or hero bar (single card), not a heavy bar in dense lists.
-6. Consistent spacing with sibling components; icon buttons have `aria-label`.
+3. Cards use `.card`; inputs use `.input`/`.label`; icon tiles use `.icon-tile`; overlines use `.eyebrow`/`.eyebrow-brand`.
+4. Headings use `font-display` (Space Grotesk) on the type scale; body is Manrope.
+5. Per-class color shown as a dot (lists) or hero bar (single card).
+6. Consistent `space-y` rhythm with siblings; responsive to mobile (0 horizontal overflow); icon buttons have `aria-label`.
