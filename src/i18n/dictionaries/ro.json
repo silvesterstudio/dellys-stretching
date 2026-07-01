@@ -9,7 +9,8 @@
     "signup": "Înregistrare",
     "logout": "Ieșire",
     "prices": "Prețuri",
-    "faq": "Întrebări"
+    "faq": "Întrebări",
+    "disciplines": "Discipline"
   },
   "common": {
     "loading": "Se încarcă...",
@@ -45,7 +46,8 @@
     "filterAll": "Toate",
     "filterAdults": "Adulți",
     "filterKids": "Copii",
-    "noSessionsWeek": "Nu sunt sesiuni programate pentru acest filtru săptămâna aceasta. Revino curând sau schimbă filtrul."
+    "noSessionsWeek": "Nu sunt sesiuni programate pentru acest filtru săptămâna aceasta. Revino curând sau schimbă filtrul.",
+    "ended": "Încheiat"
   },
   "weekdays": {
     "0": "Duminică",

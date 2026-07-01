@@ -172,11 +172,13 @@ details.dc-faq>summary{list-style:none;cursor:pointer}
 details.dc-faq>summary::-webkit-details-marker{display:none}
 .dc-faq-ic{flex:none;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:#F3F2F6;color:#6C6B74;transition:all .25s}
 details.dc-faq[open] .dc-faq-ic{background:${DC.accent};color:#fff;transform:rotate(45deg)}
-/* Full-screen sections on desktop: each section fills the viewport, its content
-   vertically centered, with a gentle scroll-snap. */
+/* Smooth anchor scrolling; offset for the sticky header. */
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+/* On desktop each section fills the viewport with its content vertically
+   centered. No scroll-snap — free, smooth scrolling. */
 @media (min-width:1024px){
-  html{scroll-snap-type:y proximity;scroll-padding-top:72px}
-  .dc-screen{min-height:100vh;display:flex;flex-direction:column;justify-content:center;scroll-snap-align:start;padding-top:40px!important;padding-bottom:40px!important}
+  .dc-screen{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding-top:40px!important;padding-bottom:40px!important}
   .dc-band-inner{padding-top:24px!important;padding-bottom:24px!important;width:100%}
 }
 `;
@@ -401,7 +403,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       </section>
 
       {/* DISCIPLINES */}
-      <section className="dc-screen" style={sectionPad}>
+      <section id="discipline" className="dc-screen" style={{ ...sectionPad, scrollMarginTop: 88 }}>
         <div style={headWrap}>
           <p style={eyebrow}>{h.disciplines.eyebrow}</p>
           <h2 style={h2}>{h.disciplines.title}</h2>

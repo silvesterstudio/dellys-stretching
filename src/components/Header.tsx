@@ -25,6 +25,7 @@ export function Header({
   const links = isAdmin
     ? [{ href: `${base}/admin`, label: dict.nav.admin }]
     : [
+        { href: `${base}#discipline`, label: dict.nav.disciplines },
         { href: `${base}#program`, label: dict.nav.schedule },
         { href: `${base}#preturi`, label: dict.nav.prices },
         { href: `${base}#faq`, label: dict.nav.faq },
@@ -63,11 +64,11 @@ export function Header({
           gap: 20,
         }}
       >
-        <Link href={base} aria-label={dict.brand} style={{ textDecoration: "none" }}>
-          <LogoMark />
+        <Link href={base} aria-label={dict.brand} style={{ textDecoration: "none", flex: "none" }}>
+          <LogoMark priority />
         </Link>
 
-        <nav className="hidden md:flex" style={{ alignItems: "center", gap: 30 }}>
+        <nav className="hidden md:flex" style={{ alignItems: "center", gap: 26 }}>
           {links.map((l) => (
             <Link key={l.href} href={l.href} style={navLink}>
               {l.label}

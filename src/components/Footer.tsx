@@ -20,6 +20,7 @@ export function Footer({ lang, dict }: { lang: Locale; dict: Dictionary }) {
     textDecoration: "none",
   };
   const nav = [
+    { href: `${base}#discipline`, label: dict.nav.disciplines },
     { href: `${base}#program`, label: dict.nav.schedule },
     { href: `${base}#preturi`, label: dict.nav.prices },
     { href: `${base}#faq`, label: dict.nav.faq },
@@ -36,7 +37,7 @@ export function Footer({ lang, dict }: { lang: Locale; dict: Dictionary }) {
           }}
         >
           <div style={{ maxWidth: 280 }}>
-            <LogoMark />
+            <LogoMark height={40} />
             <p style={{ margin: "16px 0 0", fontSize: 14, lineHeight: 1.6, color: DC.muted }}>
               {f.tagline}
             </p>

@@ -165,6 +165,7 @@ export function ScheduleGrid({
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))",
             gap: 16,
+            alignItems: "start",
           }}
         >
           {dayCards.map(({ dISO, k, slots }) => (
@@ -249,19 +250,22 @@ function Slot({
         <div style={{ fontSize: 13, color: DC.faint, marginTop: 1 }}>{grp}</div>
       </div>
 
-      {!isPast &&
-        (full ? (
-          <div style={{ ...btnBase, background: "#F3F2F5", color: "#AEACB4", cursor: "not-allowed" }}>
-            {dict.common.full}
-          </div>
-        ) : (
-          <Link
-            href={loggedIn ? `/${lang}/book/${s.id}` : `/${lang}/login?session=${s.id}`}
-            style={{ ...btnBase, background: DC.accent, color: "#fff" }}
-          >
-            {dict.schedule.bookCta}
-          </Link>
-        ))}
+      {isPast ? (
+        <div style={{ ...btnBase, background: "#F7F6F8", color: "#B4B2BB", cursor: "default" }}>
+          {dict.schedule.ended}
+        </div>
+      ) : full ? (
+        <div style={{ ...btnBase, background: "#F3F2F5", color: "#AEACB4", cursor: "not-allowed" }}>
+          {dict.common.full}
+        </div>
+      ) : (
+        <Link
+          href={loggedIn ? `/${lang}/book/${s.id}` : `/${lang}/login?session=${s.id}`}
+          style={{ ...btnBase, background: DC.accent, color: "#fff" }}
+        >
+          {dict.schedule.bookCta}
+        </Link>
+      )}
     </div>
   );
 }
