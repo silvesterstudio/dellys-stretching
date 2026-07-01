@@ -51,7 +51,7 @@ export default async function MembershipsPage({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="container-page safe-x space-y-8 py-8 sm:py-12">
       <div className="text-center">
         <h1 className="font-display text-3xl font-bold text-mauve-900">
           {dict.memberships.title}

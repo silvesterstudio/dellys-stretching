@@ -48,7 +48,7 @@ export default async function BookPage({
 
   if (notBookable) {
     return (
-      <div className="mx-auto max-w-md py-10 text-center">
+      <div className="mx-auto max-w-md px-4 py-10 text-center">
         <p className="text-mauve-600">{dict.booking.pastSession}</p>
         <Link href={`/${locale}`} className="btn-primary mt-4">
           {dict.common.back}
@@ -99,7 +99,7 @@ export default async function BookPage({
   const name = localized(session.class_type, "name", locale);
 
   return (
-    <div className="mx-auto max-w-md py-8">
+    <div className="mx-auto max-w-md px-4 py-8">
       <div className="card p-6">
         <h1 className="font-display text-2xl font-bold text-mauve-900">
           {dict.booking.confirmTitle}

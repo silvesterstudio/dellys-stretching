@@ -171,180 +171,187 @@
       "title": "Studio de fitness în Chișinău — Pilates, stretching, gimnastică",
       "description": "Dellys — studio de fitness în Chișinău. Pilates, stretching, gimnastică și Fit Ball pentru adulți și copii. Grupe mici, rezervare online și prima ședință de probă gratuită."
     },
+    "nav": {
+      "login": "Logare",
+      "book": "Rezervă o ședință"
+    },
     "hero": {
       "eyebrow": "Studio de fitness · Chișinău",
-      "title": "Mișcare care",
-      "titleAccent": "îți schimbă ziua",
-      "subtitle": "Pilates, stretching, gimnastică și Fit Ball pentru adulți și copii. Grupe mici, instructori atenți și rezervare online în câteva secunde.",
-      "ctaPrimary": "Rezervă o ședință",
-      "ctaSecondary": "Vezi abonamentele",
-      "trust": "Prima ședință de probă este gratuită pentru fiecare categorie.",
-      "badgeSub": "Pentru fiecare categorie de vârstă"
+      "titleA": "Mișcare care ",
+      "titleB": "îți schimbă ziua",
+      "sub": "Pilates, stretching, gimnastică și Fit Ball pentru adulți și copii. Grupe mici, instructori atenți și rezervare online în câteva secunde.",
+      "cta1": "Rezervă o ședință",
+      "cta2": "Vezi abonamentele",
+      "note": "Prima ședință de probă este gratuită.",
+      "cardTitle": "Prima ședință gratuită",
+      "cardSub": "Pentru fiecare categorie de vârstă",
+      "photo": "Adaugă o fotografie din studio (format portret)"
     },
-    "stats": {
+    "stats": [
+      {
+        "n": "4+",
+        "l": "Tipuri de clase"
+      },
+      {
+        "n": "3",
+        "l": "Grupe de vârstă"
+      },
+      {
+        "n": "Gratuit",
+        "l": "Prima ședință de probă"
+      },
+      {
+        "n": "Online",
+        "l": "Rezervări rapide"
+      }
+    ],
+    "disciplines": {
+      "eyebrow": "Ce antrenăm",
+      "title": "Patru discipline, un singur loc",
+      "sub": "Alege ce ți se potrivește azi — le poți combina oricând.",
       "items": [
         {
-          "value": "4+",
-          "label": "Tipuri de clase"
+          "t": "Pilates",
+          "d": "Control, forță în centrul corpului și o postură mai bună. Mișcări lente și conștiente."
         },
         {
-          "value": "3",
-          "label": "Grupe de vârstă"
+          "t": "Stretching",
+          "d": "Flexibilitate și mobilitate. Corpul se destinde și tensiunea dispare."
         },
         {
-          "value": "Gratuit",
-          "label": "Prima ședință de probă"
+          "t": "Gimnastică",
+          "d": "Coordonare, echilibru și forță pentru adulți și copii de toate vârstele."
         },
         {
-          "value": "Online",
-          "label": "Rezervare rapidă"
+          "t": "Fit Ball",
+          "d": "Antrenament dinamic cu mingea. Tonifiere, echilibru și energie."
         }
       ]
     },
-    "categories": {
+    "age": {
+      "eyebrow": "Clase pentru fiecare vârstă",
       "title": "De la cei mici la adulți",
-      "subtitle": "Grupe separate pe vârste, ca fiecare să progreseze în ritmul lui.",
-      "freeBadge": "Prima ședință gratuită",
-      "cta": "Vezi programul",
+      "sub": "Grupe separate pe vârste, ca fiecare să progreseze în ritmul lui.",
+      "badge": "Prima ședință gratuită",
+      "link": "Vezi programul",
       "items": [
         {
-          "title": "Adulți",
-          "tag": "Pilates · Stretching · Gimnastică · Fit Ball",
-          "desc": "Tonifiere, flexibilitate și postură într-o atmosferă relaxată, cu instructori atenți la fiecare mișcare."
+          "t": "Adulți",
+          "tag": "PILATES · STRETCHING · FIT BALL",
+          "d": "Tonifiere, flexibilitate și postură într-un ritm relaxat, cu instructori atenți la fiecare mișcare.",
+          "photo": "Foto: clasă adulți"
         },
         {
-          "title": "Copii 3–7 ani",
-          "tag": "Gimnastică pentru cei mici",
-          "desc": "Gimnastică jucăușă care dezvoltă coordonarea, echilibrul și încrederea celor mici."
+          "t": "Copii 3–7 ani",
+          "tag": "GIMNASTICĂ PENTRU CEI MICI",
+          "d": "Coordonare, joacă și mișcare care le dezvoltă echilibrul și încrederea.",
+          "photo": "Foto: copii 3–7 ani"
         },
         {
-          "title": "Copii 8–13 ani",
-          "tag": "Gimnastică pentru copii mari",
-          "desc": "Antrenamente care construiesc forță, disciplină și mișcare corectă pentru copiii mai mari."
-        }
-      ],
-      "eyebrow": "Clase pentru fiecare vârstă"
-    },
-    "disciplines": {
-      "title": "Patru discipline, un singur loc",
-      "subtitle": "Alege ce ți se potrivește azi — le poți combina oricând.",
-      "items": [
-        {
-          "title": "Pilates",
-          "desc": "Control, respirație și forța centrului. Corpul devine mai stabil și mai puternic din interior."
-        },
-        {
-          "title": "Stretching",
-          "desc": "Flexibilitate și mobilitate lucrate în siguranță — pentru un corp suplu și fără tensiuni."
-        },
-        {
-          "title": "Gimnastică",
-          "desc": "Coordonare, echilibru și mișcare corectă, pentru adulți și copii de toate vârstele."
-        },
-        {
-          "title": "Fit Ball",
-          "desc": "Antrenament dinamic cu mingea: tonifiere, postură și un plus de energie."
-        }
-      ],
-      "eyebrow": "Ce antrenăm"
-    },
-    "plans": {
-      "title": "Abonamente simple, prețuri clare",
-      "subtitle": "Alege un pachet de ședințe care ți se potrivește.",
-      "from": "de la",
-      "sessions": "ședințe",
-      "cta": "Vezi toate abonamentele",
-      "empty": "Abonamentele apar în curând.",
-      "eyebrow": "Prețuri"
-    },
-    "benefits": {
-      "title": "De ce Dellys",
-      "items": [
-        {
-          "title": "Grupe mici",
-          "desc": "Locuri limitate per grupă — atenție reală pentru fiecare participant."
-        },
-        {
-          "title": "Rezervare online",
-          "desc": "Vezi programul săptămânii și rezervă-ți locul în câteva secunde, de pe telefon."
-        },
-        {
-          "title": "Abonamente flexibile",
-          "desc": "Pachete pentru orice ritm, cu ședințe care se potrivesc programului tău."
-        },
-        {
-          "title": "Prima ședință gratuită",
-          "desc": "Încearcă fără nicio obligație — o ședință de probă pentru fiecare categorie."
+          "t": "Copii 8–13 ani",
+          "tag": "GIMNASTICĂ PENTRU COPII MARI",
+          "d": "Antrenamente care construiesc forță, disciplină și mișcare corectă.",
+          "photo": "Foto: copii 8–13 ani"
         }
       ]
     },
     "steps": {
+      "eyebrow": "Cum funcționează",
       "title": "Trei pași până la primul antrenament",
-      "subtitle": "",
       "items": [
         {
-          "title": "Alege o ședință",
-          "desc": "Deschide programul săptămânii și alege ziua și ora potrivite."
+          "t": "Alege o ședință",
+          "d": "Deschide programul săptămânii și alege ziua și ora care ți se potrivesc."
         },
         {
-          "title": "Rezervă online",
-          "desc": "Creează cont și confirmă locul. Prima ședință de probă este gratuită."
+          "t": "Rezervă online",
+          "d": "Ocupi locul în câteva secunde. Prima ședință de probă este gratuită."
         },
         {
-          "title": "Vino la antrenament",
-          "desc": "Te așteptăm la studio. Restul îl facem împreună."
+          "t": "Vino la antrenament",
+          "d": "Te așteptăm la studio. Restul îl facem împreună."
         }
-      ],
-      "eyebrow": "Cum funcționează"
+      ]
     },
-    "trial": {
+    "offer": {
       "eyebrow": "Ofertă de bun venit",
       "title": "Începe cu o ședință gratuită",
-      "desc": "Fiecare client nou primește o ședință de probă gratuită pentru fiecare categorie — adulți, copii 3–7 și copii 8–13 ani. Fără plată, fără obligații.",
-      "cta": "Rezervă ședința gratuită"
+      "sub": "Fiecare client nou primește o ședință de probă gratuită pentru fiecare categorie: adulți, copii 3–7 și 8–13 ani. Fără plată, fără obligații.",
+      "cta": "Rezervă ședința gratuită",
+      "benefits": [
+        {
+          "t": "Grupe mici",
+          "d": "Maxim câțiva participanți pe grupă."
+        },
+        {
+          "t": "Rezervare online",
+          "d": "Îți alegi locul în câteva secunde."
+        },
+        {
+          "t": "Abonamente flexibile",
+          "d": "Pachete care ți se potrivesc."
+        },
+        {
+          "t": "Prima ședință gratuită",
+          "d": "Încerci înainte să te decizi."
+        }
+      ]
     },
-    "scheduleSection": {
+    "prog": {
+      "eyebrow": "Program",
       "title": "Rezervă locul tău săptămâna aceasta",
-      "subtitle": "Programul actual, actualizat în timp real. Alege o sesiune și rezervă.",
-      "eyebrow": "Program"
+      "sub": "Program actual, actualizat în timp real. Alege o sesiune și rezervă."
+    },
+    "price": {
+      "eyebrow": "Prețuri",
+      "title": "Abonamente simple, prețuri clare",
+      "sub": "Alege un pachet de ședințe care ți se potrivește.",
+      "best": "Cea mai bună ofertă",
+      "choose": "Alege planul",
+      "all": "Vezi toate abonamentele",
+      "sessions": "ședințe"
     },
     "faq": {
+      "eyebrow": "Întrebări",
       "title": "Întrebări frecvente",
       "items": [
         {
           "q": "Cum rezerv o ședință?",
-          "a": "Creează-ți un cont, deschide programul săptămânii și apasă „Rezervă” la sesiunea dorită. Primești confirmarea imediat."
+          "a": "Alegi ziua și ora din program, apeși Rezervă și confirmi. Primești confirmarea imediat."
         },
         {
           "q": "Chiar este prima ședință gratuită?",
-          "a": "Da. Fiecare client nou are o ședință de probă gratuită pentru fiecare categorie: adulți, copii 3–7 ani și copii 8–13 ani."
+          "a": "Da. Fiecare client nou are o ședință de probă gratuită pentru fiecare categorie, fără obligații."
         },
         {
           "q": "Ce clase oferiți?",
-          "a": "Pilates, stretching, gimnastică și Fit Ball pentru adulți, plus clase de gimnastică pentru copii de 3–7 și 8–13 ani."
+          "a": "Pilates, stretching, gimnastică și Fit Ball, pentru adulți și copii între 3 și 13 ani."
         },
         {
           "q": "Cum funcționează abonamentele?",
-          "a": "Alegi un pachet de ședințe, iar plata se face la recepție. Locul tău este rezervat după confirmare."
+          "a": "Cumperi un pachet de ședințe și le folosești în perioada de valabilitate, la orice clasă din program."
         },
         {
           "q": "Pot anula o rezervare?",
-          "a": "Da, poți anula gratuit cu până la 12 ore înainte de începerea ședinței, direct din contul tău."
+          "a": "Da, poți anula sau reprograma din contul tău cu câteva ore înainte de ședință."
         }
-      ],
-      "eyebrow": "Întrebări"
+      ]
     },
-    "finalCta": {
+    "cta": {
       "title": "Gata să începi?",
-      "subtitle": "Rezervă-ți prima ședință gratuită astăzi.",
-      "primary": "Rezervă acum",
-      "secondary": "Am deja cont"
+      "sub": "Rezervă-ți prima ședință gratuită astăzi.",
+      "btn": "Rezervă acum"
     },
-    "location": {
-      "title": "Unde ne găsești",
-      "city": "Chișinău, Moldova",
-      "hoursLabel": "Program",
-      "hours": "Luni–Sâmbătă"
+    "footer": {
+      "tagline": "Studio de fitness pentru adulți și copii în Chișinău. Pilates, stretching, gimnastică și Fit Ball.",
+      "studio": "Studio",
+      "contact": "Contact",
+      "hours": "Program",
+      "addr": "str. Exemplu 10, Chișinău",
+      "hoursVal": "Luni – Sâmbătă · 9:00 – 21:00",
+      "rights": "Toate drepturile rezervate.",
+      "phone": "+373 60 000 000",
+      "email": "salut@dellys.md"
     }
   },
   "admin": {

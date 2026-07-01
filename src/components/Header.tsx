@@ -1,11 +1,12 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { Locale } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { Profile } from "@/lib/auth";
+import { DC } from "@/lib/dc";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { LogoutButton } from "./LogoutButton";
 import { MobileNav } from "./MobileNav";
+import { LogoMark } from "./LogoMark";
 
 export function Header({
   lang,
@@ -18,71 +19,96 @@ export function Header({
 }) {
   const base = `/${lang}`;
   const isAdmin = profile?.role === "admin";
-  const ctaHref = `${base}#schedule`;
-  const ctaLabel = dict.home.hero.ctaPrimary;
+  const ctaHref = `${base}#program`;
+  const ctaLabel = dict.home.nav.book;
 
-  // Clients see marketing anchors (the landing sections) + their account; admins
-  // just get the admin panel. Booking CTA is client-facing only.
   const links = isAdmin
     ? [{ href: `${base}/admin`, label: dict.nav.admin }]
     : [
-        { href: `${base}#schedule`, label: dict.nav.schedule },
-        { href: `${base}#plans`, label: dict.nav.prices },
+        { href: `${base}#program`, label: dict.nav.schedule },
+        { href: `${base}#preturi`, label: dict.nav.prices },
         { href: `${base}#faq`, label: dict.nav.faq },
         ...(profile ? [{ href: `${base}/dashboard`, label: dict.nav.dashboard }] : []),
       ];
 
+  const navLink: React.CSSProperties = {
+    textDecoration: "none",
+    color: "#4A4954",
+    fontWeight: 600,
+    fontSize: 15,
+  };
+
   return (
-    <header className="sticky top-0 z-30 border-b border-mauve-100 bg-white/85 backdrop-blur">
-      <div className="container-page relative flex items-center justify-between gap-3 py-3">
-        <Link href={base} className="flex items-center" aria-label={dict.brand}>
-          <Image
-            src="/dellys-logo.webp"
-            alt={dict.brand}
-            width={1053}
-            height={266}
-            priority
-            sizes="(max-width: 640px) 112px, 128px"
-            className="h-7 w-auto sm:h-8"
-          />
+    <header
+      style={{
+        position: "sticky",
+        top: 0,
+        zIndex: 50,
+        backdropFilter: "saturate(1.5) blur(16px)",
+        WebkitBackdropFilter: "saturate(1.5) blur(16px)",
+        background: "rgba(255,255,255,.82)",
+        borderBottom: `1px solid ${DC.border2}`,
+        fontFamily: DC.sans,
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 1200,
+          margin: "0 auto",
+          padding: "0 24px",
+          height: 72,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 20,
+        }}
+      >
+        <Link href={base} aria-label={dict.brand} style={{ textDecoration: "none" }}>
+          <LogoMark />
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex">
+        <nav className="hidden md:flex" style={{ alignItems: "center", gap: 30 }}>
           {links.map((l) => (
-            <Link key={l.href} href={l.href} className="btn-ghost px-3 py-2 text-sm">
+            <Link key={l.href} href={l.href} style={navLink}>
               {l.label}
             </Link>
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <LanguageSwitcher current={lang} />
-          <div className="hidden items-center gap-2 md:flex">
+          <div className="hidden md:flex" style={{ alignItems: "center", gap: 14 }}>
             {profile ? (
-              <>
-                {!isAdmin && (
-                  <Link href={ctaHref} className="btn-primary py-2 text-sm">
-                    {ctaLabel}
-                  </Link>
-                )}
-                <LogoutButton label={dict.nav.logout} />
-              </>
+              <LogoutButton label={dict.nav.logout} />
             ) : (
-              <>
-                <Link href={`${base}/login`} className="btn-ghost px-3 py-2 text-sm">
-                  {dict.nav.login}
-                </Link>
-                <Link href={ctaHref} className="btn-primary py-2 text-sm">
-                  {ctaLabel}
-                </Link>
-              </>
+              <Link href={`${base}/login`} style={navLink}>
+                {dict.home.nav.login}
+              </Link>
+            )}
+            {!isAdmin && (
+              <Link
+                href={ctaHref}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  background: DC.accent,
+                  color: "#fff",
+                  fontWeight: 700,
+                  fontSize: 14,
+                  padding: "10px 20px",
+                  borderRadius: 999,
+                  textDecoration: "none",
+                }}
+              >
+                {ctaLabel}
+              </Link>
             )}
           </div>
           <MobileNav
             links={links}
             loggedIn={!!profile}
             loginHref={`${base}/login`}
-            loginLabel={dict.nav.login}
+            loginLabel={dict.home.nav.login}
             signupHref={ctaHref}
             signupLabel={ctaLabel}
             logoutLabel={dict.nav.logout}

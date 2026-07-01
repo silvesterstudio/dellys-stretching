@@ -40,12 +40,12 @@ export default async function OgImage({
             {dict.brand}
           </div>
           <div style={{ marginTop: "20px", fontSize: "40px", color: "#554e54", maxWidth: "900px", lineHeight: 1.3 }}>
-            {dict.home.hero.subtitle}
+            {dict.home.hero.sub}
           </div>
         </div>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "30px" }}>
-          <span style={{ color: "#cc0f56", fontWeight: 700 }}>{dict.home.location.city}</span>
+          <span style={{ color: "#cc0f56", fontWeight: 700 }}>Chișinău, Moldova</span>
           <span style={{ color: "#9d959c" }}>dellys.md</span>
         </div>
       </div>

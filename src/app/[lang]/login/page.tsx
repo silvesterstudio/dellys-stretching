@@ -44,7 +44,7 @@ export default async function LoginPage({
   }
 
   return (
-    <div className="mx-auto max-w-md py-10 sm:py-16">
+    <div className="mx-auto max-w-md px-4 py-10 sm:py-16">
       <div className="card p-7 sm:p-8">
         <div className="flex justify-center">
           <Image

@@ -33,7 +33,7 @@ export default async function AdminLayout({
   ];
 
   return (
-    <div>
+    <div className="container-page safe-x py-8 sm:py-10">
       <h1 className="mb-5 font-display text-3xl font-semibold tracking-tight text-mauve-900">
         {dict.admin.title}
       </h1>

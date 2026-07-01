@@ -58,7 +58,9 @@ export default async function LangLayout({
     <html lang={locale} className={`${display.variable} ${sans.variable}`}>
       <body className="font-sans">
         <Header lang={locale} dict={dict} profile={profile} />
-        <main className="container-page safe-x py-6 sm:py-10">{children}</main>
+        {/* No global container: the home page manages its own full-width bands;
+            every other page wraps its content in `container-page`. */}
+        <main>{children}</main>
       </body>
     </html>
   );

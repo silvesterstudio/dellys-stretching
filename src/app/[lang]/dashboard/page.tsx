@@ -97,7 +97,7 @@ export default async function DashboardPage({
           : dict.common.booked;
 
   return (
-    <div className="space-y-8">
+    <div className="container-page safe-x space-y-8 py-8 sm:py-12">
       <h1 className="font-display text-3xl font-bold text-mauve-900">
         {dict.dashboard.title}
       </h1>
