@@ -101,8 +101,8 @@ const h2: React.CSSProperties = {
   color: DC.ink,
 };
 const subText: React.CSSProperties = { margin: "14px 0 0", fontSize: 17, lineHeight: 1.6, color: DC.muted };
-const sectionPad: React.CSSProperties = { maxWidth: 1200, margin: "0 auto", padding: "100px 24px" };
-const headWrap: React.CSSProperties = { textAlign: "center", maxWidth: 640, margin: "0 auto 56px" };
+const sectionPad: React.CSSProperties = { maxWidth: 1200, margin: "0 auto", padding: "64px 24px" };
+const headWrap: React.CSSProperties = { textAlign: "center", maxWidth: 640, margin: "0 auto 44px" };
 const btnPrimary: React.CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
@@ -139,6 +139,10 @@ const DISC_ICONS = [
   <Icon key="s"><path d="M4 12h16M9 7l-5 5 5 5M15 7l5 5-5 5" /></Icon>,
   <Icon key="g"><path d="M12 3v18M3 12h18M6 6l12 12M18 6L6 18" /></Icon>,
   <Icon key="f"><circle cx="12" cy="13" r="7" /><path d="M5.4 10.4c4.2 2.1 9 2.1 13.2 0M12 6v14" /></Icon>,
+  // Popa + Press — kettlebell
+  <Icon key="pp"><circle cx="12" cy="14.5" r="5.5" /><path d="M8.5 10.5V8a3.5 3.5 0 017 0v2.5" /></Icon>,
+  // Total Body — barbell
+  <Icon key="tb"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11" /></Icon>,
 ];
 function BIcon({ children }: { children: React.ReactNode }) {
   return (
@@ -176,15 +180,9 @@ details.dc-faq>summary{list-style:none;cursor:pointer}
 details.dc-faq>summary::-webkit-details-marker{display:none}
 .dc-faq-ic{flex:none;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:#F3F2F6;color:#6C6B74;transition:all .25s}
 details.dc-faq[open] .dc-faq-ic{background:${DC.accent};color:#fff;transform:rotate(45deg)}
-/* Smooth anchor scrolling; offset for the sticky header. */
-html{scroll-behavior:smooth;scroll-padding-top:84px}
+/* Smooth anchor scrolling; offset for the sticky island header. */
+html{scroll-behavior:smooth;scroll-padding-top:92px}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-/* On desktop each section fills the viewport with its content vertically
-   centered. No scroll-snap — free, smooth scrolling. */
-@media (min-width:1024px){
-  .dc-screen{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding-top:40px!important;padding-bottom:40px!important}
-  .dc-band-inner{padding-top:24px!important;padding-bottom:24px!important;width:100%}
-}
 `;
 
 export default async function HomePage({ params }: { params: Promise<{ lang: string }> }) {
@@ -213,7 +211,15 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       description: h.meta.description,
       url: `${SITE_URL}${base}`,
       image: `${SITE_URL}/dellys-logo.webp`,
-      address: { "@type": "PostalAddress", addressLocality: "Chișinău", addressCountry: "MD" },
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "str. Gheorghe Asachi 65",
+        addressLocality: "Chișinău",
+        addressCountry: "MD",
+      },
+      telephone: "+373 68 344 333",
+      email: "info@caracas.md",
+      sameAs: ["https://facebook.com/Caracas.md", "https://instagram.com/caracas.md"],
       areaServed: "Chișinău",
       priceRange: "$$",
       knowsLanguage: ["ro", "ru"],
@@ -239,7 +245,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       <section
         style={{
           position: "relative",
-          marginTop: -72,
+          marginTop: -76,
           minHeight: "clamp(600px,92vh,880px)",
           display: "flex",
           flexDirection: "column",
@@ -280,34 +286,9 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
 
         <div style={{ position: "relative", zIndex: 2, width: "100%", maxWidth: 1200, margin: "0 auto", padding: "104px 24px 64px" }}>
           <div style={{ maxWidth: 640 }}>
-            {/* Badge pill */}
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                fontSize: 12,
-                fontWeight: 700,
-                letterSpacing: ".14em",
-                textTransform: "uppercase",
-                color: "#fff",
-                background: "rgba(255,255,255,.1)",
-                border: "1px solid rgba(255,255,255,.22)",
-                backdropFilter: "blur(6px)",
-                WebkitBackdropFilter: "blur(6px)",
-                borderRadius: 999,
-                padding: "8px 16px",
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill={DC.accent} aria-hidden>
-                <path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.8 5.9 21.4l1.4-6.8L2.2 9.9l6.9-.8z" />
-              </svg>
-              {h.hero.eyebrow}
-            </span>
-
             <h1
               style={{
-                margin: "22px 0 0",
+                margin: 0,
                 fontFamily: DC.display,
                 fontWeight: 600,
                 fontSize: "clamp(42px,6vw,74px)",
@@ -325,23 +306,8 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             </p>
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 34 }}>
-              <a href="#program" className="dc-btn" style={{ ...btnPrimary, gap: 10, boxShadow: "0 16px 40px -16px rgba(224,17,95,.75)" }}>
+              <a href="#program" className="dc-btn" style={{ ...btnPrimary, boxShadow: "0 16px 40px -16px rgba(224,17,95,.75)" }}>
                 {h.hero.cta1}
-                <span
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 26,
-                    height: 26,
-                    borderRadius: 999,
-                    background: "rgba(255,255,255,.22)",
-                  }}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <path d="M5 12h14M13 6l6 6-6 6" />
-                  </svg>
-                </span>
               </a>
               <a
                 href="#preturi"
@@ -366,76 +332,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                 {h.hero.cta2}
               </a>
             </div>
-
-            {/* Floating glass card — the free-trial hook */}
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 14,
-                marginTop: 40,
-                background: "rgba(20,16,26,.5)",
-                border: "1px solid rgba(255,255,255,.14)",
-                backdropFilter: "blur(10px)",
-                WebkitBackdropFilter: "blur(10px)",
-                borderRadius: 18,
-                padding: "15px 22px 15px 16px",
-                boxShadow: "0 24px 60px -28px rgba(0,0,0,.7)",
-              }}
-            >
-              <span
-                style={{
-                  width: 46,
-                  height: 46,
-                  borderRadius: 13,
-                  flex: "none",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: DC.accent,
-                  color: "#fff",
-                }}
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </span>
-              <div>
-                <div style={{ fontFamily: DC.display, fontWeight: 600, fontSize: 16, color: "#fff" }}>{h.hero.cardTitle}</div>
-                <div style={{ fontSize: 13, color: "rgba(255,255,255,.62)", marginTop: 2 }}>{h.hero.cardSub}</div>
-              </div>
-            </div>
           </div>
-        </div>
-      </section>
-
-      {/* STATS STRIP */}
-      <section style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px" }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))",
-            gap: 24,
-            borderBottom: `1px solid ${DC.border2}`,
-            padding: "44px 0",
-          }}
-        >
-          {h.stats.map((s, i) => (
-            <div key={s.l}>
-              <div
-                style={{
-                  fontFamily: DC.display,
-                  fontWeight: 600,
-                  fontSize: 34,
-                  letterSpacing: "-.02em",
-                  color: i === 2 ? DC.accent : DC.ink,
-                }}
-              >
-                {s.n}
-              </div>
-              <div style={{ fontSize: 14, color: DC.muted2, marginTop: 4 }}>{s.l}</div>
-            </div>
-          ))}
         </div>
       </section>
 
@@ -446,7 +343,8 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
           <h2 style={h2}>{h.disciplines.title}</h2>
           <p style={subText}>{h.disciplines.sub}</p>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(232px,1fr))", gap: 20 }}>
+        {/* 6 cards → balanced 3×2 on desktop */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 20 }}>
           {h.disciplines.items.map((d, i) => (
             <div
               key={d.t}
@@ -524,7 +422,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       </section>
 
       {/* HOW IT WORKS */}
-      <section className="dc-screen" style={{ maxWidth: 1120, margin: "0 auto", padding: "100px 24px" }}>
+      <section className="dc-screen" style={{ maxWidth: 1120, margin: "0 auto", padding: "64px 24px" }}>
         <div style={headWrap}>
           <p style={eyebrow}>{h.steps.eyebrow}</p>
           <h2 style={h2}>{h.steps.title}</h2>
@@ -543,7 +441,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       </section>
 
       {/* OFFER + BENEFITS */}
-      <section className="dc-screen" style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px 100px" }}>
+      <section className="dc-screen" style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px 64px" }}>
         <div style={{ background: tint(6), border: `1px solid ${tint(16)}`, borderRadius: 28, padding: "clamp(32px,5vw,64px)" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 44, alignItems: "center" }}>
             <div>
@@ -583,7 +481,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
 
       {/* PROGRAM */}
       <section id="program" className="dc-screen" style={{ scrollMarginTop: 88, background: DC.band, borderTop: `1px solid ${DC.bandBorder}`, borderBottom: `1px solid ${DC.bandBorder}` }}>
-        <div className="dc-band-inner" style={{ maxWidth: 1200, margin: "0 auto", padding: "100px 24px" }}>
+        <div className="dc-band-inner" style={{ maxWidth: 1200, margin: "0 auto", padding: "64px 24px" }}>
           <div style={{ textAlign: "center", maxWidth: 660, margin: "0 auto 40px" }}>
             <p style={eyebrow}>{h.prog.eyebrow}</p>
             <h2 style={h2}>{h.prog.title}</h2>
@@ -603,7 +501,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
 
       {/* PRICES */}
       {plans.length > 0 && (
-        <section id="preturi" className="dc-screen" style={{ scrollMarginTop: 88, maxWidth: 1160, margin: "0 auto", padding: "100px 24px" }}>
+        <section id="preturi" className="dc-screen" style={{ scrollMarginTop: 88, maxWidth: 1160, margin: "0 auto", padding: "64px 24px" }}>
           <div style={headWrap}>
             <p style={eyebrow}>{h.price.eyebrow}</p>
             <h2 style={h2}>{h.price.title}</h2>
@@ -691,8 +589,8 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       )}
 
       {/* FAQ */}
-      <section id="faq" className="dc-screen" style={{ scrollMarginTop: 88, maxWidth: 760, margin: "0 auto", padding: "40px 24px 100px" }}>
-        <div style={{ textAlign: "center", margin: "0 auto 48px" }}>
+      <section id="faq" className="dc-screen" style={{ scrollMarginTop: 88, maxWidth: 760, margin: "0 auto", padding: "24px 24px 64px" }}>
+        <div style={{ textAlign: "center", margin: "0 auto 40px" }}>
           <p style={eyebrow}>{h.faq.eyebrow}</p>
           <h2 style={h2}>{h.faq.title}</h2>
         </div>
@@ -714,7 +612,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       </section>
 
       {/* DARK CTA */}
-      <section className="dc-screen" style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px 100px" }}>
+      <section className="dc-screen" style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px 64px" }}>
         <div style={{ position: "relative", overflow: "hidden", background: DC.ink, borderRadius: 28, padding: "clamp(48px,7vw,88px) 32px", textAlign: "center" }}>
           <div aria-hidden style={{ position: "absolute", top: -80, right: -40, width: 360, height: 360, borderRadius: "50%", background: `radial-gradient(circle, ${tint(55)}, transparent 62%)`, pointerEvents: "none" }} />
           <div aria-hidden style={{ position: "absolute", bottom: -100, left: -30, width: 320, height: 320, borderRadius: "50%", background: `radial-gradient(circle, ${tint(34)}, transparent 64%)`, pointerEvents: "none" }} />

@@ -82,12 +82,16 @@ export function ScheduleGrid({
     byDay.set(k, arr);
   }
 
+  const intlLocale = lang === "ru" ? "ru-RU" : "ro-RO";
   const dayName = (iso: string) =>
-    new Intl.DateTimeFormat(lang === "ru" ? "ru-RU" : "ro-RO", {
-      weekday: "long",
-      timeZone: TIMEZONE,
-    })
+    new Intl.DateTimeFormat(intlLocale, { weekday: "long", timeZone: TIMEZONE })
       .format(new Date(iso))
+      .toUpperCase();
+  // "17 IUN" / "17 ИЮН" — the calendar date of each weekday card.
+  const dayDate = (iso: string) =>
+    new Intl.DateTimeFormat(intlLocale, { day: "numeric", month: "short", timeZone: TIMEZONE })
+      .format(new Date(iso))
+      .replace(".", "")
       .toUpperCase();
 
   // Only days that actually have (filtered) sessions — matches the design.
@@ -163,8 +167,8 @@ export function ScheduleGrid({
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))",
-            gap: 16,
+            gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))",
+            gap: 22,
             alignItems: "start",
           }}
         >
@@ -175,20 +179,39 @@ export function ScheduleGrid({
                 background: "#fff",
                 border: `1px solid ${DC.border}`,
                 borderRadius: DC.radius,
-                padding: 18,
+                padding: 24,
               }}
             >
               <div
                 style={{
-                  fontWeight: 700,
-                  fontSize: 13,
-                  letterSpacing: ".13em",
-                  textTransform: "uppercase",
-                  color: DC.ink,
-                  padding: "4px 4px 14px",
+                  display: "flex",
+                  alignItems: "baseline",
+                  justifyContent: "space-between",
+                  gap: 10,
+                  padding: "2px 4px 16px",
                 }}
               >
-                {dayName(dISO)}
+                <span
+                  style={{
+                    fontWeight: 700,
+                    fontSize: 13,
+                    letterSpacing: ".13em",
+                    textTransform: "uppercase",
+                    color: DC.ink,
+                  }}
+                >
+                  {dayName(dISO)}
+                </span>
+                <span
+                  style={{
+                    fontWeight: 700,
+                    fontSize: 12,
+                    letterSpacing: ".1em",
+                    color: DC.faint,
+                  }}
+                >
+                  {dayDate(dISO)}
+                </span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {slots.map((s) => (
@@ -226,9 +249,9 @@ function Slot({
   const spotsText = full ? dict.common.full : `${left} ${dict.common.spotsLeft}`;
 
   return (
-    <div style={{ border: `1px solid ${DC.border2}`, borderRadius: 15, padding: "15px 16px" }}>
+    <div style={{ border: `1px solid ${DC.border2}`, borderRadius: 16, padding: "18px 18px 16px" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontFamily: DC.display, fontWeight: 600, fontSize: 18, color: DC.ink }}>
+        <span style={{ fontFamily: DC.display, fontWeight: 600, fontSize: 20, color: DC.ink }}>
           {time}
         </span>
         <span

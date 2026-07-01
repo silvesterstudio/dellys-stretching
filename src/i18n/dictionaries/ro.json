@@ -209,7 +209,7 @@
     ],
     "disciplines": {
       "eyebrow": "Ce antrenăm",
-      "title": "Patru discipline, un singur loc",
+      "title": "Șase discipline, un singur loc",
       "sub": "Alege ce ți se potrivește azi — le poți combina oricând.",
       "items": [
         {
@@ -227,6 +227,14 @@
         {
           "t": "Fit Ball",
           "d": "Antrenament dinamic cu mingea. Tonifiere, echilibru și energie."
+        },
+        {
+          "t": "Popa + Press",
+          "d": "Antrenament țintit pentru fesieri și abdomen. Tonifiere rapidă și eficientă."
+        },
+        {
+          "t": "Total Body",
+          "d": "Antrenament complet pentru tot corpul — forță, rezistență și tonus."
         }
       ]
     },
@@ -349,11 +357,11 @@
       "studio": "Studio",
       "contact": "Contact",
       "hours": "Program",
-      "addr": "str. Exemplu 10, Chișinău",
-      "hoursVal": "Luni – Sâmbătă · 9:00 – 21:00",
+      "addr": "str. Gheorghe Asachi 65, Chișinău",
+      "hoursVal": "Luni–Vineri 8:00–19:00 · Sâmbătă 8:00–13:00 · Duminică închis",
       "rights": "Toate drepturile rezervate.",
-      "phone": "+373 60 000 000",
-      "email": "salut@dellys.md"
+      "phone": "+373 68 344 333",
+      "email": "info@caracas.md"
     }
   },
   "admin": {

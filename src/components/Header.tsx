@@ -65,24 +65,32 @@ export function Header({
         position: "sticky",
         top: 0,
         zIndex: 50,
-        backdropFilter: overlay ? "none" : "saturate(1.5) blur(16px)",
-        WebkitBackdropFilter: overlay ? "none" : "saturate(1.5) blur(16px)",
-        background: overlay ? "transparent" : "rgba(255,255,255,.82)",
-        borderBottom: `1px solid ${overlay ? "transparent" : DC.border2}`,
+        padding: "14px 16px 0",
+        background: "transparent",
         fontFamily: DC.sans,
-        transition: "background .3s, border-color .3s, backdrop-filter .3s",
       }}
     >
+      {/* Floating "island": rounded glass bar detached from the page edges.
+          Dark glass over the hero photo, white glass everywhere else. */}
       <div
         style={{
           maxWidth: 1200,
           margin: "0 auto",
-          padding: "0 24px",
-          height: 72,
+          padding: "0 14px 0 22px",
+          height: 62,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           gap: 20,
+          borderRadius: 999,
+          background: overlay ? "rgba(22,17,28,.42)" : "rgba(255,255,255,.85)",
+          border: `1px solid ${overlay ? "rgba(255,255,255,.16)" : DC.border2}`,
+          backdropFilter: "saturate(1.5) blur(18px)",
+          WebkitBackdropFilter: "saturate(1.5) blur(18px)",
+          boxShadow: overlay
+            ? "0 18px 44px -24px rgba(0,0,0,.55)"
+            : "0 16px 40px -26px rgba(20,18,26,.35)",
+          transition: "background .3s, border-color .3s, box-shadow .3s",
         }}
       >
         <Link

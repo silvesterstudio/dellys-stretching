@@ -67,6 +67,12 @@ export function Footer({ lang, dict }: { lang: Locale; dict: Dictionary }) {
               <a href={`mailto:${f.email}`} style={link}>
                 {f.email}
               </a>
+              <a href="https://facebook.com/Caracas.md" target="_blank" rel="noopener noreferrer" style={link}>
+                Facebook
+              </a>
+              <a href="https://instagram.com/caracas.md" target="_blank" rel="noopener noreferrer" style={link}>
+                Instagram
+              </a>
             </div>
           </div>
 
