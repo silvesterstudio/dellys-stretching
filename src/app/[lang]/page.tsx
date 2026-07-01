@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { Locale } from "@/lib/constants";
-import { SITE_URL } from "@/lib/constants";
+import { SITE_URL, TIMEZONE } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { getWeekRange } from "@/lib/week";
-import { weekdayInTz } from "@/lib/format";
-import { formatPrice } from "@/lib/format";
+import { weekdayInTz, formatPrice, formatTime } from "@/lib/format";
 import { localized } from "@/lib/i18n-data";
 import { fetchSessions } from "@/lib/queries";
 import { getCurrentUserId } from "@/lib/auth";
@@ -145,6 +144,18 @@ export default async function HomePage({
   ]);
   const loggedIn = !!userId;
 
+  // Next bookable sessions for the hero's live preview card (future + open seats).
+  const nowMs = Date.now();
+  const previewSessions = sessions
+    .filter((s) => new Date(s.starts_at).getTime() > nowMs && s.capacity - s.booked_count > 0)
+    .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
+    .slice(0, 3);
+  const fmtDay = (iso: string) =>
+    new Intl.DateTimeFormat(locale === "ru" ? "ru-RU" : "ro-RO", {
+      weekday: "short",
+      timeZone: TIMEZONE,
+    }).format(new Date(iso));
+
   // Structured data for Google: the business + an FAQ block (rich results).
   const jsonLd = [
     {
@@ -182,44 +193,118 @@ export default async function HomePage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      {/* Hero */}
-      <section className="relative isolate pt-4 text-center sm:pt-10">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-[-3rem] -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-brand-200/40 blur-3xl"
-        />
-        <p className="eyebrow animate-rise">{h.hero.eyebrow}</p>
-        <h1 className="animate-rise mx-auto mt-5 max-w-4xl font-display text-[2.75rem] font-bold leading-[1.04] -tracking-[0.025em] text-mauve-900 sm:text-6xl lg:text-7xl">
-          {h.hero.title} <span className="text-brand-500">{h.hero.titleAccent}</span>
-        </h1>
-        <p className="animate-rise mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-mauve-600">
-          {h.hero.subtitle}
-        </p>
-        <div className="animate-rise mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <a href="#schedule" className="btn-primary w-full px-7 py-3 text-base sm:w-auto">
-            {h.hero.ctaPrimary}
-          </a>
-          <a href="#plans" className="btn-secondary w-full px-7 py-3 text-base sm:w-auto">
-            {h.hero.ctaSecondary}
-          </a>
-        </div>
-        <p className="mt-6 inline-flex items-center gap-2 text-sm text-mauve-500">
-          <CheckIcon />
-          {h.hero.trust}
-        </p>
+      {/* Hero — asymmetric layout on a soft pink panel, with a live booking card */}
+      <section className="pt-2 sm:pt-4">
+        <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-brand-50 via-sand-50 to-white px-6 py-12 ring-1 ring-brand-100/70 sm:px-10 sm:py-16">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -right-16 -top-20 h-72 w-72 rounded-full bg-brand-200/40 blur-3xl"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -bottom-24 -left-16 h-72 w-72 rounded-full bg-brand-100/50 blur-3xl"
+          />
 
-        {/* Disciplines strip — communicates the offering at a glance. */}
-        <ul className="mx-auto mt-10 flex max-w-2xl flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[13px] font-medium uppercase tracking-[0.14em] text-mauve-400">
-          {h.disciplines.items.map((d, i) => (
-            <li key={d.title} className="flex items-center gap-3">
-              {i > 0 && <span className="text-brand-300" aria-hidden>·</span>}
-              {d.title}
-            </li>
-          ))}
-        </ul>
+          <div className="relative grid items-center gap-12 lg:grid-cols-12">
+            {/* Left: message */}
+            <div className="animate-rise text-center lg:col-span-7 lg:text-left">
+              <p className="eyebrow">{h.hero.eyebrow}</p>
+              <h1 className="mx-auto mt-4 max-w-2xl font-display text-[2.6rem] font-bold leading-[1.05] -tracking-[0.025em] text-mauve-900 sm:text-5xl lg:mx-0 lg:text-6xl">
+                {h.hero.title} <span className="text-brand-500">{h.hero.titleAccent}</span>
+              </h1>
+              <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-mauve-600 lg:mx-0">
+                {h.hero.subtitle}
+              </p>
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start">
+                <a href="#schedule" className="btn-primary px-7 py-3 text-base">
+                  {h.hero.ctaPrimary}
+                </a>
+                <a href="#plans" className="btn-secondary px-7 py-3 text-base">
+                  {h.hero.ctaSecondary}
+                </a>
+              </div>
+              <ul className="mt-7 flex flex-wrap justify-center gap-2 lg:justify-start">
+                {[h.benefits.items[0].title, h.categories.freeBadge, "RO · RU"].map((chip) => (
+                  <li
+                    key={chip}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs font-medium text-mauve-600 ring-1 ring-mauve-200/70"
+                  >
+                    <CheckIcon className="h-3.5 w-3.5 text-brand-600" />
+                    {chip}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Right: live "next sessions" booking card */}
+            <div className="animate-rise lg:col-span-5">
+              <div className="card p-5 shadow-xl shadow-brand-500/10">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold text-mauve-900">
+                    {dict.dashboard.upcoming}
+                  </span>
+                  <span className="badge-brand">● live</span>
+                </div>
+
+                {previewSessions.length > 0 ? (
+                  <ul className="mt-4 space-y-2.5">
+                    {previewSessions.map((s) => {
+                      const left = Math.max(0, s.capacity - s.booked_count);
+                      return (
+                        <li
+                          key={s.id}
+                          className="flex items-center justify-between gap-3 rounded-xl border border-mauve-100 bg-white p-3"
+                        >
+                          <div className="min-w-0">
+                            <div className="font-display text-base font-bold text-mauve-900">
+                              {formatTime(s.starts_at, locale)}
+                              <span className="ml-1.5 text-xs font-medium capitalize text-mauve-400">
+                                {fmtDay(s.starts_at)}
+                              </span>
+                            </div>
+                            <div className="truncate text-sm font-medium text-mauve-700">
+                              {localized(s.class_type, "name", locale)}
+                            </div>
+                            <div className="text-xs text-brand-600">
+                              {left} {dict.common.spotsLeft}
+                            </div>
+                          </div>
+                          <Link
+                            href={
+                              loggedIn
+                                ? `${base}/book/${s.id}`
+                                : `${base}/login?session=${s.id}`
+                            }
+                            className="btn-primary shrink-0 px-3 py-1.5 text-xs"
+                          >
+                            {dict.schedule.bookCta}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <div className="mt-4 rounded-xl border border-mauve-100 bg-white p-5 text-center">
+                    <p className="text-sm text-mauve-600">{h.trial.title}</p>
+                    <a href="#schedule" className="btn-primary mt-3 px-5 py-2 text-sm">
+                      {h.hero.ctaPrimary}
+                    </a>
+                  </div>
+                )}
+
+                <a
+                  href="#schedule"
+                  className="mt-3 block text-center text-sm font-semibold text-brand-600 hover:text-brand-700"
+                >
+                  {h.categories.cta} →
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Stats — quiet hairline-framed row. */}
-        <dl className="mx-auto mt-14 grid max-w-3xl grid-cols-2 gap-y-8 border-y border-mauve-100 py-8 sm:grid-cols-4 sm:gap-y-0">
+        <dl className="mx-auto mt-14 grid max-w-3xl grid-cols-2 gap-y-8 border-b border-mauve-100 pb-8 sm:grid-cols-4 sm:gap-y-0">
           {h.stats.items.map((s) => (
             <div key={s.label} className="text-center">
               <dd className="font-display text-3xl font-bold -tracking-[0.02em] text-mauve-900">

@@ -11,6 +11,9 @@
 html {
   scroll-behavior: smooth;
   -webkit-tap-highlight-color: transparent;
+  /* Decorative blur blobs and wide type must never create a horizontal scroll
+     / right-edge clip on narrow screens. */
+  overflow-x: hidden;
 }
 
 /* Respect users who ask for less motion: neutralize the pulse/rise animations
