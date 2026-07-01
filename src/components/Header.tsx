@@ -1,4 +1,8 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { Locale } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { Profile } from "@/lib/auth";
@@ -18,6 +22,21 @@ export function Header({
   profile: Profile | null;
 }) {
   const base = `/${lang}`;
+  const pathname = usePathname();
+  const isHome = pathname === base;
+
+  // On the homepage the hero is a dark full-bleed image; the header floats
+  // transparently over it until the user scrolls, then it becomes solid white.
+  // Everywhere else it is always solid.
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  const overlay = isHome && !scrolled;
+
   const isAdmin = profile?.role === "admin";
   const ctaHref = `${base}#program`;
   const ctaLabel = dict.home.nav.book;
@@ -34,9 +53,10 @@ export function Header({
 
   const navLink: React.CSSProperties = {
     textDecoration: "none",
-    color: "#4A4954",
+    color: overlay ? "rgba(255,255,255,.92)" : "#4A4954",
     fontWeight: 600,
     fontSize: 15,
+    transition: "color .3s",
   };
 
   return (
@@ -45,11 +65,12 @@ export function Header({
         position: "sticky",
         top: 0,
         zIndex: 50,
-        backdropFilter: "saturate(1.5) blur(16px)",
-        WebkitBackdropFilter: "saturate(1.5) blur(16px)",
-        background: "rgba(255,255,255,.82)",
-        borderBottom: `1px solid ${DC.border2}`,
+        backdropFilter: overlay ? "none" : "saturate(1.5) blur(16px)",
+        WebkitBackdropFilter: overlay ? "none" : "saturate(1.5) blur(16px)",
+        background: overlay ? "transparent" : "rgba(255,255,255,.82)",
+        borderBottom: `1px solid ${overlay ? "transparent" : DC.border2}`,
         fontFamily: DC.sans,
+        transition: "background .3s, border-color .3s, backdrop-filter .3s",
       }}
     >
       <div
@@ -64,7 +85,17 @@ export function Header({
           gap: 20,
         }}
       >
-        <Link href={base} aria-label={dict.brand} style={{ textDecoration: "none", flex: "none" }}>
+        <Link
+          href={base}
+          aria-label={dict.brand}
+          style={{
+            textDecoration: "none",
+            flex: "none",
+            // Lift the pink lockup off the photo when floating over the hero.
+            filter: overlay ? "drop-shadow(0 2px 10px rgba(0,0,0,.35))" : "none",
+            transition: "filter .3s",
+          }}
+        >
           <LogoMark priority />
         </Link>
 
@@ -99,6 +130,8 @@ export function Header({
                   padding: "10px 20px",
                   borderRadius: 999,
                   textDecoration: "none",
+                  boxShadow: overlay ? "0 10px 30px -12px rgba(224,17,95,.7)" : "none",
+                  transition: "box-shadow .3s",
                 }}
               >
                 {ctaLabel}

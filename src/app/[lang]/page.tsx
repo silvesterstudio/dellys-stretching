@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import type { Locale } from "@/lib/constants";
 import { SITE_URL } from "@/lib/constants";
@@ -78,6 +79,9 @@ async function fetchTeaserPlans(): Promise<TeaserPlan[]> {
 }
 
 // ── shared inline styles (ported from the design) ──
+// Hero base tone — kept as a 6-digit hex so alpha suffixes (e.g. `${HERO_BG}F2`)
+// build the gradient stops for the dark photo overlay.
+const HERO_BG = "#100D14";
 const eyebrow: React.CSSProperties = {
   margin: 0,
   fontFamily: DC.sans,
@@ -231,54 +235,113 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       <style dangerouslySetInnerHTML={{ __html: DC_CSS }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      {/* HERO */}
-      <section className="dc-screen" style={{ maxWidth: 1200, margin: "0 auto", padding: "72px 24px 40px", position: "relative" }}>
+      {/* HERO — dark full-bleed studio photo with the header floating over it */}
+      <section
+        style={{
+          position: "relative",
+          marginTop: -72,
+          minHeight: "clamp(600px,92vh,880px)",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          overflow: "hidden",
+          background: HERO_BG,
+        }}
+      >
+        {/* Background photo */}
+        <Image
+          src="/hero-image-dellys.webp"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          style={{ objectFit: "cover", objectPosition: "center 26%", zIndex: 0 }}
+        />
+        {/* Legibility overlays: heavier on the left where the copy sits, plus a
+            bottom vignette to ground the floating card. */}
         <div
           aria-hidden
           style={{
             position: "absolute",
-            top: -40,
-            right: -40,
-            width: 520,
-            height: 520,
-            borderRadius: "50%",
-            background: `radial-gradient(circle at center, ${tint(12)}, transparent 62%)`,
-            pointerEvents: "none",
-            zIndex: 0,
+            inset: 0,
+            zIndex: 1,
+            background: `linear-gradient(90deg, ${HERO_BG}F2 0%, ${HERO_BG}D9 30%, ${HERO_BG}94 58%, ${HERO_BG}59 100%)`,
           }}
         />
         <div
+          aria-hidden
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(340px,1fr))",
-            gap: 52,
-            alignItems: "center",
-            position: "relative",
+            position: "absolute",
+            inset: 0,
             zIndex: 1,
+            background: `linear-gradient(0deg, ${HERO_BG}E6 0%, ${HERO_BG}00 42%)`,
           }}
-        >
-          <div>
-            <p style={eyebrow}>{h.hero.eyebrow}</p>
+        />
+
+        <div style={{ position: "relative", zIndex: 2, width: "100%", maxWidth: 1200, margin: "0 auto", padding: "104px 24px 64px" }}>
+          <div style={{ maxWidth: 640 }}>
+            {/* Badge pill */}
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: ".14em",
+                textTransform: "uppercase",
+                color: "#fff",
+                background: "rgba(255,255,255,.1)",
+                border: "1px solid rgba(255,255,255,.22)",
+                backdropFilter: "blur(6px)",
+                WebkitBackdropFilter: "blur(6px)",
+                borderRadius: 999,
+                padding: "8px 16px",
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill={DC.accent} aria-hidden>
+                <path d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.8 5.9 21.4l1.4-6.8L2.2 9.9l6.9-.8z" />
+              </svg>
+              {h.hero.eyebrow}
+            </span>
+
             <h1
               style={{
-                margin: "18px 0 0",
+                margin: "22px 0 0",
                 fontFamily: DC.display,
                 fontWeight: 600,
-                fontSize: "clamp(40px,5.4vw,64px)",
+                fontSize: "clamp(42px,6vw,74px)",
                 lineHeight: 1.02,
                 letterSpacing: "-.025em",
-                color: DC.ink,
+                color: "#fff",
               }}
             >
               {h.hero.titleA}
               <span style={{ color: DC.accent }}>{h.hero.titleB}</span>
             </h1>
-            <p style={{ margin: "22px 0 0", maxWidth: 480, fontSize: 18, lineHeight: 1.62, color: DC.sub }}>
+
+            <p style={{ margin: "22px 0 0", maxWidth: 520, fontSize: 18, lineHeight: 1.62, color: "rgba(255,255,255,.82)" }}>
               {h.hero.sub}
             </p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 32 }}>
-              <a href="#program" className="dc-btn" style={btnPrimary}>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 34 }}>
+              <a href="#program" className="dc-btn" style={{ ...btnPrimary, gap: 10, boxShadow: "0 16px 40px -16px rgba(224,17,95,.75)" }}>
                 {h.hero.cta1}
+                <span
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: 26,
+                    height: 26,
+                    borderRadius: 999,
+                    background: "rgba(255,255,255,.22)",
+                  }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M5 12h14M13 6l6 6-6 6" />
+                  </svg>
+                </span>
               </a>
               <a
                 href="#preturi"
@@ -288,99 +351,73 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
                   alignItems: "center",
                   justifyContent: "center",
                   gap: 8,
-                  background: "#fff",
-                  color: DC.ink,
+                  background: "rgba(255,255,255,.06)",
+                  color: "#fff",
                   fontWeight: 700,
                   fontSize: 16,
                   padding: "16px 30px",
-                  border: "1px solid #E2E0E6",
+                  border: "1px solid rgba(255,255,255,.34)",
                   borderRadius: 999,
                   textDecoration: "none",
+                  backdropFilter: "blur(6px)",
+                  WebkitBackdropFilter: "blur(6px)",
                 }}
               >
                 {h.hero.cta2}
               </a>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 9, marginTop: 22 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ color: DC.accent, flex: "none" }} aria-hidden>
-                <circle cx="12" cy="12" r="10" fill={tint(14)} />
-                <path d="M8 12l2.5 2.5L16 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              <span style={{ fontSize: 14.5, fontWeight: 600, color: "#4A4954" }}>{h.hero.note}</span>
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 30 }}>
-              {h.disciplines.items.map((d) => (
-                <span
-                  key={d.t}
-                  style={{ fontSize: 13, fontWeight: 600, color: DC.muted, background: DC.chip, borderRadius: 999, padding: "8px 15px" }}
-                >
-                  {d.t}
-                </span>
-              ))}
-            </div>
-          </div>
 
-          <div style={{ position: "relative" }}>
+            {/* Floating glass card — the free-trial hook */}
             <div
               style={{
-                position: "relative",
-                height: "clamp(420px,50vw,548px)",
-                borderRadius: 28,
-                overflow: "hidden",
-                background: "#F3F2F6",
-              }}
-            >
-              <PhotoBox style={{ width: "100%", height: "100%" }} />
-            </div>
-            <div
-              style={{
-                position: "absolute",
-                left: -14,
-                bottom: -16,
-                display: "flex",
+                display: "inline-flex",
                 alignItems: "center",
-                gap: 13,
-                background: "#fff",
-                border: `1px solid ${DC.border2}`,
+                gap: 14,
+                marginTop: 40,
+                background: "rgba(20,16,26,.5)",
+                border: "1px solid rgba(255,255,255,.14)",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
                 borderRadius: 18,
-                padding: "15px 20px",
-                boxShadow: "0 22px 48px -22px rgba(20,18,26,.32)",
+                padding: "15px 22px 15px 16px",
+                boxShadow: "0 24px 60px -28px rgba(0,0,0,.7)",
               }}
             >
               <span
                 style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 12,
+                  width: 46,
+                  height: 46,
+                  borderRadius: 13,
                   flex: "none",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  background: tint(12),
-                  color: DC.accent,
+                  background: DC.accent,
+                  color: "#fff",
                 }}
               >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </span>
               <div>
-                <div style={{ fontFamily: DC.display, fontWeight: 600, fontSize: 15, color: DC.ink }}>{h.hero.cardTitle}</div>
-                <div style={{ fontSize: 12.5, color: DC.muted2, marginTop: 2 }}>{h.hero.cardSub}</div>
+                <div style={{ fontFamily: DC.display, fontWeight: 600, fontSize: 16, color: "#fff" }}>{h.hero.cardTitle}</div>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,.62)", marginTop: 2 }}>{h.hero.cardSub}</div>
               </div>
             </div>
           </div>
         </div>
+      </section>
 
+      {/* STATS STRIP */}
+      <section style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px" }}>
         <div
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit,minmax(170px,1fr))",
             gap: 24,
-            borderTop: `1px solid ${DC.border2}`,
             borderBottom: `1px solid ${DC.border2}`,
-            padding: "34px 0",
-            marginTop: 44,
+            padding: "44px 0",
           }}
         >
           {h.stats.map((s, i) => (
