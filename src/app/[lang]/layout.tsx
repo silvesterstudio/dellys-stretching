@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Playfair_Display, Manrope } from "next/font/google";
 import "../globals.css";
-import { LOCALES, type Locale } from "@/lib/constants";
+import { LOCALES, SITE_URL, type Locale } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { getCurrentProfile } from "@/lib/auth";
@@ -22,8 +22,13 @@ const sans = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Dellys — Studio",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Dellys — Studio de fitness în Chișinău",
+    template: "%s · Dellys",
+  },
   description: "Rezervă-ți locul la următoarea sesiune. Pilates, stretching, gimnastică.",
+  applicationName: "Dellys",
   icons: { icon: "/dellys-logo.webp", apple: "/dellys-logo.webp" },
 };
 

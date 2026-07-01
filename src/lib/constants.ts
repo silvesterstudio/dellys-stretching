@@ -5,6 +5,13 @@
 // correct zone and future-proofs against any divergence in DST policy.
 export const TIMEZONE = "Europe/Chisinau";
 
+// Public origin of the site, used for SEO absolutes (canonical URLs, Open Graph,
+// sitemap, JSON-LD). Set NEXT_PUBLIC_SITE_URL in production; the fallback keeps
+// local/dev builds working. No trailing slash.
+export const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://dellys.md"
+).replace(/\/$/, "");
+
 export const LOCALES = ["ro", "ru"] as const;
 export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = "ro";

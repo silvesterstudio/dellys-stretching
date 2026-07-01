@@ -158,6 +158,89 @@
     "loginToBuy": "Autentifică-te pentru a cumpăra",
     "reception": "Plata se face la recepție. Locul tău e rezervat după confirmare."
   },
+  "home": {
+    "meta": {
+      "title": "Studio de fitness în Chișinău — Pilates, stretching, gimnastică",
+      "description": "Dellys — studio de fitness în Chișinău. Pilates, stretching, gimnastică și Fit Ball pentru adulți și copii. Grupe mici, rezervare online și prima ședință de probă gratuită."
+    },
+    "hero": {
+      "eyebrow": "Studio de fitness · Chișinău",
+      "title": "Mișcare care îți schimbă ziua",
+      "subtitle": "Pilates, stretching, gimnastică și Fit Ball pentru adulți și copii. Grupe mici, instructori atenți și rezervare online în câteva secunde.",
+      "ctaPrimary": "Rezervă o ședință",
+      "ctaSecondary": "Vezi abonamentele",
+      "trust": "Prima ședință de probă este gratuită pentru fiecare categorie."
+    },
+    "stats": {
+      "items": [
+        { "value": "4+", "label": "Tipuri de clase" },
+        { "value": "3", "label": "Grupe de vârstă" },
+        { "value": "Gratuit", "label": "Prima ședință de probă" },
+        { "value": "Online", "label": "Rezervare rapidă" }
+      ]
+    },
+    "categories": {
+      "title": "Clase pentru fiecare vârstă",
+      "subtitle": "De la adulți la cei mici — găsești locul potrivit.",
+      "freeBadge": "Prima ședință gratuită",
+      "cta": "Vezi programul",
+      "items": [
+        { "title": "Adulți", "desc": "Pilates, stretching, gimnastică și Fit Ball. Tonifiere, flexibilitate și postură într-o atmosferă relaxată." },
+        { "title": "Copii 3–7 ani", "desc": "Gimnastică jucăușă care dezvoltă coordonarea, echilibrul și încrederea celor mici." },
+        { "title": "Copii 8–13 ani", "desc": "Antrenamente care construiesc forță, disciplină și mișcare corectă pentru copiii mai mari." }
+      ]
+    },
+    "benefits": {
+      "title": "De ce Dellys",
+      "items": [
+        { "title": "Grupe mici", "desc": "Locuri limitate per grupă — atenție reală pentru fiecare participant." },
+        { "title": "Rezervare online", "desc": "Vezi programul săptămânii și rezervă-ți locul în câteva secunde, de pe telefon." },
+        { "title": "Abonamente flexibile", "desc": "Pachete pentru orice ritm, cu ședințe care se potrivesc programului tău." },
+        { "title": "Prima ședință gratuită", "desc": "Încearcă fără nicio obligație — o ședință de probă pentru fiecare categorie." }
+      ]
+    },
+    "steps": {
+      "title": "Cum funcționează",
+      "subtitle": "Trei pași până la primul antrenament.",
+      "items": [
+        { "title": "Alege o ședință", "desc": "Deschide programul săptămânii și alege ziua și ora potrivite." },
+        { "title": "Rezervă online", "desc": "Creează cont și confirmă locul. Prima ședință de probă este gratuită." },
+        { "title": "Vino la antrenament", "desc": "Te așteptăm la studio. Restul îl facem împreună." }
+      ]
+    },
+    "trial": {
+      "eyebrow": "Ofertă de bun venit",
+      "title": "Începe cu o ședință gratuită",
+      "desc": "Fiecare client nou primește o ședință de probă gratuită pentru fiecare categorie — adulți, copii 3–7 și copii 8–13 ani. Fără plată, fără obligații.",
+      "cta": "Creează cont gratuit"
+    },
+    "scheduleSection": {
+      "title": "Rezervă locul tău săptămâna aceasta",
+      "subtitle": "Programul actual, actualizat în timp real. Alege o sesiune și rezervă."
+    },
+    "faq": {
+      "title": "Întrebări frecvente",
+      "items": [
+        { "q": "Cum rezerv o ședință?", "a": "Creează-ți un cont, deschide programul săptămânii și apasă „Rezervă” la sesiunea dorită. Primești confirmarea imediat." },
+        { "q": "Chiar este prima ședință gratuită?", "a": "Da. Fiecare client nou are o ședință de probă gratuită pentru fiecare categorie: adulți, copii 3–7 ani și copii 8–13 ani." },
+        { "q": "Ce clase oferiți?", "a": "Pilates, stretching, gimnastică și Fit Ball pentru adulți, plus clase de gimnastică pentru copii de 3–7 și 8–13 ani." },
+        { "q": "Cum funcționează abonamentele?", "a": "Alegi un pachet de ședințe, iar plata se face la recepție. Locul tău este rezervat după confirmare." },
+        { "q": "Pot anula o rezervare?", "a": "Da, poți anula gratuit cu până la 12 ore înainte de începerea ședinței, direct din contul tău." }
+      ]
+    },
+    "finalCta": {
+      "title": "Gata să începi?",
+      "subtitle": "Rezervă-ți prima ședință gratuită astăzi.",
+      "primary": "Rezervă acum",
+      "secondary": "Am deja cont"
+    },
+    "location": {
+      "title": "Unde ne găsești",
+      "city": "Chișinău, Moldova",
+      "hoursLabel": "Program",
+      "hours": "Luni–Sâmbătă"
+    }
+  },
   "admin": {
     "title": "Panou de administrare",
     "sessions": "Sesiuni",

@@ -22,7 +22,8 @@ export function Header({
   // client-facing, so they're hidden for admins; the admin panel link only shows
   // for admins. (Login/logout is handled separately below.)
   const links = [
-    { href: base, label: dict.nav.schedule },
+    // The live schedule lives as an anchored section on the home/landing page.
+    { href: isAdmin ? base : `${base}#schedule`, label: dict.nav.schedule },
     ...(!isAdmin ? [{ href: `${base}/memberships`, label: dict.nav.memberships }] : []),
     ...(profile && !isAdmin
       ? [{ href: `${base}/dashboard`, label: dict.nav.dashboard }]
