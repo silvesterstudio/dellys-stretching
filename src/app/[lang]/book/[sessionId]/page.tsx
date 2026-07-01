@@ -131,6 +131,9 @@ export default async function BookPage({
           initialChildren={children}
           balance={balance}
           freeSessionAvailable={freeSessionAvailable}
+          sessionStartISO={session.starts_at}
+          sessionDurationMin={session.duration_min}
+          sessionName={name}
         />
       </div>
     </div>

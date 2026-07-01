@@ -66,8 +66,16 @@ export function ScheduleGrid({
     };
   }, [weekStartISO, weekEndISO]);
 
+  // Client-side audience filter (All / Adults / Kids). "child" covers both kids
+  // groups; adult classes are hidden under "Kids" and vice-versa.
+  const [audience, setAudience] = useState<"all" | "adult" | "child">("all");
+  const visible =
+    audience === "all"
+      ? sessions
+      : sessions.filter((s) => s.class_type.audience === audience);
+
   const byDay = new Map<string, SessionWithType[]>();
-  for (const s of sessions) {
+  for (const s of visible) {
     const k = dayKey(s.starts_at);
     const arr = byDay.get(k) ?? [];
     arr.push(s);
@@ -80,11 +88,46 @@ export function ScheduleGrid({
       timeZone: TIMEZONE,
     }).format(new Date(iso));
 
+  const filters: { key: "all" | "adult" | "child"; label: string }[] = [
+    { key: "all", label: dict.schedule.filterAll },
+    { key: "adult", label: dict.schedule.filterAdults },
+    { key: "child", label: dict.schedule.filterKids },
+  ];
+
   // One card per day, Monday–Saturday. Always render all six so the week reads
   // as a complete grid even where a day has no sessions yet.
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {days.map((dISO) => {
+    <div className="space-y-6">
+      <div
+        role="group"
+        aria-label={dict.schedule.title}
+        className="mx-auto flex w-fit items-center gap-1 rounded-full border border-mauve-200 bg-white p-1"
+      >
+        {filters.map((f) => {
+          const active = audience === f.key;
+          return (
+            <button
+              key={f.key}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setAudience(f.key)}
+              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2 ${
+                active ? "bg-brand-600 text-white" : "text-mauve-600 hover:bg-mauve-100"
+              }`}
+            >
+              {f.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {visible.length === 0 ? (
+        <div className="card p-10 text-center text-sm text-mauve-400">
+          {dict.schedule.noSessionsWeek}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {days.map((dISO) => {
         const k = dayKey(dISO);
         const daySessions = byDay.get(k) ?? [];
         const empty = daySessions.length === 0;
@@ -119,7 +162,9 @@ export function ScheduleGrid({
             )}
           </div>
         );
-      })}
+          })}
+        </div>
+      )}
     </div>
   );
 }

@@ -127,7 +127,7 @@ export default async function DashboardPage({
               </div>
             ))}
           </div>
-          <Link href={`/${locale}`} className="btn-primary mt-3">
+          <Link href={`/${locale}#schedule`} className="btn-primary mt-3">
             {dict.schedule.bookCta}
           </Link>
         </section>
@@ -222,7 +222,7 @@ export default async function DashboardPage({
         {upcoming.length === 0 ? (
           <div className="card p-5 text-sm text-mauve-500">
             {dict.dashboard.noBookings}{" "}
-            <Link href={`/${locale}`} className="text-brand-600 underline">
+            <Link href={`/${locale}#schedule`} className="text-brand-600 underline">
               {dict.nav.schedule}
             </Link>
           </div>

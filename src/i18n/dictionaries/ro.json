@@ -39,7 +39,11 @@
     "noSessions": "Nicio sesiune programată în această săptămână.",
     "bookCta": "Rezervă",
     "instructor": "Instructor",
-    "noSessionsDay": "Nicio sesiune disponibilă"
+    "noSessionsDay": "Nicio sesiune disponibilă",
+    "filterAll": "Toate",
+    "filterAdults": "Adulți",
+    "filterKids": "Copii",
+    "noSessionsWeek": "Nu sunt sesiuni programate pentru acest filtru săptămâna aceasta. Revino curând sau schimbă filtrul."
   },
   "weekdays": {
     "0": "Duminică",
@@ -92,6 +96,8 @@
     "rateLimited": "Prea multe cereri de email acum. Așteaptă câteva minute și încearcă din nou."
   },
   "booking": {
+    "addToCalendar": "Adaugă în calendar",
+    "bookAnother": "Rezervă altă ședință",
     "confirmTitle": "Confirmă rezervarea",
     "selectChild": "Pentru ce copil este rezervarea?",
     "addChild": "Adaugă un copil",
@@ -186,10 +192,28 @@
       "freeBadge": "Prima ședință gratuită",
       "cta": "Vezi programul",
       "items": [
-        { "title": "Adulți", "desc": "Pilates, stretching, gimnastică și Fit Ball. Tonifiere, flexibilitate și postură într-o atmosferă relaxată." },
-        { "title": "Copii 3–7 ani", "desc": "Gimnastică jucăușă care dezvoltă coordonarea, echilibrul și încrederea celor mici." },
-        { "title": "Copii 8–13 ani", "desc": "Antrenamente care construiesc forță, disciplină și mișcare corectă pentru copiii mai mari." }
+        { "title": "Adulți", "tag": "Pilates · Stretching · Gimnastică · Fit Ball", "desc": "Tonifiere, flexibilitate și postură într-o atmosferă relaxată, cu instructori atenți la fiecare mișcare." },
+        { "title": "Copii 3–7 ani", "tag": "Gimnastică pentru cei mici", "desc": "Gimnastică jucăușă care dezvoltă coordonarea, echilibrul și încrederea celor mici." },
+        { "title": "Copii 8–13 ani", "tag": "Gimnastică pentru copii mari", "desc": "Antrenamente care construiesc forță, disciplină și mișcare corectă pentru copiii mai mari." }
       ]
+    },
+    "disciplines": {
+      "title": "Ce antrenăm",
+      "subtitle": "Patru discipline, un singur loc.",
+      "items": [
+        { "title": "Pilates", "desc": "Control, respirație și forța centrului. Corpul devine mai stabil și mai puternic din interior." },
+        { "title": "Stretching", "desc": "Flexibilitate și mobilitate lucrate în siguranță — pentru un corp suplu și fără tensiuni." },
+        { "title": "Gimnastică", "desc": "Coordonare, echilibru și mișcare corectă, pentru adulți și copii de toate vârstele." },
+        { "title": "Fit Ball", "desc": "Antrenament dinamic cu mingea: tonifiere, postură și un plus de energie." }
+      ]
+    },
+    "plans": {
+      "title": "Abonamente simple, prețuri clare",
+      "subtitle": "Alege un pachet de ședințe care ți se potrivește.",
+      "from": "de la",
+      "sessions": "ședințe",
+      "cta": "Vezi toate abonamentele",
+      "empty": "Abonamentele apar în curând."
     },
     "benefits": {
       "title": "De ce Dellys",

@@ -16,6 +16,20 @@ interface Child {
   name: string;
 }
 
+// Google Calendar "add event" template link — a lightweight retention nudge on
+// booking success (no .ics file to host). Times are emitted as UTC basic format.
+function googleCalendarUrl(name: string, startISO: string, durationMin: number) {
+  const start = new Date(startISO);
+  const end = new Date(start.getTime() + durationMin * 60000);
+  const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const params = new URLSearchParams({
+    action: "TEMPLATE",
+    text: `Dellys — ${name}`,
+    dates: `${fmt(start)}/${fmt(end)}`,
+  });
+  return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
 export function BookingForm({
   lang,
   dict,
@@ -24,6 +38,9 @@ export function BookingForm({
   initialChildren,
   balance,
   freeSessionAvailable = false,
+  sessionStartISO,
+  sessionDurationMin,
+  sessionName,
 }: {
   lang: Locale;
   dict: Dictionary;
@@ -32,6 +49,9 @@ export function BookingForm({
   initialChildren: Child[];
   balance: number;
   freeSessionAvailable?: boolean;
+  sessionStartISO: string;
+  sessionDurationMin: number;
+  sessionName: string;
 }) {
   const router = useRouter();
   const [children, setChildren] = useState<Child[]>(initialChildren);
@@ -111,12 +131,22 @@ export function BookingForm({
     return (
       <div className="mt-5 text-center">
         <div className="alert-success">{dict.booking.success}</div>
-        <button
-          onClick={() => router.replace(`/${lang}/dashboard`)}
-          className="btn-primary mt-4 w-full"
-        >
-          {dict.nav.dashboard}
-        </button>
+        <div className="mt-4 flex flex-col gap-2">
+          <button
+            onClick={() => router.replace(`/${lang}/dashboard`)}
+            className="btn-primary w-full"
+          >
+            {dict.nav.dashboard}
+          </button>
+          <a
+            href={googleCalendarUrl(sessionName, sessionStartISO, sessionDurationMin)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-secondary w-full"
+          >
+            {dict.booking.addToCalendar}
+          </a>
+        </div>
       </div>
     );
   }
@@ -135,7 +165,7 @@ export function BookingForm({
             </button>
           )}
           <button
-            onClick={() => router.replace(`/${lang}`)}
+            onClick={() => router.replace(`/${lang}#schedule`)}
             className={blocked.alreadyBooked ? "btn-secondary w-full" : "btn-primary w-full"}
           >
             ← {dict.nav.schedule}

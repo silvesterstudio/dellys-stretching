@@ -6,11 +6,25 @@ import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { getWeekRange } from "@/lib/week";
 import { weekdayInTz } from "@/lib/format";
+import { formatPrice } from "@/lib/format";
+import { localized } from "@/lib/i18n-data";
 import { fetchSessions } from "@/lib/queries";
 import { getCurrentUserId } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { ScheduleGrid } from "@/components/schedule/ScheduleGrid";
 
 export const dynamic = "force-dynamic";
+
+type TeaserPlan = {
+  id: string;
+  name_ro: string;
+  name_ru: string;
+  price: number;
+  currency: string;
+  session_count: number;
+  featured: boolean;
+};
 
 function resolveLocale(lang: string): Locale {
   return (isLocale(lang) ? lang : "ro") as Locale;
@@ -68,15 +82,40 @@ function CheckIcon({ className = "h-4 w-4 text-brand-600" }: { className?: strin
   );
 }
 
-function SectionHead({ title, subtitle }: { title: string; subtitle?: string }) {
+function SectionHead({
+  eyebrow,
+  title,
+  subtitle,
+}: {
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+}) {
   return (
     <div className="mx-auto max-w-2xl text-center">
+      {eyebrow && <p className="eyebrow mb-3">{eyebrow}</p>}
       <h2 className="font-display text-3xl font-bold -tracking-[0.02em] text-mauve-900 sm:text-4xl">
         {title}
       </h2>
       {subtitle && <p className="mt-3 text-mauve-500">{subtitle}</p>}
     </div>
   );
+}
+
+async function fetchTeaserPlans(): Promise<TeaserPlan[]> {
+  if (!isSupabaseConfigured()) return [];
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .from("membership_plans")
+      .select("id, name_ro, name_ru, price, currency, session_count, featured")
+      .eq("active", true)
+      .order("featured", { ascending: false })
+      .order("price", { ascending: true });
+    return ((data ?? []) as TeaserPlan[]).slice(0, 3);
+  } catch {
+    return [];
+  }
 }
 
 export default async function HomePage({
@@ -90,17 +129,19 @@ export default async function HomePage({
   const h = dict.home;
   const base = `/${locale}`;
 
-  // Live schedule (same Monday–Saturday window the schedule uses): on Sunday the
-  // current week is all in the past, so roll forward to next week.
+  // Live schedule window (Monday–Saturday). On Sunday the current week is all in
+  // the past, so roll forward to next week.
   const onSunday = weekdayInTz(new Date().toISOString()) === 0;
   const range = getWeekRange(onSunday ? 1 : 0);
   const days = range.days.slice(0, 6).map((d) => d.toISOString());
   const weekEnd = range.days[6];
   const startISO = range.start.toISOString();
   const endISO = weekEnd.toISOString();
-  const [sessions, userId] = await Promise.all([
+
+  const [sessions, userId, plans] = await Promise.all([
     fetchSessions(range.start, weekEnd),
     getCurrentUserId(),
+    fetchTeaserPlans(),
   ]);
   const loggedIn = !!userId;
 
@@ -143,15 +184,13 @@ export default async function HomePage({
 
       {/* Hero */}
       <section className="relative isolate pt-4 text-center sm:pt-10">
-        {/* Single signature accent: a soft pink glow behind the headline. */}
         <div
           aria-hidden
           className="pointer-events-none absolute left-1/2 top-[-3rem] -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-brand-200/40 blur-3xl"
         />
         <p className="eyebrow animate-rise">{h.hero.eyebrow}</p>
         <h1 className="animate-rise mx-auto mt-5 max-w-4xl font-display text-[2.75rem] font-bold leading-[1.04] -tracking-[0.025em] text-mauve-900 sm:text-6xl lg:text-7xl">
-          {h.hero.title}{" "}
-          <span className="text-brand-500">{h.hero.titleAccent}</span>
+          {h.hero.title} <span className="text-brand-500">{h.hero.titleAccent}</span>
         </h1>
         <p className="animate-rise mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-mauve-600">
           {h.hero.subtitle}
@@ -160,17 +199,27 @@ export default async function HomePage({
           <a href="#schedule" className="btn-primary w-full px-7 py-3 text-base sm:w-auto">
             {h.hero.ctaPrimary}
           </a>
-          <Link href={`${base}/memberships`} className="btn-secondary w-full px-7 py-3 text-base sm:w-auto">
+          <a href="#plans" className="btn-secondary w-full px-7 py-3 text-base sm:w-auto">
             {h.hero.ctaSecondary}
-          </Link>
+          </a>
         </div>
         <p className="mt-6 inline-flex items-center gap-2 text-sm text-mauve-500">
           <CheckIcon />
           {h.hero.trust}
         </p>
 
-        {/* Stats — a quiet hairline-framed row, not heavy cards. */}
-        <dl className="mx-auto mt-16 grid max-w-3xl grid-cols-2 gap-y-8 border-y border-mauve-100 py-8 sm:grid-cols-4 sm:gap-y-0">
+        {/* Disciplines strip — communicates the offering at a glance. */}
+        <ul className="mx-auto mt-10 flex max-w-2xl flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[13px] font-medium uppercase tracking-[0.14em] text-mauve-400">
+          {h.disciplines.items.map((d, i) => (
+            <li key={d.title} className="flex items-center gap-3">
+              {i > 0 && <span className="text-brand-300" aria-hidden>·</span>}
+              {d.title}
+            </li>
+          ))}
+        </ul>
+
+        {/* Stats — quiet hairline-framed row. */}
+        <dl className="mx-auto mt-14 grid max-w-3xl grid-cols-2 gap-y-8 border-y border-mauve-100 py-8 sm:grid-cols-4 sm:gap-y-0">
           {h.stats.items.map((s) => (
             <div key={s.label} className="text-center">
               <dd className="font-display text-3xl font-bold -tracking-[0.02em] text-mauve-900">
@@ -184,7 +233,23 @@ export default async function HomePage({
         </dl>
       </section>
 
-      {/* Categories */}
+      {/* Disciplines */}
+      <section>
+        <SectionHead title={h.disciplines.title} subtitle={h.disciplines.subtitle} />
+        <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {h.disciplines.items.map((d) => (
+            <div key={d.title} className="card card-hover flex flex-col p-6">
+              <span className="h-1.5 w-8 rounded-full bg-brand-500" />
+              <h3 className="mt-5 font-display text-xl font-bold -tracking-[0.01em] text-mauve-900">
+                {d.title}
+              </h3>
+              <p className="mt-2.5 text-sm leading-relaxed text-mauve-600">{d.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Age categories */}
       <section>
         <SectionHead title={h.categories.title} subtitle={h.categories.subtitle} />
         <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-3">
@@ -197,7 +262,10 @@ export default async function HomePage({
               <h3 className="mt-5 font-display text-xl font-bold -tracking-[0.01em] text-mauve-900">
                 {c.title}
               </h3>
-              <p className="mt-2.5 flex-1 text-sm leading-relaxed text-mauve-600">{c.desc}</p>
+              <p className="mt-1 text-[13px] font-medium uppercase tracking-[0.1em] text-mauve-400">
+                {c.tag}
+              </p>
+              <p className="mt-3 flex-1 text-sm leading-relaxed text-mauve-600">{c.desc}</p>
               <a
                 href="#schedule"
                 className="mt-5 inline-flex items-center gap-1 self-start text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700"
@@ -273,6 +341,41 @@ export default async function HomePage({
           />
         </div>
       </section>
+
+      {/* Membership pricing teaser — real, active plans */}
+      {plans.length > 0 && (
+        <section id="plans" className="scroll-mt-24">
+          <SectionHead title={h.plans.title} subtitle={h.plans.subtitle} />
+          <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-3">
+            {plans.map((p) => (
+              <div
+                key={p.id}
+                className={`card flex flex-col p-6 ${p.featured ? "ring-2 ring-brand-400" : ""}`}
+              >
+                {p.featured && (
+                  <span className="mb-3 self-start rounded-full bg-brand-600 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
+                    ★ {dict.memberships.featured}
+                  </span>
+                )}
+                <h3 className="font-display text-lg font-bold text-mauve-900">
+                  {localized(p, "name", locale)}
+                </h3>
+                <div className="mt-2 font-display text-3xl font-bold -tracking-[0.02em] text-brand-600">
+                  {formatPrice(p.price, p.currency, locale)}
+                </div>
+                <p className="mt-1 text-sm text-mauve-500">
+                  {p.session_count} {h.plans.sessions}
+                </p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-8 text-center">
+            <Link href={`${base}/memberships`} className="btn-secondary px-7 py-3 text-base">
+              {h.plans.cta}
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* FAQ — no-JS accessible accordion, also emitted as JSON-LD above */}
       <section>
