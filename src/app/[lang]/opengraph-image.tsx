@@ -29,7 +29,7 @@ export default async function OgImage({
           justifyContent: "space-between",
           background: "#ffffff",
           padding: "80px",
-          fontFamily: "Georgia, serif",
+          fontFamily: "ui-sans-serif, system-ui, sans-serif",
         }}
       >
         {/* pink accent bar */}

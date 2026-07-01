@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import type { Locale } from "@/lib/constants";
 import { SITE_URL } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
@@ -55,9 +54,9 @@ export async function generateMetadata({
   };
 }
 
-function CheckIcon() {
+function CheckIcon({ className = "h-4 w-4 text-brand-600" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 20 20" fill="none" aria-hidden className="h-4 w-4 text-brand-600">
+    <svg viewBox="0 0 20 20" fill="none" aria-hidden className={className}>
       <path
         d="M4 10.5l3.5 3.5L16 5.5"
         stroke="currentColor"
@@ -66,6 +65,17 @@ function CheckIcon() {
         strokeLinejoin="round"
       />
     </svg>
+  );
+}
+
+function SectionHead({ title, subtitle }: { title: string; subtitle?: string }) {
+  return (
+    <div className="mx-auto max-w-2xl text-center">
+      <h2 className="font-display text-3xl font-bold -tracking-[0.02em] text-mauve-900 sm:text-4xl">
+        {title}
+      </h2>
+      {subtitle && <p className="mt-3 text-mauve-500">{subtitle}</p>}
+    </div>
   );
 }
 
@@ -125,47 +135,50 @@ export default async function HomePage({
   ];
 
   return (
-    <div className="space-y-20 sm:space-y-28">
+    <div className="space-y-24 sm:space-y-36">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
       {/* Hero */}
-      <section className="animate-rise pt-2 text-center sm:pt-6">
-        <p className="eyebrow">{h.hero.eyebrow}</p>
-        <h1 className="mx-auto mt-4 max-w-3xl font-display text-4xl font-bold leading-tight tracking-tight text-mauve-900 sm:text-5xl">
-          {h.hero.title}
+      <section className="relative isolate pt-4 text-center sm:pt-10">
+        {/* Single signature accent: a soft pink glow behind the headline. */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-[-3rem] -z-10 h-72 w-72 -translate-x-1/2 rounded-full bg-brand-200/40 blur-3xl"
+        />
+        <p className="eyebrow animate-rise">{h.hero.eyebrow}</p>
+        <h1 className="animate-rise mx-auto mt-5 max-w-4xl font-display text-[2.75rem] font-bold leading-[1.04] -tracking-[0.025em] text-mauve-900 sm:text-6xl lg:text-7xl">
+          {h.hero.title}{" "}
+          <span className="text-brand-500">{h.hero.titleAccent}</span>
         </h1>
-        <p className="mx-auto mt-5 max-w-2xl text-lg text-mauve-600">
+        <p className="animate-rise mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-mauve-600">
           {h.hero.subtitle}
         </p>
-        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <a href="#schedule" className="btn-primary w-full sm:w-auto">
+        <div className="animate-rise mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <a href="#schedule" className="btn-primary w-full px-7 py-3 text-base sm:w-auto">
             {h.hero.ctaPrimary}
           </a>
-          <Link href={`${base}/memberships`} className="btn-secondary w-full sm:w-auto">
+          <Link href={`${base}/memberships`} className="btn-secondary w-full px-7 py-3 text-base sm:w-auto">
             {h.hero.ctaSecondary}
           </Link>
         </div>
-        <p className="mt-5 inline-flex items-center gap-2 text-sm text-mauve-500">
+        <p className="mt-6 inline-flex items-center gap-2 text-sm text-mauve-500">
           <CheckIcon />
           {h.hero.trust}
         </p>
 
-        {/* Stats strip */}
-        <dl className="mx-auto mt-12 grid max-w-3xl grid-cols-2 gap-3 sm:grid-cols-4">
+        {/* Stats — a quiet hairline-framed row, not heavy cards. */}
+        <dl className="mx-auto mt-16 grid max-w-3xl grid-cols-2 gap-y-8 border-y border-mauve-100 py-8 sm:grid-cols-4 sm:gap-y-0">
           {h.stats.items.map((s) => (
-            <div key={s.label} className="card p-4 text-center">
-              <dt className="sr-only">{s.label}</dt>
-              <dd>
-                <span className="block font-display text-2xl font-bold text-brand-600">
-                  {s.value}
-                </span>
-                <span className="mt-1 block text-xs font-medium text-mauve-500">
-                  {s.label}
-                </span>
+            <div key={s.label} className="text-center">
+              <dd className="font-display text-3xl font-bold -tracking-[0.02em] text-mauve-900">
+                {s.value}
               </dd>
+              <dt className="mt-1.5 text-[11px] font-medium uppercase tracking-[0.15em] text-mauve-400">
+                {s.label}
+              </dt>
             </div>
           ))}
         </dl>
@@ -173,23 +186,24 @@ export default async function HomePage({
 
       {/* Categories */}
       <section>
-        <div className="text-center">
-          <h2 className="font-display text-3xl font-bold tracking-tight text-mauve-900">
-            {h.categories.title}
-          </h2>
-          <p className="mt-2 text-mauve-500">{h.categories.subtitle}</p>
-        </div>
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <SectionHead title={h.categories.title} subtitle={h.categories.subtitle} />
+        <div className="mt-12 grid grid-cols-1 gap-5 sm:grid-cols-3">
           {h.categories.items.map((c) => (
-            <div key={c.title} className="card card-hover flex flex-col p-6">
-              <span className="badge-success self-start">{h.categories.freeBadge}</span>
-              <h3 className="mt-4 section-title">{c.title}</h3>
-              <p className="mt-2 flex-1 text-sm text-mauve-600">{c.desc}</p>
+            <div key={c.title} className="card card-hover flex flex-col p-7">
+              <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
+                <CheckIcon className="h-3.5 w-3.5 text-brand-600" />
+                {h.categories.freeBadge}
+              </span>
+              <h3 className="mt-5 font-display text-xl font-bold -tracking-[0.01em] text-mauve-900">
+                {c.title}
+              </h3>
+              <p className="mt-2.5 flex-1 text-sm leading-relaxed text-mauve-600">{c.desc}</p>
               <a
                 href="#schedule"
-                className="btn-ghost mt-4 self-start px-0 hover:bg-transparent hover:text-brand-700"
+                className="mt-5 inline-flex items-center gap-1 self-start text-sm font-semibold text-brand-600 transition-colors hover:text-brand-700"
               >
-                {h.categories.cta} →
+                {h.categories.cta}
+                <span aria-hidden>→</span>
               </a>
             </div>
           ))}
@@ -198,55 +212,46 @@ export default async function HomePage({
 
       {/* Benefits */}
       <section>
-        <div className="text-center">
-          <h2 className="font-display text-3xl font-bold tracking-tight text-mauve-900">
-            {h.benefits.title}
-          </h2>
-        </div>
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <SectionHead title={h.benefits.title} />
+        <div className="mt-12 grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
           {h.benefits.items.map((b) => (
-            <div key={b.title} className="card p-5">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-50">
-                <CheckIcon />
+            <div key={b.title}>
+              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50">
+                <CheckIcon className="h-5 w-5 text-brand-600" />
               </span>
-              <h3 className="mt-4 text-base font-semibold text-mauve-900">{b.title}</h3>
-              <p className="mt-1.5 text-sm text-mauve-600">{b.desc}</p>
+              <h3 className="mt-5 text-base font-semibold text-mauve-900">{b.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-mauve-600">{b.desc}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* How it works */}
+      {/* How it works — a real 3-step sequence, so numbering carries meaning. */}
       <section>
-        <div className="text-center">
-          <h2 className="font-display text-3xl font-bold tracking-tight text-mauve-900">
-            {h.steps.title}
-          </h2>
-          <p className="mt-2 text-mauve-500">{h.steps.subtitle}</p>
-        </div>
-        <ol className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <SectionHead title={h.steps.title} subtitle={h.steps.subtitle} />
+        <ol className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-3">
           {h.steps.items.map((s, i) => (
-            <li key={s.title} className="card flex flex-col p-6">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-600 font-display text-lg font-bold text-white">
-                {i + 1}
+            <li key={s.title} className="relative">
+              <span className="font-display text-5xl font-bold -tracking-[0.03em] text-brand-500/90">
+                {String(i + 1).padStart(2, "0")}
               </span>
-              <h3 className="mt-4 section-title">{s.title}</h3>
-              <p className="mt-2 text-sm text-mauve-600">{s.desc}</p>
+              <h3 className="mt-4 font-display text-xl font-bold text-mauve-900">{s.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-mauve-600">{s.desc}</p>
             </li>
           ))}
         </ol>
       </section>
 
       {/* Free-trial band */}
-      <section className="card overflow-hidden bg-sand-50 p-8 text-center sm:p-12">
+      <section className="card overflow-hidden bg-sand-50 px-6 py-14 text-center sm:px-12 sm:py-16">
         <p className="eyebrow">{h.trial.eyebrow}</p>
-        <h2 className="mx-auto mt-3 max-w-2xl font-display text-3xl font-bold tracking-tight text-mauve-900">
+        <h2 className="mx-auto mt-4 max-w-2xl font-display text-3xl font-bold -tracking-[0.02em] text-mauve-900 sm:text-4xl">
           {h.trial.title}
         </h2>
-        <p className="mx-auto mt-3 max-w-2xl text-mauve-600">{h.trial.desc}</p>
+        <p className="mx-auto mt-4 max-w-xl leading-relaxed text-mauve-600">{h.trial.desc}</p>
         <Link
           href={loggedIn ? "#schedule" : `${base}/login?mode=signup`}
-          className="btn-primary mt-7"
+          className="btn-primary mt-8 px-7 py-3 text-base"
         >
           {h.trial.cta}
         </Link>
@@ -254,14 +259,9 @@ export default async function HomePage({
 
       {/* Live schedule — connects to the booking system */}
       <section id="schedule" className="scroll-mt-24">
-        <div className="text-center">
-          <h2 className="font-display text-3xl font-bold tracking-tight text-mauve-900">
-            {h.scheduleSection.title}
-          </h2>
-          <p className="mt-2 text-mauve-500">{h.scheduleSection.subtitle}</p>
-          <div className="mx-auto mt-3 h-0.5 w-12 rounded-full bg-brand-500" />
-        </div>
-        <div className="mt-8">
+        <SectionHead title={h.scheduleSection.title} subtitle={h.scheduleSection.subtitle} />
+        <div className="mx-auto mt-4 h-0.5 w-10 rounded-full bg-brand-500" />
+        <div className="mt-10">
           <ScheduleGrid
             lang={locale}
             dict={dict}
@@ -276,44 +276,44 @@ export default async function HomePage({
 
       {/* FAQ — no-JS accessible accordion, also emitted as JSON-LD above */}
       <section>
-        <div className="text-center">
-          <h2 className="font-display text-3xl font-bold tracking-tight text-mauve-900">
-            {h.faq.title}
-          </h2>
-        </div>
-        <div className="mx-auto mt-8 max-w-2xl space-y-3">
+        <SectionHead title={h.faq.title} />
+        <div className="mx-auto mt-10 max-w-2xl divide-y divide-mauve-100 border-y border-mauve-100">
           {h.faq.items.map((it) => (
-            <details key={it.q} className="card group p-5">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-medium text-mauve-900">
+            <details key={it.q} className="group py-4">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15px] font-semibold text-mauve-900">
                 {it.q}
-                <span className="text-brand-500 transition-transform duration-200 group-open:rotate-45">
+                <span className="text-2xl font-light leading-none text-brand-500 transition-transform duration-200 group-open:rotate-45">
                   +
                 </span>
               </summary>
-              <p className="mt-3 text-sm text-mauve-600">{it.a}</p>
+              <p className="mt-3 text-sm leading-relaxed text-mauve-600">{it.a}</p>
             </details>
           ))}
         </div>
       </section>
 
       {/* Final CTA + location */}
-      <section className="card bg-sand-50 p-8 text-center sm:p-12">
-        <h2 className="font-display text-3xl font-bold tracking-tight text-mauve-900">
+      <section className="card relative isolate overflow-hidden bg-sand-50 px-6 py-14 text-center sm:px-12 sm:py-16">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute right-[-4rem] top-[-4rem] -z-10 h-64 w-64 rounded-full bg-brand-200/40 blur-3xl"
+        />
+        <h2 className="font-display text-3xl font-bold -tracking-[0.02em] text-mauve-900 sm:text-4xl">
           {h.finalCta.title}
         </h2>
-        <p className="mt-2 text-mauve-600">{h.finalCta.subtitle}</p>
-        <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <a href="#schedule" className="btn-primary w-full sm:w-auto">
+        <p className="mt-3 text-mauve-600">{h.finalCta.subtitle}</p>
+        <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <a href="#schedule" className="btn-primary w-full px-7 py-3 text-base sm:w-auto">
             {h.finalCta.primary}
           </a>
           {!loggedIn && (
-            <Link href={`${base}/login`} className="btn-secondary w-full sm:w-auto">
+            <Link href={`${base}/login`} className="btn-secondary w-full px-7 py-3 text-base sm:w-auto">
               {h.finalCta.secondary}
             </Link>
           )}
         </div>
-        <div className="mt-8 border-t border-mauve-200/70 pt-6 text-sm text-mauve-500">
-          <span className="font-medium text-mauve-700">{h.location.title}:</span>{" "}
+        <div className="mt-10 text-sm text-mauve-500">
+          <span className="font-semibold text-mauve-700">{h.location.title}:</span>{" "}
           {h.location.city} · {h.location.hoursLabel}: {h.location.hours}
         </div>
       </section>

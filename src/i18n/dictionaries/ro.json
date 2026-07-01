@@ -165,7 +165,8 @@
     },
     "hero": {
       "eyebrow": "Studio de fitness · Chișinău",
-      "title": "Mișcare care îți schimbă ziua",
+      "title": "Mișcare care",
+      "titleAccent": "îți schimbă ziua",
       "subtitle": "Pilates, stretching, gimnastică și Fit Ball pentru adulți și copii. Grupe mici, instructori atenți și rezervare online în câteva secunde.",
       "ctaPrimary": "Rezervă o ședință",
       "ctaSecondary": "Vezi abonamentele",

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { Playfair_Display, Manrope } from "next/font/google";
+import { Montserrat, Manrope } from "next/font/google";
 import "../globals.css";
 import { LOCALES, SITE_URL, type Locale } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
@@ -8,15 +8,17 @@ import { getDictionary } from "@/i18n/get-dictionary";
 import { getCurrentProfile } from "@/lib/auth";
 import { Header } from "@/components/Header";
 
-const display = Playfair_Display({
-  subsets: ["latin", "cyrillic"],
+// Display = Montserrat (geometric, modern, boutique). latin-ext covers Romanian
+// diacritics (ă â î ș ț); cyrillic covers Russian.
+const display = Montserrat({
+  subsets: ["latin", "latin-ext", "cyrillic"],
   weight: ["500", "600", "700"],
   variable: "--font-display",
   display: "swap",
 });
 
 const sans = Manrope({
-  subsets: ["latin", "cyrillic"],
+  subsets: ["latin", "latin-ext", "cyrillic"],
   variable: "--font-sans",
   display: "swap",
 });
