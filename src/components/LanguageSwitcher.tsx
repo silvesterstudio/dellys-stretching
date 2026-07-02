@@ -6,7 +6,14 @@ import { LOCALES, type Locale } from "@/lib/constants";
 // Built from LOCALES so adding a locale doesn't require touching this regex.
 const LOCALE_PREFIX = new RegExp(`^/(${LOCALES.join("|")})(?=/|$)`);
 
-export function LanguageSwitcher({ current }: { current: Locale }) {
+export function LanguageSwitcher({
+  current,
+  variant = "light",
+}: {
+  current: Locale;
+  // "dark" sits on the dark glass header island; "light" on white surfaces.
+  variant?: "light" | "dark";
+}) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -22,8 +29,15 @@ export function LanguageSwitcher({ current }: { current: Locale }) {
     router.refresh();
   }
 
+  const dark = variant === "dark";
   return (
-    <div className="inline-flex rounded-full border border-mauve-200 bg-white p-0.5 text-xs font-medium">
+    <div
+      className={
+        dark
+          ? "inline-flex rounded-full border border-white/20 bg-white/10 p-0.5 text-xs font-medium"
+          : "inline-flex rounded-full border border-mauve-200 bg-white p-0.5 text-xs font-medium"
+      }
+    >
       {LOCALES.map((l) => (
         <button
           key={l}
@@ -31,7 +45,9 @@ export function LanguageSwitcher({ current }: { current: Locale }) {
           className={
             l === current
               ? "rounded-full bg-brand-600 px-3 py-1 text-white"
-              : "rounded-full px-3 py-1 text-mauve-600 hover:text-mauve-900"
+              : dark
+                ? "rounded-full px-3 py-1 text-white/70 hover:text-white"
+                : "rounded-full px-3 py-1 text-mauve-600 hover:text-mauve-900"
           }
           aria-current={l === current}
         >

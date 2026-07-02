@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import type { Locale } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { Profile } from "@/lib/auth";
@@ -22,20 +20,6 @@ export function Header({
   profile: Profile | null;
 }) {
   const base = `/${lang}`;
-  const pathname = usePathname();
-  const isHome = pathname === base;
-
-  // On the homepage the hero is a dark full-bleed image; the header floats
-  // transparently over it until the user scrolls, then it becomes solid white.
-  // Everywhere else it is always solid.
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-  const overlay = isHome && !scrolled;
 
   const isAdmin = profile?.role === "admin";
   const ctaHref = `${base}#program`;
@@ -47,16 +31,15 @@ export function Header({
         { href: `${base}#discipline`, label: dict.nav.disciplines },
         { href: `${base}#program`, label: dict.nav.schedule },
         { href: `${base}#preturi`, label: dict.nav.prices },
-        { href: `${base}#faq`, label: dict.nav.faq },
         ...(profile ? [{ href: `${base}/dashboard`, label: dict.nav.dashboard }] : []),
       ];
 
   const navLink: React.CSSProperties = {
     textDecoration: "none",
-    color: overlay ? "rgba(255,255,255,.92)" : "#4A4954",
+    color: "rgba(255,255,255,.92)",
     fontWeight: 600,
     fontSize: 15,
-    transition: "color .3s",
+    transition: "color .2s",
   };
 
   return (
@@ -70,8 +53,7 @@ export function Header({
         fontFamily: DC.sans,
       }}
     >
-      {/* Floating "island": rounded glass bar detached from the page edges.
-          Dark glass over the hero photo, white glass everywhere else. */}
+      {/* Floating "island": rounded dark glass bar detached from the page edges. */}
       <div
         style={{
           maxWidth: 1200,
@@ -83,14 +65,11 @@ export function Header({
           justifyContent: "space-between",
           gap: 20,
           borderRadius: 999,
-          background: overlay ? "rgba(22,17,28,.42)" : "rgba(255,255,255,.85)",
-          border: `1px solid ${overlay ? "rgba(255,255,255,.16)" : DC.border2}`,
+          background: "rgba(20,16,26,.55)",
+          border: "1px solid rgba(255,255,255,.16)",
           backdropFilter: "saturate(1.5) blur(18px)",
           WebkitBackdropFilter: "saturate(1.5) blur(18px)",
-          boxShadow: overlay
-            ? "0 18px 44px -24px rgba(0,0,0,.55)"
-            : "0 16px 40px -26px rgba(20,18,26,.35)",
-          transition: "background .3s, border-color .3s, box-shadow .3s",
+          boxShadow: "0 18px 44px -24px rgba(0,0,0,.55)",
         }}
       >
         <Link
@@ -99,9 +78,8 @@ export function Header({
           style={{
             textDecoration: "none",
             flex: "none",
-            // Lift the pink lockup off the photo when floating over the hero.
-            filter: overlay ? "drop-shadow(0 2px 10px rgba(0,0,0,.35))" : "none",
-            transition: "filter .3s",
+            // Lift the pink lockup off the dark glass.
+            filter: "drop-shadow(0 2px 10px rgba(0,0,0,.35))",
           }}
         >
           <LogoMark priority />
@@ -116,7 +94,7 @@ export function Header({
         </nav>
 
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <LanguageSwitcher current={lang} />
+          <LanguageSwitcher current={lang} variant="dark" />
           <div className="hidden md:flex" style={{ alignItems: "center", gap: 14 }}>
             {profile ? (
               <LogoutButton label={dict.nav.logout} />
@@ -138,8 +116,7 @@ export function Header({
                   padding: "10px 20px",
                   borderRadius: 999,
                   textDecoration: "none",
-                  boxShadow: overlay ? "0 10px 30px -12px rgba(224,17,95,.7)" : "none",
-                  transition: "box-shadow .3s",
+                  boxShadow: "0 10px 30px -12px rgba(224,17,95,.7)",
                 }}
               >
                 {ctaLabel}

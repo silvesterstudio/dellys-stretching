@@ -94,10 +94,9 @@ export function ScheduleGrid({
       .replace(".", "")
       .toUpperCase();
 
-  // Only days that actually have (filtered) sessions — matches the design.
-  const dayCards = days
-    .map((dISO) => ({ dISO, k: dayKey(dISO), slots: byDay.get(dayKey(dISO)) ?? [] }))
-    .filter((d) => d.slots.length > 0);
+  // Every weekday gets a card — empty days show a placeholder so the grid
+  // keeps the same rhythm regardless of how full the week is.
+  const dayCards = days.map((dISO) => ({ dISO, k: dayKey(dISO), slots: byDay.get(dayKey(dISO)) ?? [] }));
 
   const filters: { key: "all" | "adult" | "child"; label: string }[] = [
     { key: "all", label: dict.schedule.filterAll },
@@ -107,6 +106,16 @@ export function ScheduleGrid({
 
   return (
     <div>
+      {/* Kids sessions get a slow colour-cycling border. */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+@keyframes dc-kids-rgb{0%{border-color:#FF5C8A}25%{border-color:#9B6BFF}50%{border-color:#38C6FF}75%{border-color:#4EE08A}100%{border-color:#FF5C8A}}
+.dc-kids{animation:dc-kids-rgb 8s linear infinite}
+@media (prefers-reduced-motion:reduce){.dc-kids{animation:none}}
+`,
+        }}
+      />
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 40 }}>
         <div
           role="group"
@@ -148,40 +157,29 @@ export function ScheduleGrid({
         </div>
       </div>
 
-      {dayCards.length === 0 ? (
-        <div
-          style={{
-            maxWidth: 480,
-            margin: "0 auto",
-            textAlign: "center",
-            padding: "40px 24px",
-            border: `1px solid ${DC.border}`,
-            borderRadius: DC.radius,
-            color: DC.faint,
-            fontSize: 14,
-          }}
-        >
-          {dict.schedule.noSessionsWeek}
-        </div>
-      ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))",
-            gap: 22,
-            alignItems: "start",
-          }}
-        >
-          {dayCards.map(({ dISO, k, slots }) => (
-            <div
-              key={k}
-              style={{
-                background: "#fff",
-                border: `1px solid ${DC.border}`,
-                borderRadius: DC.radius,
-                padding: 24,
-              }}
-            >
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))",
+          // Every row shares the height of the tallest card, so all six day
+          // cards stay the same size no matter how many sessions they hold.
+          gridAutoRows: "1fr",
+          gap: 22,
+        }}
+      >
+        {dayCards.map(({ dISO, k, slots }) => (
+          <div
+            key={k}
+            style={{
+              background: "#fff",
+              border: `1px solid ${DC.border}`,
+              borderRadius: DC.radius,
+              padding: 24,
+              minHeight: 280,
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
               <div
                 style={{
                   display: "flex",
@@ -213,15 +211,32 @@ export function ScheduleGrid({
                   {dayDate(dISO)}
                 </span>
               </div>
+            {slots.length === 0 ? (
+              <div
+                style={{
+                  flex: 1,
+                  display: "grid",
+                  placeItems: "center",
+                  border: `1px dashed ${DC.border}`,
+                  borderRadius: 16,
+                  color: DC.faint,
+                  fontSize: 13.5,
+                  textAlign: "center",
+                  padding: 16,
+                }}
+              >
+                {dict.schedule.noSessionsDay}
+              </div>
+            ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {slots.map((s) => (
                   <Slot key={s.id} s={s} lang={lang} dict={dict} now={now} loggedIn={loggedIn} />
                 ))}
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -247,9 +262,17 @@ function Slot({
   const time = formatTime(s.starts_at, lang);
   const dotColor = full ? "#C9C7CF" : left <= 2 ? DC.accent : DC.green;
   const spotsText = full ? dict.common.full : `${left} ${dict.common.spotsLeft}`;
+  const isKids = s.class_type.audience === "child";
 
   return (
-    <div style={{ border: `1px solid ${DC.border2}`, borderRadius: 16, padding: "18px 18px 16px" }}>
+    <div
+      className={isKids ? "dc-kids" : undefined}
+      style={{
+        border: isKids ? "1.5px solid #FF5C8A" : `1px solid ${DC.border2}`,
+        borderRadius: 16,
+        padding: "18px 18px 16px",
+      }}
+    >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <span style={{ fontFamily: DC.display, fontWeight: 600, fontSize: 20, color: DC.ink }}>
           {time}

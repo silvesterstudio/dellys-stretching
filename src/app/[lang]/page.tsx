@@ -7,27 +7,14 @@ import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { getWeekRange } from "@/lib/week";
 import { weekdayInTz } from "@/lib/format";
-import { localized } from "@/lib/i18n-data";
 import { fetchSessions } from "@/lib/queries";
 import { getCurrentUserId } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { ScheduleGrid } from "@/components/schedule/ScheduleGrid";
+import { PricingTeaser } from "@/components/PricingTeaser";
 import { Footer } from "@/components/Footer";
 import { DC, tint } from "@/lib/dc";
 
 export const dynamic = "force-dynamic";
-
-type TeaserPlan = {
-  id: string;
-  name_ro: string;
-  name_ru: string;
-  price: number;
-  currency: string;
-  session_count: number;
-  validity_days: number;
-  featured: boolean;
-};
 
 function resolveLocale(lang: string): Locale {
   return (isLocale(lang) ? lang : "ro") as Locale;
@@ -62,37 +49,12 @@ export async function generateMetadata({
   };
 }
 
-async function fetchTeaserPlans(): Promise<TeaserPlan[]> {
-  if (!isSupabaseConfigured()) return [];
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase
-      .from("membership_plans")
-      .select("id, name_ro, name_ru, price, currency, session_count, validity_days, featured")
-      .eq("active", true)
-      .order("featured", { ascending: false })
-      .order("price", { ascending: true });
-    return ((data ?? []) as TeaserPlan[]).slice(0, 3);
-  } catch {
-    return [];
-  }
-}
-
 // ── shared inline styles (ported from the design) ──
 // Hero base tone — kept as a 6-digit hex so alpha suffixes (e.g. `${HERO_BG}F2`)
 // build the gradient stops for the dark photo overlay.
 const HERO_BG = "#100D14";
-const eyebrow: React.CSSProperties = {
-  margin: 0,
-  fontFamily: DC.sans,
-  fontWeight: 700,
-  fontSize: 12,
-  letterSpacing: ".16em",
-  textTransform: "uppercase",
-  color: DC.accent,
-};
 const h2: React.CSSProperties = {
-  margin: "14px 0 0",
+  margin: 0,
   fontFamily: DC.display,
   fontWeight: 600,
   fontSize: "clamp(30px,4vw,44px)",
@@ -176,10 +138,8 @@ const DC_CSS = `
 .dc-lift{transition:transform .2s,box-shadow .25s,border-color .2s}
 .dc-lift:hover{transform:translateY(-4px);box-shadow:0 22px 48px -28px rgba(20,18,26,.3);border-color:#E3E1E7}
 .dc-link{transition:color .2s}
-details.dc-faq>summary{list-style:none;cursor:pointer}
-details.dc-faq>summary::-webkit-details-marker{display:none}
-.dc-faq-ic{flex:none;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:#F3F2F6;color:#6C6B74;transition:all .25s}
-details.dc-faq[open] .dc-faq-ic{background:${DC.accent};color:#fff;transform:rotate(45deg)}
+/* Full-viewport hero (svh avoids the mobile URL-bar jump). */
+.dc-hero{min-height:100vh;min-height:100svh}
 /* Smooth anchor scrolling; offset for the sticky island header. */
 html{scroll-behavior:smooth;scroll-padding-top:92px}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
@@ -196,10 +156,9 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
   const range = getWeekRange(onSunday ? 1 : 0);
   const days = range.days.slice(0, 6).map((d) => d.toISOString());
   const weekEnd = range.days[6];
-  const [sessions, userId, plans] = await Promise.all([
+  const [sessions, userId] = await Promise.all([
     fetchSessions(range.start, weekEnd),
     getCurrentUserId(),
-    fetchTeaserPlans(),
   ]);
   const loggedIn = !!userId;
 
@@ -225,15 +184,6 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       knowsLanguage: ["ro", "ru"],
       sport: ["Pilates", "Stretching", "Gymnastics"],
     },
-    {
-      "@context": "https://schema.org",
-      "@type": "FAQPage",
-      mainEntity: h.faq.items.map((it) => ({
-        "@type": "Question",
-        name: it.q,
-        acceptedAnswer: { "@type": "Answer", text: it.a },
-      })),
-    },
   ];
 
   return (
@@ -243,10 +193,10 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
 
       {/* HERO — dark full-bleed studio photo with the header floating over it */}
       <section
+        className="dc-hero"
         style={{
           position: "relative",
           marginTop: -76,
-          minHeight: "clamp(600px,92vh,880px)",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
@@ -339,7 +289,6 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       {/* DISCIPLINES */}
       <section id="discipline" className="dc-screen" style={{ ...sectionPad, scrollMarginTop: 88 }}>
         <div style={headWrap}>
-          <p style={eyebrow}>{h.disciplines.eyebrow}</p>
           <h2 style={h2}>{h.disciplines.title}</h2>
           <p style={subText}>{h.disciplines.sub}</p>
         </div>
@@ -373,10 +322,9 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       </section>
 
       {/* AGE CATEGORIES */}
-      <section className="dc-screen" style={{ background: DC.band, borderTop: `1px solid ${DC.bandBorder}`, borderBottom: `1px solid ${DC.bandBorder}` }}>
+      <section className="dc-screen">
         <div className="dc-band-inner" style={sectionPad}>
           <div style={headWrap}>
-            <p style={eyebrow}>{h.age.eyebrow}</p>
             <h2 style={h2}>{h.age.title}</h2>
             <p style={subText}>{h.age.sub}</p>
           </div>
@@ -424,7 +372,6 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       {/* HOW IT WORKS */}
       <section className="dc-screen" style={{ maxWidth: 1120, margin: "0 auto", padding: "64px 24px" }}>
         <div style={headWrap}>
-          <p style={eyebrow}>{h.steps.eyebrow}</p>
           <h2 style={h2}>{h.steps.title}</h2>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))", gap: 20 }}>
@@ -445,7 +392,6 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
         <div style={{ background: tint(6), border: `1px solid ${tint(16)}`, borderRadius: 28, padding: "clamp(32px,5vw,64px)" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))", gap: 44, alignItems: "center" }}>
             <div>
-              <p style={eyebrow}>{h.offer.eyebrow}</p>
               <h2 style={{ ...h2, fontSize: "clamp(28px,3.6vw,40px)", lineHeight: 1.08 }}>{h.offer.title}</h2>
               <p style={{ margin: "16px 0 0", maxWidth: 440, fontSize: 16, lineHeight: 1.62, color: DC.sub }}>{h.offer.sub}</p>
               <Link href={loggedIn ? "#program" : `${base}/login?mode=signup`} className="dc-btn" style={{ ...btnPrimary, marginTop: 26 }}>
@@ -480,10 +426,9 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       </section>
 
       {/* PROGRAM */}
-      <section id="program" className="dc-screen" style={{ scrollMarginTop: 88, background: DC.band, borderTop: `1px solid ${DC.bandBorder}`, borderBottom: `1px solid ${DC.bandBorder}` }}>
+      <section id="program" className="dc-screen" style={{ scrollMarginTop: 88 }}>
         <div className="dc-band-inner" style={{ maxWidth: 1200, margin: "0 auto", padding: "64px 24px" }}>
           <div style={{ textAlign: "center", maxWidth: 660, margin: "0 auto 40px" }}>
-            <p style={eyebrow}>{h.prog.eyebrow}</p>
             <h2 style={h2}>{h.prog.title}</h2>
             <p style={subText}>{h.prog.sub}</p>
           </div>
@@ -500,114 +445,16 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
       </section>
 
       {/* PRICES */}
-      {plans.length > 0 && (
-        <section id="preturi" className="dc-screen" style={{ scrollMarginTop: 88, maxWidth: 1160, margin: "0 auto", padding: "64px 24px" }}>
-          <div style={headWrap}>
-            <p style={eyebrow}>{h.price.eyebrow}</p>
-            <h2 style={h2}>{h.price.title}</h2>
-            <p style={subText}>{h.price.sub}</p>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 22, alignItems: "start" }}>
-            {plans.map((p, i) => {
-              const feat = i === 0 && p.featured;
-              const name = localized(p, "name", locale);
-              const meta = `${p.validity_days} ${dict.memberships.days}`;
-              const foot = `${p.session_count} ${h.price.sessions}`;
-              if (feat) {
-                return (
-                  <div
-                    key={p.id}
-                    style={{
-                      position: "relative",
-                      background: DC.accent,
-                      borderRadius: DC.radius,
-                      padding: "34px 30px",
-                      boxShadow: `0 30px 60px -30px ${tint(70)}`,
-                    }}
-                  >
-                    <span
-                      style={{
-                        position: "absolute",
-                        top: -13,
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        whiteSpace: "nowrap",
-                        fontSize: 11,
-                        fontWeight: 700,
-                        letterSpacing: ".1em",
-                        textTransform: "uppercase",
-                        color: DC.accent,
-                        background: "#fff",
-                        borderRadius: 999,
-                        padding: "7px 16px",
-                        boxShadow: "0 6px 16px -8px rgba(20,18,26,.4)",
-                      }}
-                    >
-                      {h.price.best}
-                    </span>
-                    <div style={{ fontSize: 15, fontWeight: 600, color: "#fff" }}>{name}</div>
-                    <div style={{ fontSize: 13.5, color: tint(78) }}>{meta}</div>
-                    <div style={{ margin: "18px 0 0", display: "flex", alignItems: "baseline", gap: 8 }}>
-                      <span style={{ fontFamily: DC.display, fontWeight: 600, fontSize: 46, letterSpacing: "-.02em", color: "#fff" }}>{p.price}</span>
-                      <span style={{ fontSize: 16, fontWeight: 600, color: tint(82) }}>{p.currency}</span>
-                    </div>
-                    <div style={{ height: 1, background: "color-mix(in srgb,#fff 28%,transparent)", margin: "22px 0" }} />
-                    <div style={{ fontSize: 14, color: tint(86) }}>{foot}</div>
-                    <Link href={`${base}/memberships`} className="dc-btn" style={{ display: "block", textAlign: "center", marginTop: 24, background: "#fff", color: DC.accent, fontWeight: 700, fontSize: 15, padding: 14, borderRadius: 999, textDecoration: "none" }}>
-                      {h.price.choose}
-                    </Link>
-                  </div>
-                );
-              }
-              return (
-                <div
-                  key={p.id}
-                  className="dc-lift"
-                  style={{ background: "#fff", border: `1px solid ${DC.border}`, borderRadius: DC.radius, padding: "34px 30px" }}
-                >
-                  <div style={{ fontSize: 15, fontWeight: 600, color: DC.ink }}>{name}</div>
-                  <div style={{ fontSize: 13.5, color: DC.faint }}>{meta}</div>
-                  <div style={{ margin: "18px 0 0", display: "flex", alignItems: "baseline", gap: 8 }}>
-                    <span style={{ fontFamily: DC.display, fontWeight: 600, fontSize: 46, letterSpacing: "-.02em", color: DC.accent }}>{p.price}</span>
-                    <span style={{ fontSize: 16, fontWeight: 600, color: DC.faint }}>{p.currency}</span>
-                  </div>
-                  <div style={{ height: 1, background: DC.border2, margin: "22px 0" }} />
-                  <div style={{ fontSize: 14, color: DC.muted }}>{foot}</div>
-                  <Link href={`${base}/memberships`} className="dc-btn" style={{ display: "block", textAlign: "center", marginTop: 24, background: "#fff", color: DC.ink, fontWeight: 700, fontSize: 15, padding: 14, border: "1px solid #E2E0E6", borderRadius: 999, textDecoration: "none" }}>
-                    {h.price.choose}
-                  </Link>
-                </div>
-              );
-            })}
-          </div>
-          <div style={{ textAlign: "center", marginTop: 34 }}>
-            <Link href={`${base}/memberships`} className="dc-link" style={{ fontWeight: 700, fontSize: 15, color: DC.accent, textDecoration: "none" }}>
-              {h.price.all} <span aria-hidden>→</span>
-            </Link>
-          </div>
-        </section>
-      )}
-
-      {/* FAQ */}
-      <section id="faq" className="dc-screen" style={{ scrollMarginTop: 88, maxWidth: 760, margin: "0 auto", padding: "24px 24px 64px" }}>
-        <div style={{ textAlign: "center", margin: "0 auto 40px" }}>
-          <p style={eyebrow}>{h.faq.eyebrow}</p>
-          <h2 style={h2}>{h.faq.title}</h2>
+      <section id="preturi" className="dc-screen" style={{ scrollMarginTop: 88, maxWidth: 1160, margin: "0 auto", padding: "64px 24px" }}>
+        <div style={headWrap}>
+          <h2 style={h2}>{h.price.title}</h2>
+          <p style={subText}>{h.price.sub}</p>
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {h.faq.items.map((it) => (
-            <details key={it.q} className="dc-faq" style={{ border: `1px solid ${DC.border}`, borderRadius: 16, overflow: "hidden", background: "#fff" }}>
-              <summary style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "20px 22px" }}>
-                <span style={{ fontWeight: 700, fontSize: 16, color: DC.ink }}>{it.q}</span>
-                <span className="dc-faq-ic">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
-                    <path d="M12 5v14M5 12h14" />
-                  </svg>
-                </span>
-              </summary>
-              <p style={{ margin: 0, padding: "0 22px 22px", fontSize: 15, lineHeight: 1.62, color: DC.muted }}>{it.a}</p>
-            </details>
-          ))}
+        <PricingTeaser lang={locale} dict={dict} />
+        <div style={{ textAlign: "center", marginTop: 34 }}>
+          <Link href={`${base}/memberships`} className="dc-link" style={{ fontWeight: 700, fontSize: 15, color: DC.accent, textDecoration: "none" }}>
+            {h.price.all} <span aria-hidden>→</span>
+          </Link>
         </div>
       </section>
 
