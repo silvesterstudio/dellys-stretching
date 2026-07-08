@@ -29,6 +29,17 @@ export async function updateProfileAction(
       phone: phone?.trim() || null,
     })
     .eq("id", userId);
+
+  // A corrected phone may now match an imported offline membership — claim it
+  // immediately (best-effort; never surface a claim failure as a save failure).
+  if (!error) {
+    try {
+      await supabase.rpc("claim_legacy_memberships");
+    } catch {
+      // ignore
+    }
+  }
+
   revalidatePath("/[lang]/dashboard", "page");
   return { error: error?.message ?? null };
 }

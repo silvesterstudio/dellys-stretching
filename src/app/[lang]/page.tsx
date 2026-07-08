@@ -256,7 +256,7 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             </p>
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 34 }}>
-              <a href="#program" className="dc-btn" style={{ ...btnPrimary, boxShadow: "0 16px 40px -16px rgba(224,17,95,.75)" }}>
+              <a href="#program" className="dc-btn" style={btnPrimary}>
                 {h.hero.cta1}
               </a>
               <a

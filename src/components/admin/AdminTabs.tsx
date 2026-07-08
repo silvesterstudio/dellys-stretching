@@ -26,7 +26,7 @@ export function AdminTabs({ tabs }: { tabs: { href: string; label: string }[] })
             aria-current={active ? "page" : undefined}
             className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors ${
               active
-                ? "bg-brand-600 text-white shadow-sm shadow-brand-500/25"
+                ? "bg-brand-600 text-white"
                 : "text-mauve-600 hover:bg-mauve-100"
             }`}
           >

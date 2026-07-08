@@ -173,6 +173,7 @@ export interface Database {
           active: boolean;
           featured: boolean;
           sort_order: number;
+          system_key: string | null;
           created_at: string;
         };
         Insert: {
@@ -187,9 +188,49 @@ export interface Database {
           active?: boolean;
           featured?: boolean;
           sort_order?: number;
+          system_key?: string | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["membership_plans"]["Insert"]>;
+        Relationships: [];
+      };
+      legacy_memberships: {
+        Row: {
+          id: string;
+          full_name: string | null;
+          phone: string | null;
+          phone_norm: string | null;
+          email: string | null;
+          audience: ClassAudience;
+          plan_label: string | null;
+          sessions_remaining: number;
+          expires_at: string;
+          note: string | null;
+          status: "pending" | "claimed" | "void";
+          claimed_by_user_id: string | null;
+          claimed_membership_id: string | null;
+          claimed_at: string | null;
+          imported_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          full_name?: string | null;
+          phone?: string | null;
+          email?: string | null;
+          audience?: ClassAudience;
+          plan_label?: string | null;
+          sessions_remaining?: number;
+          expires_at: string;
+          note?: string | null;
+          status?: "pending" | "claimed" | "void";
+          claimed_by_user_id?: string | null;
+          claimed_membership_id?: string | null;
+          claimed_at?: string | null;
+          imported_by?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["legacy_memberships"]["Insert"]>;
         Relationships: [];
       };
       membership_requests: {
@@ -310,6 +351,18 @@ export interface Database {
       decide_membership_request: {
         Args: { p_request_id: string; p_approve: boolean };
         Returns: string | null; // membership id when approved
+      };
+      claim_legacy_memberships: {
+        Args: Record<string, never>;
+        Returns: number; // how many legacy rows the caller claimed
+      };
+      admin_claim_legacy: {
+        Args: { p_legacy_id: string; p_user_id: string };
+        Returns: string; // new user_memberships id
+      };
+      admin_autolink_legacy: {
+        Args: Record<string, never>;
+        Returns: number; // how many rows were auto-linked
       };
     };
     Enums: {

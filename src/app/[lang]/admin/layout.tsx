@@ -29,6 +29,7 @@ export default async function AdminLayout({
     { href: `${base}/dashboard`, label: dict.admin.dashboardTab },
     { href: `${base}/templates`, label: dict.admin.templates },
     { href: `${base}/members`, label: dict.admin.members },
+    { href: `${base}/transfers`, label: dict.admin.transfersTab },
     { href: `${base}/plans`, label: dict.admin.plansTab },
   ];
 

@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import type { Locale } from "@/lib/constants";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 interface NavLink {
   href: string;
@@ -11,6 +13,7 @@ interface NavLink {
 }
 
 export function MobileNav({
+  lang,
   links,
   loggedIn,
   loginHref,
@@ -20,6 +23,7 @@ export function MobileNav({
   logoutLabel,
   menuLabel,
 }: {
+  lang: Locale;
   links: NavLink[];
   loggedIn: boolean;
   loginHref: string;
@@ -119,6 +123,10 @@ export function MobileNav({
                   </Link>
                 </div>
               )}
+            </div>
+            {/* Language pills live here on mobile (hidden from the top bar). */}
+            <div className="mt-1 flex justify-center border-t border-mauve-100 pt-3">
+              <LanguageSwitcher current={lang} />
             </div>
           </div>
         </>

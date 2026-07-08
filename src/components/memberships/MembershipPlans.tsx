@@ -73,13 +73,11 @@ export function MembershipPlans({
                     <div
                       key={p.id}
                       className={`card relative flex flex-col p-5 ${
-                        p.featured
-                          ? "ring-2 ring-brand-400 shadow-lg shadow-brand-500/15"
-                          : ""
+                        p.featured ? "ring-2 ring-brand-400" : ""
                       }`}
                     >
                       {p.featured && (
-                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-brand-600 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm shadow-brand-500/40">
+                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-brand-600 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
                           ★ {dict.memberships.featured}
                         </span>
                       )}

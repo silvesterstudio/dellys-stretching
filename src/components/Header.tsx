@@ -36,7 +36,7 @@ export function Header({
 
   const navLink: React.CSSProperties = {
     textDecoration: "none",
-    color: "rgba(255,255,255,.92)",
+    color: "rgba(26,20,32,.82)",
     fontWeight: 600,
     fontSize: 15,
     transition: "color .2s",
@@ -53,7 +53,7 @@ export function Header({
         fontFamily: DC.sans,
       }}
     >
-      {/* Floating "island": rounded dark glass bar detached from the page edges. */}
+      {/* Floating "island": rounded light glass bar detached from the page edges. */}
       <div
         style={{
           maxWidth: 1200,
@@ -65,11 +65,11 @@ export function Header({
           justifyContent: "space-between",
           gap: 20,
           borderRadius: 999,
-          background: "rgba(20,16,26,.55)",
-          border: "1px solid rgba(255,255,255,.16)",
+          background: "rgba(255,255,255,.72)",
+          border: "1px solid rgba(26,20,32,.08)",
           backdropFilter: "saturate(1.5) blur(18px)",
           WebkitBackdropFilter: "saturate(1.5) blur(18px)",
-          boxShadow: "0 18px 44px -24px rgba(0,0,0,.55)",
+          boxShadow: "0 18px 44px -24px rgba(60,40,70,.28)",
         }}
       >
         <Link
@@ -78,8 +78,8 @@ export function Header({
           style={{
             textDecoration: "none",
             flex: "none",
-            // Lift the pink lockup off the dark glass.
-            filter: "drop-shadow(0 2px 10px rgba(0,0,0,.35))",
+            // Soft lift for the pink lockup on the light glass.
+            filter: "drop-shadow(0 2px 8px rgba(60,40,70,.14))",
           }}
         >
           <LogoMark priority />
@@ -94,7 +94,11 @@ export function Header({
         </nav>
 
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <LanguageSwitcher current={lang} variant="dark" />
+          {/* Desktop keeps the language pills inline; on mobile they move into
+              the menu so the bar stays a clean logo + hamburger. */}
+          <div className="hidden md:flex">
+            <LanguageSwitcher current={lang} variant="light" />
+          </div>
           <div className="hidden md:flex" style={{ alignItems: "center", gap: 14 }}>
             {profile ? (
               <LogoutButton label={dict.nav.logout} />
@@ -116,7 +120,6 @@ export function Header({
                   padding: "10px 20px",
                   borderRadius: 999,
                   textDecoration: "none",
-                  boxShadow: "0 10px 30px -12px rgba(224,17,95,.7)",
                 }}
               >
                 {ctaLabel}
@@ -124,6 +127,7 @@ export function Header({
             )}
           </div>
           <MobileNav
+            lang={lang}
             links={links}
             loggedIn={!!profile}
             loginHref={`${base}/login`}

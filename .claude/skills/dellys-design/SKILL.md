@@ -9,6 +9,24 @@ Modern, editorial **white + ruby**. A clean white canvas with cool-neutral ink; 
 
 Source of truth: `src/app/globals.css` (`@layer components`) and `tailwind.config.ts`. **Always reuse the token classes below — never hand-roll an equivalent.** If a needed pattern doesn't exist as a token, add it to `globals.css` rather than inlining ad-hoc styles in one component. Because the whole app is tokenized, changing a token re-skins every page.
 
+## Two surfaces, ONE system (important)
+The app renders the design system through **two** mechanisms that are deliberately the same colors and fonts — treat them as one system:
+1. **Tailwind token classes** (`brand`/`mauve`/`sand`, `.card`, `.btn-primary`, `font-display`) — used by **every page except the landing**: login, signup, dashboard/account, memberships, book, admin. This is the default; build new UI with these.
+2. **Inline `DC` tokens** (`src/lib/dc.ts`) — used **only** by the landing page (`src/app/[lang]/page.tsx`), `Header`, and `Footer`, because those were ported 1:1 from a static HTML mockup. `DC` is a mirror of the Tailwind scale, NOT a second palette:
+   - `DC.accent #E0115F` = `brand-500`; white-text buttons still darken to `brand-600`.
+   - `DC.ink #16151B` = `mauve-900`; `DC.sub`=`mauve-500`, `DC.muted`=`mauve-600`, `DC.faint`=`mauve-400`, `DC.border`=`mauve-100`.
+   - `DC.display`/`DC.sans` = the same Space Grotesk / Manrope as `font-display`/`font-sans`.
+   - `tint(p)` = accent mixed p% into white (used for soft pink icon-tiles/bands), the inline analog of `brand-50/100` and `sand`.
+
+**Rule:** when editing the landing/header/footer, use `DC`; everywhere else use the Tailwind classes. Never introduce a color/font that isn't in this shared mapping. To match "the landing look" on a non-landing page, reach for the equivalent Tailwind token — do NOT import `DC` into app pages.
+
+### Landing-page signatures (reproduce these with Tailwind on other pages when asked to "match the landing")
+- **Header** = a floating rounded "island": `rounded-full`, translucent **light** glass (`rgba(255,255,255,.72)` + `blur(18px)`), hairline border, soft shadow; sticky, detached from the page edges. On **mobile the bar is just logo + hamburger** — the language pills and nav collapse into the `MobileNav` menu (they're `hidden md:flex` in `Header.tsx`). Keep it this way; don't re-add chrome to the mobile bar.
+- **Cards**: white, `1px` hairline border (`DC.border`/`mauve-100`), radius ~20px (`.card` = rounded-2xl), soft neutral shadow, `dc-lift` hover (translateY(-4px) + shadow) on interactive ones.
+- **Buttons**: full pill; primary = accent fill, white text, a pink glow shadow on hero/CTA sizes.
+- **Section rhythm**: centered head (`font-display` h2 + muted subtitle), ~64px vertical padding, alternating soft pink `tint(6)` bands and a final dark `DC.ink` CTA band with radial accent blobs.
+- **Auth pages** carry a faint `bg-brand-200/35 blur-3xl` glow behind the card so they're not a stark white void.
+
 ## Typography
 - **Display / headings: Space Grotesk** (geometric, modern) via `font-display`. Use for page `<h1>`, section `<h2>`, card titles, stat values, numerals, session times. Space Grotesk has **no Cyrillic**, so Russian headings fall back per-glyph to Manrope — this is wired in the Tailwind `display` stack; just use `font-display`.
 - **Body / UI: Manrope** (default `font-sans`). Also carries Cyrillic.

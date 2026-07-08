@@ -55,6 +55,14 @@ export default async function DashboardPage({
   // redirect() throws internally — keep it outside the try/catch above.
   if (!userId || !supabase) redirect(`/${locale}/login`);
 
+  // Claim any offline/imported memberships that match this account (by phone or
+  // email). Idempotent and best-effort — a failure must never block the page.
+  try {
+    await supabase.rpc("claim_legacy_memberships");
+  } catch {
+    // ignore
+  }
+
   const [
     bookings,
     memberships,
@@ -105,7 +113,7 @@ export default async function DashboardPage({
       {/* Free introductory sessions — one per category, until first attended. */}
       {availableTrials.length > 0 && (
         <section>
-          <h2 className="section-title mb-1">{dict.dashboard.freeTrials}</h2>
+          <h2 className="mb-1 font-display text-lg font-semibold text-mauve-900">{dict.dashboard.freeTrials}</h2>
           <p className="mb-3 text-sm text-mauve-500">{dict.dashboard.freeTrialsHint}</p>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {availableTrials.map((c) => (
@@ -127,7 +135,7 @@ export default async function DashboardPage({
               </div>
             ))}
           </div>
-          <Link href={`/${locale}#schedule`} className="btn-primary mt-3">
+          <Link href={`/${locale}#program`} className="btn-primary mt-3">
             {dict.schedule.bookCta}
           </Link>
         </section>
@@ -135,7 +143,7 @@ export default async function DashboardPage({
 
       {/* Memberships */}
       <section>
-        <h2 className="mb-3 text-lg font-semibold text-mauve-800">
+        <h2 className="mb-3 font-display text-lg font-semibold text-mauve-900">
           {dict.dashboard.myMemberships}
         </h2>
         {memberships.length === 0 ? (
@@ -186,7 +194,7 @@ export default async function DashboardPage({
       {/* Pending membership requests */}
       {requests.length > 0 && (
         <section>
-          <h2 className="mb-3 text-lg font-semibold text-mauve-800">
+          <h2 className="mb-3 font-display text-lg font-semibold text-mauve-900">
             {dict.dashboard.pendingRequests}
           </h2>
           <div className="space-y-2">
@@ -216,13 +224,13 @@ export default async function DashboardPage({
 
       {/* Upcoming bookings */}
       <section>
-        <h2 className="mb-3 text-lg font-semibold text-mauve-800">
+        <h2 className="mb-3 font-display text-lg font-semibold text-mauve-900">
           {dict.dashboard.upcoming}
         </h2>
         {upcoming.length === 0 ? (
           <div className="card p-5 text-sm text-mauve-500">
             {dict.dashboard.noBookings}{" "}
-            <Link href={`/${locale}#schedule`} className="text-brand-600 underline">
+            <Link href={`/${locale}#program`} className="text-brand-600 underline">
               {dict.nav.schedule}
             </Link>
           </div>
@@ -268,7 +276,7 @@ export default async function DashboardPage({
       {/* History */}
       {past.length > 0 && (
         <section>
-          <h2 className="mb-3 text-lg font-semibold text-mauve-800">
+          <h2 className="mb-3 font-display text-lg font-semibold text-mauve-900">
             {dict.dashboard.past}
           </h2>
           <div className="space-y-2">
@@ -304,7 +312,7 @@ export default async function DashboardPage({
       {/* Children */}
       {children.length > 0 && (
         <section>
-          <h2 className="mb-3 text-lg font-semibold text-mauve-800">
+          <h2 className="mb-3 font-display text-lg font-semibold text-mauve-900">
             {dict.dashboard.children}
           </h2>
           <div className="flex flex-wrap gap-2">
@@ -319,7 +327,7 @@ export default async function DashboardPage({
 
       {/* Account details */}
       <section>
-        <h2 className="mb-3 text-lg font-semibold text-mauve-800">
+        <h2 className="mb-3 font-display text-lg font-semibold text-mauve-900">
           {dict.dashboard.myDetails}
         </h2>
         <ProfileForm

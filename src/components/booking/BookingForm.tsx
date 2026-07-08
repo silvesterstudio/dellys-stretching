@@ -165,7 +165,7 @@ export function BookingForm({
             </button>
           )}
           <button
-            onClick={() => router.replace(`/${lang}#schedule`)}
+            onClick={() => router.replace(`/${lang}#program`)}
             className={blocked.alreadyBooked ? "btn-secondary w-full" : "btn-primary w-full"}
           >
             ← {dict.nav.schedule}

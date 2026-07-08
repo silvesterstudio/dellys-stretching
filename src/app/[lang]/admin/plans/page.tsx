@@ -22,6 +22,9 @@ export default async function AdminPlansPage({
     .select(
       "id, audience, name_ro, name_ru, session_count, price, currency, validity_days, featured, active, sort_order",
     )
+    // Hide internal system plans (e.g. the hidden "transferred membership" plans)
+    // so they can't be edited or deleted from the price catalog.
+    .is("system_key", null)
     .order("sort_order", { ascending: true });
 
   return (
