@@ -69,15 +69,6 @@ export function Header({
     fontSize: 15,
     transition: "color .2s",
   };
-  const activePill: React.CSSProperties = {
-    textDecoration: "none",
-    background: DC.accent,
-    color: "#fff",
-    fontWeight: 700,
-    fontSize: 14,
-    padding: "7px 15px",
-    borderRadius: 999,
-  };
 
   return (
     <header
@@ -122,12 +113,32 @@ export function Header({
           <LogoMark priority />
         </Link>
 
-        <nav className="hidden md:flex" style={{ alignItems: "center", gap: showAdminNav ? 6 : 26 }}>
-          {links.map((l) => (
-            <Link key={l.href} href={l.href} style={l.href === activeHref ? activePill : navLink}>
-              {l.label}
-            </Link>
-          ))}
+        <nav
+          className="hidden md:flex"
+          style={{ alignItems: "center", gap: showAdminNav ? 4 : 26 }}
+        >
+          {links.map((l) =>
+            showAdminNav ? (
+              // Admin section nav: every item is a pill (active = filled accent,
+              // others quiet with a soft hover) so they space evenly.
+              <Link
+                key={l.href}
+                href={l.href}
+                aria-current={l.href === activeHref ? "page" : undefined}
+                className={`whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
+                  l.href === activeHref
+                    ? "bg-brand-600 text-white"
+                    : "text-mauve-700 hover:bg-mauve-100"
+                }`}
+              >
+                {l.label}
+              </Link>
+            ) : (
+              <Link key={l.href} href={l.href} style={navLink}>
+                {l.label}
+              </Link>
+            ),
+          )}
         </nav>
 
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
