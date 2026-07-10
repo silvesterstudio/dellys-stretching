@@ -400,6 +400,25 @@
       "transfer": "Перевод",
       "free": "Бесплатно"
     },
+    "audit": {
+      "title": "Журнал действий",
+      "none": "Действий пока нет.",
+      "actions": {
+        "checkin.attend": "Отметка прихода",
+        "checkin.no_show": "Отмечен неявкой",
+        "checkin.walkin": "Приход без записи",
+        "checkin.undo": "Отмена прихода",
+        "membership.assign": "Абонемент выдан",
+        "membership.transfer": "Абонемент перенесён",
+        "membership.delete": "Абонемент удалён",
+        "membership.freeze": "Абонемент заморожен",
+        "membership.unfreeze": "Абонемент разморожен",
+        "membership.sessions": "Занятия изменены",
+        "membership.expiry": "Срок изменён",
+        "member.notes": "Заметки обновлены",
+        "member.role": "Роль изменена"
+      }
+    },
     "roster": "Список участников",
     "assignMembership": "Назначить абонемент",
     "markAttended": "Присутствовал",

@@ -400,6 +400,25 @@
       "transfer": "Transfer",
       "free": "Gratuit"
     },
+    "audit": {
+      "title": "Jurnal activitate",
+      "none": "Nicio activitate încă.",
+      "actions": {
+        "checkin.attend": "Check-in (prezent)",
+        "checkin.no_show": "Marcat absent",
+        "checkin.walkin": "Check-in walk-in",
+        "checkin.undo": "Check-in anulat",
+        "membership.assign": "Abonament atribuit",
+        "membership.transfer": "Abonament transferat",
+        "membership.delete": "Abonament șters",
+        "membership.freeze": "Abonament înghețat",
+        "membership.unfreeze": "Abonament dezghețat",
+        "membership.sessions": "Ședințe ajustate",
+        "membership.expiry": "Expirare modificată",
+        "member.notes": "Notițe actualizate",
+        "member.role": "Rol modificat"
+      }
+    },
     "roster": "Listă participanți",
     "assignMembership": "Atribuie abonament",
     "markAttended": "Prezent",

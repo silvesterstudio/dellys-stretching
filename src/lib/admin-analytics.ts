@@ -290,6 +290,35 @@ export async function computeRecentTransactions(
   }
 }
 
+export interface AuditRow {
+  id: string;
+  date: string;
+  actor: string;
+  action: string;
+  detail: Record<string, unknown> | null;
+}
+
+// Recent admin/staff actions from the audit log (newest first).
+export async function computeRecentAudit(limit = 40): Promise<AuditRow[]> {
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("audit_log")
+      .select("id, created_at, actor_email, action, detail")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    return ((data ?? []) as Record<string, unknown>[]).map((r) => ({
+      id: r.id as string,
+      date: r.created_at as string,
+      actor: (r.actor_email as string) ?? "—",
+      action: r.action as string,
+      detail: (r.detail as Record<string, unknown>) ?? null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 export interface KpiMetrics {
   activeMemberships: number; // not expired & sessions remaining
   totalMembers: number;

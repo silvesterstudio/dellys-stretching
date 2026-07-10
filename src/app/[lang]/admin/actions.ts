@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin, requireStaff } from "@/lib/auth";
 import { bucharestWallToUtc } from "@/lib/week";
 import { weekdayInTz, wallTimeInTz } from "@/lib/format";
 
@@ -12,27 +12,63 @@ import { weekdayInTz, wallTimeInTz } from "@/lib/format";
 
 type ActionResult = { error: string | null };
 
+// Append an audit-log row. Best-effort: logging must never break the action it
+// records, so failures are swallowed. Writes via the service role (RLS-bypassing)
+// after the caller has already been verified.
+async function logAudit(
+  actor: { id: string; email: string },
+  action: string,
+  targetType: string | null,
+  targetId: string | null,
+  detail?: Record<string, unknown>,
+): Promise<void> {
+  try {
+    const service = createAdminClient();
+    await service.from("audit_log").insert({
+      actor_id: actor.id,
+      actor_email: actor.email,
+      action,
+      target_type: targetType,
+      target_id: targetId,
+      detail: detail ?? null,
+    });
+  } catch {
+    /* ignore */
+  }
+}
+
 export async function checkInAction(
   bookingId: string,
   membershipId: string | null,
 ): Promise<ActionResult> {
-  await requireAdmin();
+  const actor = await requireStaff();
   const supabase = await createClient();
   const { error } = await supabase.rpc("check_in_booking", {
     p_booking_id: bookingId,
     p_membership_id: membershipId,
   });
+  if (!error) {
+    await logAudit(actor, "checkin.attend", "booking", bookingId, {
+      membershipId,
+    });
+  }
   revalidatePath("/[lang]/admin/sessions/[id]", "page");
   return { error: error?.message ?? null };
 }
 
 export async function markNoShowAction(bookingId: string): Promise<ActionResult> {
-  await requireAdmin();
-  const supabase = await createClient();
-  const { error } = await supabase
+  const actor = await requireStaff();
+  let service;
+  try {
+    service = createAdminClient();
+  } catch {
+    return { error: "NO_SERVICE_KEY" };
+  }
+  const { error } = await service
     .from("bookings")
     .update({ status: "no_show" })
     .eq("id", bookingId);
+  if (!error) await logAudit(actor, "checkin.no_show", "booking", bookingId);
   revalidatePath("/[lang]/admin/sessions/[id]", "page");
   return { error: error?.message ?? null };
 }
@@ -46,7 +82,7 @@ export async function walkInCheckInAction(
   userId: string,
   membershipId: string | null,
 ): Promise<ActionResult> {
-  await requireAdmin();
+  const actor = await requireStaff();
   let service;
   try {
     service = createAdminClient();
@@ -110,6 +146,7 @@ export async function walkInCheckInAction(
     }
     return { error: error.message };
   }
+  await logAudit(actor, "checkin.walkin", "booking", bookingId, { userId, membershipId });
   revalidatePath("/[lang]/admin/sessions/[id]", "page");
   return { error: null };
 }
@@ -176,7 +213,7 @@ export async function getUsableMembershipsAction(
   audience: "adult" | "child",
   lang: "ro" | "ru" = "ro",
 ): Promise<{ id: string; label: string }[]> {
-  await requireAdmin();
+  await requireStaff();
   let service;
   try {
     service = createAdminClient();
@@ -203,7 +240,7 @@ export async function getUsableMembershipsAction(
 // Undo a check-in: revert an attended booking to "booked" and refund the session
 // that was deducted (if any). The seat stays held, so booked_count is unchanged.
 export async function undoCheckInAction(bookingId: string): Promise<ActionResult> {
-  await requireAdmin();
+  const actor = await requireStaff();
   let service;
   try {
     service = createAdminClient();
@@ -239,6 +276,11 @@ export async function undoCheckInAction(bookingId: string): Promise<ActionResult
     .from("bookings")
     .update({ status: "booked", membership_id: null })
     .eq("id", bookingId);
+  if (!error) {
+    await logAudit(actor, "checkin.undo", "booking", bookingId, {
+      refunded: booking.status === "attended" && !!booking.membership_id,
+    });
+  }
   revalidatePath("/[lang]/admin/sessions/[id]", "page");
   return { error: error?.message ?? null };
 }
@@ -295,6 +337,13 @@ export async function assignMembershipAction(
     amount_paid: amountPaid,
     payment_method: method,
   });
+  if (!error) {
+    await logAudit(admin, "membership.assign", "member", userId, {
+      planId,
+      amountPaid,
+      method,
+    });
+  }
   revalidatePath("/[lang]/admin/members", "page");
   revalidatePath("/[lang]/admin/dashboard", "page");
   // Don't leak raw Postgres error text (table/constraint names) to the client.
@@ -359,6 +408,13 @@ export async function transferMembershipAction(
     assigned_by: admin.id,
     note: noteParts.join(" · "),
   });
+  if (!error) {
+    await logAudit(admin, "membership.transfer", "member", userId, {
+      audience,
+      sessions,
+      expiresOn: input.expiresOn,
+    });
+  }
   revalidatePath("/[lang]/admin/members", "page");
   return { error: error ? "TRANSFER_FAILED" : null };
 }
@@ -604,7 +660,7 @@ function pickOne<T>(v: T | T[] | null | undefined): T | null {
 }
 
 export async function searchMembersAction(query: string): Promise<AdminMemberRow[]> {
-  await requireAdmin();
+  await requireStaff();
   let admin;
   try {
     admin = createAdminClient();
@@ -816,7 +872,7 @@ export async function setMembershipFrozenAction(
   membershipId: string,
   frozen: boolean,
 ): Promise<ActionResult> {
-  await requireAdmin();
+  const actor = await requireAdmin();
   const supabase = await createClient();
 
   if (frozen) {
@@ -825,6 +881,7 @@ export async function setMembershipFrozenAction(
       .from("user_memberships")
       .update({ frozen: true, freeze_start_date: new Date().toISOString() })
       .eq("id", membershipId);
+    if (!error) await logAudit(actor, "membership.freeze", "membership", membershipId);
     revalidatePath("/[lang]/admin/members", "page");
     return { error: error?.message ?? null };
   }
@@ -853,6 +910,7 @@ export async function setMembershipFrozenAction(
     .from("user_memberships")
     .update({ frozen: false, freeze_start_date: null, expires_at: newExpiry })
     .eq("id", membershipId);
+  if (!error) await logAudit(actor, "membership.unfreeze", "membership", membershipId);
   revalidatePath("/[lang]/admin/members", "page");
   return { error: error?.message ?? null };
 }
@@ -862,13 +920,14 @@ export async function updateMemberNotesAction(
   userId: string,
   notes: string,
 ): Promise<ActionResult> {
-  await requireAdmin();
+  const actor = await requireAdmin();
   const supabase = await createClient();
   const trimmed = notes.trim();
   const { error } = await supabase
     .from("profiles")
     .update({ notes: trimmed || null })
     .eq("id", userId);
+  if (!error) await logAudit(actor, "member.notes", "member", userId);
   revalidatePath("/[lang]/admin/members", "page");
   return { error: error?.message ?? null };
 }
@@ -877,7 +936,7 @@ export async function addMembershipSessionsAction(
   membershipId: string,
   count: number,
 ): Promise<ActionResult> {
-  await requireAdmin();
+  const actor = await requireAdmin();
   if (!Number.isFinite(count) || count === 0) return { error: "INVALID" };
   const supabase = await createClient();
   const { data: m } = await supabase
@@ -891,6 +950,12 @@ export async function addMembershipSessionsAction(
     .from("user_memberships")
     .update({ sessions_remaining: next })
     .eq("id", membershipId);
+  if (!error) {
+    await logAudit(actor, "membership.sessions", "membership", membershipId, {
+      delta: Math.trunc(count),
+      to: next,
+    });
+  }
   revalidatePath("/[lang]/admin/members", "page");
   return { error: error?.message ?? null };
 }
@@ -899,7 +964,7 @@ export async function updateMembershipExpiryAction(
   membershipId: string,
   dateStr: string, // YYYY-MM-DD (Chisinau calendar day)
 ): Promise<ActionResult> {
-  await requireAdmin();
+  const actor = await requireAdmin();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return { error: "INVALID_DATE" };
   const supabase = await createClient();
   // Valid through the end of the chosen day.
@@ -908,6 +973,9 @@ export async function updateMembershipExpiryAction(
     .from("user_memberships")
     .update({ expires_at: expires })
     .eq("id", membershipId);
+  if (!error) {
+    await logAudit(actor, "membership.expiry", "membership", membershipId, { to: dateStr });
+  }
   revalidatePath("/[lang]/admin/members", "page");
   return { error: error?.message ?? null };
 }
@@ -915,13 +983,14 @@ export async function updateMembershipExpiryAction(
 export async function deleteMembershipAction(
   membershipId: string,
 ): Promise<ActionResult> {
-  await requireAdmin();
+  const actor = await requireAdmin();
   const supabase = await createClient();
   // bookings.membership_id is ON DELETE SET NULL, so past attendance survives.
   const { error } = await supabase
     .from("user_memberships")
     .delete()
     .eq("id", membershipId);
+  if (!error) await logAudit(actor, "membership.delete", "membership", membershipId);
   revalidatePath("/[lang]/admin/members", "page");
   return { error: error?.message ?? null };
 }

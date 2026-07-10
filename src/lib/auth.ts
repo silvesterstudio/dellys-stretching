@@ -72,3 +72,28 @@ export async function requireAdmin(): Promise<Profile> {
   if (!data || data.role !== "admin") throw new Error("Forbidden: admin only");
   return data;
 }
+
+// Like requireAdmin, but also allows the limited "reception" role (front-desk
+// staff who can run check-in but not pricing/resets/deletes). Admins pass too.
+export async function requireStaff(): Promise<Profile> {
+  if (!isSupabaseConfigured()) throw new Error("Forbidden");
+  const supabase = await createClient();
+  let user;
+  try {
+    ({
+      data: { user },
+    } = await supabase.auth.getUser());
+  } catch {
+    throw new Error("Forbidden");
+  }
+  if (!user) throw new Error("Forbidden");
+  const { data } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", user.id)
+    .single();
+  if (!data || (data.role !== "admin" && data.role !== "reception")) {
+    throw new Error("Forbidden: staff only");
+  }
+  return data;
+}
