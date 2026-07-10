@@ -125,7 +125,7 @@ export async function computeWindowMetrics(
     const [sold, sessionsHeld, attendance, newMembers, bookings] = await Promise.all([
       admin
         .from("user_memberships")
-        .select("amount_paid, plan:membership_plans ( price, currency )")
+        .select("amount_paid, plan:membership_plans ( price, currency, system_key )")
         .gte("created_at", startISO)
         .lt("created_at", endISO),
       admin
@@ -157,8 +157,17 @@ export async function computeWindowMetrics(
     const soldRows = (sold.data ?? []) as Record<string, unknown>[];
     let revenue = 0;
     let currency = "MDL";
+    let membershipsSold = 0;
     for (const r of soldRows) {
-      const plan = one(r.plan as never) as { price: number; currency: string } | null;
+      const plan = one(r.plan as never) as
+        | { price: number; currency: string; system_key: string | null }
+        | null;
+      // Legacy transfers / imports hang off hidden system plans — they aren't
+      // real point-in-window sales, so they count toward neither revenue nor
+      // the "sold" tally.
+      const isSystem = !!plan?.system_key;
+      if (isSystem) continue;
+      membershipsSold += 1;
       // Prefer what was actually collected; fall back to the plan's list price
       // for legacy rows written before payment capture existed.
       const paid = r.amount_paid;
@@ -169,7 +178,7 @@ export async function computeWindowMetrics(
     return {
       revenue,
       currency,
-      membershipsSold: soldRows.length,
+      membershipsSold,
       sessionsHeld: sessionsHeld.count ?? 0,
       attendance: attendance.count ?? 0,
       newMembers: newMembers.count ?? 0,

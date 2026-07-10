@@ -137,7 +137,7 @@ export function PricingTeaser({ lang, dict }: { lang: Locale; dict: Dictionary }
                 fontWeight: 700,
                 fontSize: 15,
                 padding: 13,
-                border: "1px solid #E2E0E6",
+                border: `1px solid ${DC.border}`,
                 borderRadius: 999,
                 textDecoration: "none",
               }}

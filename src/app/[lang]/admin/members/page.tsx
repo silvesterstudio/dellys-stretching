@@ -44,7 +44,7 @@ export default async function MembersPage({
         .from("membership_requests")
         .select(
           `id, created_at,
-           profile:profiles ( email, full_name ),
+           profile:profiles!user_id ( email, full_name ),
            plan:membership_plans ( name_ro, name_ru, session_count, price, currency )`,
         )
         .eq("status", "pending")

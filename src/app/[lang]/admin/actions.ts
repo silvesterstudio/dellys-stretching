@@ -64,13 +64,20 @@ export async function markNoShowAction(bookingId: string): Promise<ActionResult>
   } catch {
     return { error: "NO_SERVICE_KEY" };
   }
-  const { error } = await service
+  // Only a still-open booking can be marked no-show. Guarding on status stops a
+  // stale/concurrent click from flipping an already-"attended" row to no_show,
+  // which would strand the deducted session (undo only refunds "attended").
+  const { data, error } = await service
     .from("bookings")
     .update({ status: "no_show" })
-    .eq("id", bookingId);
-  if (!error) await logAudit(actor, "checkin.no_show", "booking", bookingId);
+    .eq("id", bookingId)
+    .in("status", ["booked", "pending"])
+    .select("id");
+  if (error) return { error: error.message };
+  if (!data || data.length === 0) return { error: "NOT_CHECKINABLE" };
+  await logAudit(actor, "checkin.no_show", "booking", bookingId);
   revalidatePath("/[lang]/admin/sessions/[id]", "page");
-  return { error: error?.message ?? null };
+  return { error: null };
 }
 
 // Walk-in check-in: attend a client who didn't pre-book. We create the booking
@@ -249,7 +256,7 @@ export async function undoCheckInAction(bookingId: string): Promise<ActionResult
   }
   const { data: booking } = await service
     .from("bookings")
-    .select("id, status, membership_id")
+    .select("id, status, membership_id, user_id, session_id")
     .eq("id", bookingId)
     .maybeSingle();
   if (!booking) return { error: "NOT_FOUND" };
@@ -257,9 +264,10 @@ export async function undoCheckInAction(bookingId: string): Promise<ActionResult
   if (booking.status !== "attended" && booking.status !== "no_show") {
     return { error: "NOT_UNDOABLE" };
   }
+  const wasAttended = booking.status === "attended";
 
   // Refund the deducted session (only an "attended" check-in deducts one).
-  if (booking.status === "attended" && booking.membership_id) {
+  if (wasAttended && booking.membership_id) {
     const { data: mem } = await service
       .from("user_memberships")
       .select("sessions_remaining")
@@ -276,6 +284,37 @@ export async function undoCheckInAction(bookingId: string): Promise<ActionResult
     .from("bookings")
     .update({ status: "booked", membership_id: null })
     .eq("id", bookingId);
+
+  // check_in_booking stamps the category free-trial on first attendance. If this
+  // undo removed the member's ONLY attendance in that category, release the
+  // trial so their genuine first session is still free.
+  if (!error && wasAttended && booking.session_id) {
+    const { data: sess } = await service
+      .from("sessions")
+      .select("class_type:class_types ( category )")
+      .eq("id", booking.session_id as string)
+      .maybeSingle();
+    const ct = sess
+      ? (Array.isArray(sess.class_type) ? sess.class_type[0] : sess.class_type)
+      : null;
+    const category = (ct as { category: string | null } | null)?.category ?? null;
+    if (category) {
+      const { data: others } = await service
+        .from("bookings")
+        .select("id, session:sessions!inner ( class_type:class_types!inner ( category ) )")
+        .eq("user_id", booking.user_id as string)
+        .eq("status", "attended")
+        .eq("session.class_type.category", category)
+        .limit(1);
+      if (!others || others.length === 0) {
+        await service
+          .from("free_trial_usage")
+          .delete()
+          .eq("user_id", booking.user_id as string)
+          .eq("category", category);
+      }
+    }
+  }
   if (!error) {
     await logAudit(actor, "checkin.undo", "booking", bookingId, {
       refunded: booking.status === "attended" && !!booking.membership_id,
@@ -317,15 +356,19 @@ export async function assignMembershipAction(
   ).toISOString();
 
   // Default to the plan's list price paid in cash if the admin didn't override.
-  const rawAmount = payment?.amount;
-  const amountPaid =
-    rawAmount != null && Number.isFinite(rawAmount) && rawAmount >= 0
-      ? rawAmount
-      : Number(plan.price) || 0;
   const method =
     payment?.method && PAYMENT_METHODS.includes(payment.method as never)
       ? payment.method
       : "cash";
+  const rawAmount = payment?.amount;
+  // A comped ("free") membership collects nothing, regardless of the prefilled
+  // amount — otherwise it would book phantom revenue.
+  const amountPaid =
+    method === "free"
+      ? 0
+      : rawAmount != null && Number.isFinite(rawAmount) && rawAmount >= 0
+        ? rawAmount
+        : Number(plan.price) || 0;
 
   const { error } = await supabase.from("user_memberships").insert({
     user_id: userId,
@@ -424,13 +467,18 @@ export async function decideMembershipRequestAction(
   requestId: string,
   approve: boolean,
 ): Promise<ActionResult> {
-  await requireAdmin();
+  const actor = await requireAdmin();
   const supabase = await createClient();
   const { error } = await supabase.rpc("decide_membership_request", {
     p_request_id: requestId,
     p_approve: approve,
   });
+  if (!error) {
+    await logAudit(actor, approve ? "request.approve" : "request.reject", "request", requestId);
+  }
   revalidatePath("/[lang]/admin/members", "page");
+  // Approving creates a revenue-bearing membership — refresh the dashboard too.
+  revalidatePath("/[lang]/admin/dashboard", "page");
   return { error: error?.message ?? null };
 }
 
@@ -1046,7 +1094,7 @@ const EPOCH = "1970-01-01T00:00:00Z";
 // schedule — so this wipes all of them and every number drops to zero. Admin
 // accounts, class types and the price catalog (membership_plans) are kept.
 export async function resetStatisticsAction(): Promise<ResetResult> {
-  await requireAdmin();
+  const actor = await requireAdmin();
   let admin;
   try {
     admin = createAdminClient();
@@ -1082,18 +1130,20 @@ export async function resetStatisticsAction(): Promise<ResetResult> {
     .select("id");
   if (tErr) return { error: tErr.message };
 
+  const deleted = removed + (sess?.length ?? 0) + (tmpl?.length ?? 0);
+  await logAudit(actor, "reset.statistics", "reset", null, { deleted });
   revalidatePath("/[lang]/admin/dashboard", "page");
   revalidatePath("/[lang]/admin/members", "page");
   revalidatePath("/[lang]/admin/templates", "page");
   revalidatePath("/[lang]", "page");
-  return { error: null, deleted: removed + (sess?.length ?? 0) + (tmpl?.length ?? 0) };
+  return { error: null, deleted };
 }
 
 // Program săptămânal: clear the whole schedule — every session (its bookings
 // cascade-delete) and every recurring weekly template. Class types (the
 // catalog) stay so the schedule can be rebuilt.
 export async function resetScheduleAction(): Promise<ResetResult> {
-  await requireAdmin();
+  const actor = await requireAdmin();
   let admin;
   try {
     admin = createAdminClient();
@@ -1112,9 +1162,11 @@ export async function resetScheduleAction(): Promise<ResetResult> {
     .gte("created_at", EPOCH)
     .select("id");
   if (tErr) return { error: tErr.message };
+  const deleted = (s?.length ?? 0) + (t?.length ?? 0);
+  await logAudit(actor, "reset.schedule", "reset", null, { deleted });
   revalidatePath("/[lang]/admin/templates", "page");
   revalidatePath("/[lang]", "page");
-  return { error: null, deleted: (s?.length ?? 0) + (t?.length ?? 0) };
+  return { error: null, deleted };
 }
 
 // Membri: delete every client account. profiles, children, user_memberships,
@@ -1122,7 +1174,7 @@ export async function resetScheduleAction(): Promise<ResetResult> {
 // deleting the auth user removes the member's entire footprint. role='admin'
 // accounts are preserved.
 export async function resetMembersAction(): Promise<ResetResult> {
-  await requireAdmin();
+  const actor = await requireAdmin();
   let admin;
   try {
     admin = createAdminClient();
@@ -1141,6 +1193,7 @@ export async function resetMembersAction(): Promise<ResetResult> {
     if (error && !/not.?found/i.test(error.message)) return { error: error.message };
     if (!error) removed += 1;
   }
+  await logAudit(actor, "reset.members", "reset", null, { deleted: removed });
   revalidatePath("/[lang]/admin/members", "page");
   revalidatePath("/[lang]/admin/dashboard", "page");
   return { error: null, deleted: removed };
@@ -1150,7 +1203,7 @@ export async function resetMembersAction(): Promise<ResetResult> {
 // membership_requests.plan_id are ON DELETE RESTRICT, so those dependents are
 // removed first — this also clears members' active memberships.
 export async function resetPlansAction(): Promise<ResetResult> {
-  await requireAdmin();
+  const actor = await requireAdmin();
   let admin;
   try {
     admin = createAdminClient();
@@ -1167,12 +1220,16 @@ export async function resetPlansAction(): Promise<ResetResult> {
     .delete()
     .gte("created_at", EPOCH);
   if (mErr) return { error: mErr.message };
+  // Keep the hidden per-audience "transferred" system plans — deleting them
+  // would permanently break legacy transfer + auto-claim (they're seeded only
+  // in migration 0012 and never re-created).
   const { data: p, error: pErr } = await admin
     .from("membership_plans")
     .delete()
-    .gte("created_at", EPOCH)
+    .is("system_key", null)
     .select("id");
   if (pErr) return { error: pErr.message };
+  await logAudit(actor, "reset.plans", "reset", null, { deleted: p?.length ?? 0 });
   revalidatePath("/[lang]/admin/plans", "page");
   revalidatePath("/[lang]/memberships", "page");
   revalidatePath("/[lang]/admin/members", "page");

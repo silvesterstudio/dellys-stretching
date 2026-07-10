@@ -419,7 +419,13 @@
         "membership.sessions": "Занятия изменены",
         "membership.expiry": "Срок изменён",
         "member.notes": "Заметки обновлены",
-        "member.role": "Роль изменена"
+        "member.role": "Роль изменена",
+        "request.approve": "Заявка одобрена",
+        "request.reject": "Заявка отклонена",
+        "reset.statistics": "Сброс статистики",
+        "reset.schedule": "Сброс расписания",
+        "reset.members": "Сброс участников",
+        "reset.plans": "Сброс цен"
       }
     },
     "roster": "Список участников",
@@ -475,6 +481,7 @@
       "payFree": "Бесплатно",
       "notes": "Заметки",
       "notesPlaceholder": "Травмы, предпочтения, заметки…",
+      "adminRole": "Администратор",
       "receptionRole": "Ресепшн",
       "receptionHint": "Доступ ресепшн — только регистрация",
       "makeReception": "Сделать ресепшн",

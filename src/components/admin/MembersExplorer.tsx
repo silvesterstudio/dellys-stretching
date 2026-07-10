@@ -52,17 +52,17 @@ type Plan = {
 };
 
 const BOOKING_BADGE: Record<string, string> = {
-  attended: "bg-green-50 text-green-700",
-  booked: "bg-brand-50 text-brand-700",
-  pending: "bg-amber-50 text-amber-700",
-  no_show: "bg-mauve-100 text-mauve-500",
-  cancelled: "bg-mauve-100 text-mauve-400",
+  attended: "badge-success",
+  booked: "badge-brand",
+  pending: "badge-warning",
+  no_show: "badge-muted",
+  cancelled: "badge-muted",
 };
 const REQUEST_BADGE: Record<string, string> = {
-  pending: "bg-amber-50 text-amber-700",
-  approved: "bg-green-50 text-green-700",
-  rejected: "bg-mauve-100 text-mauve-400",
-  cancelled: "bg-mauve-100 text-mauve-400",
+  pending: "badge-warning",
+  approved: "badge-success",
+  rejected: "badge-muted",
+  cancelled: "badge-muted",
 };
 
 export function MembersExplorer({
@@ -220,9 +220,9 @@ export function MembersExplorer({
                   </div>
                 </div>
                 {detail.profile.role === "admin" ? (
-                  <span className="badge bg-brand-50 text-brand-700">admin</span>
+                  <span className="badge-brand">{m.adminRole}</span>
                 ) : detail.profile.role === "reception" ? (
-                  <span className="badge bg-brand-50 text-brand-700">{m.receptionRole}</span>
+                  <span className="badge-brand">{m.receptionRole}</span>
                 ) : null}
               </div>
 
@@ -363,7 +363,7 @@ export function MembersExplorer({
                           </button>
                         </div>
                       ) : (
-                        <span className={`badge ${REQUEST_BADGE[r.status] ?? ""}`}>
+                        <span className={REQUEST_BADGE[r.status] ?? "badge-muted"}>
                           {statusLabel(dict.admin.requestStatus, r.status)}
                         </span>
                       )}
@@ -425,7 +425,7 @@ export function MembersExplorer({
                           </div>
                         </div>
                       </div>
-                      <span className={`badge shrink-0 ${BOOKING_BADGE[b.status] ?? ""}`}>
+                      <span className={`shrink-0 ${BOOKING_BADGE[b.status] ?? "badge-muted"}`}>
                         {statusLabel(dict.admin.bookingStatus, b.status)}
                       </span>
                     </div>
@@ -694,9 +694,12 @@ function TransferForm({
   const completedMonths = startDate
     ? (() => {
         const today = new Date();
-        const elapsed =
+        let elapsed =
           (today.getFullYear() - startDate.getFullYear()) * 12 +
           (today.getMonth() - startDate.getMonth());
+        // A month isn't fully elapsed until its day-of-month is reached, so a
+        // start of Jun 30 viewed on Jul 1 is 0 completed months, not 1.
+        if (today.getDate() < startDate.getDate()) elapsed -= 1;
         return Math.min(Math.max(elapsed, 0), months - 1);
       })()
     : 0;

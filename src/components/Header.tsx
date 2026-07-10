@@ -121,8 +121,14 @@ export function Header({
         </Link>
 
         <nav
-          className="hidden md:flex"
-          style={{ alignItems: "center", gap: showAdminNav ? 4 : 26 }}
+          className={`hidden md:flex ${showAdminNav ? "no-scrollbar" : ""}`}
+          style={{
+            alignItems: "center",
+            gap: showAdminNav ? 4 : 26,
+            // The 5 admin pills can exceed a small-laptop island; let them shrink
+            // and scroll horizontally instead of pushing the logout off-screen.
+            ...(showAdminNav ? { minWidth: 0, overflowX: "auto", flexShrink: 1 } : {}),
+          }}
         >
           {links.map((l) =>
             showAdminNav ? (

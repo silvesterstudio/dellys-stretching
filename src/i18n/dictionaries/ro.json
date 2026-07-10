@@ -419,7 +419,13 @@
         "membership.sessions": "Ședințe ajustate",
         "membership.expiry": "Expirare modificată",
         "member.notes": "Notițe actualizate",
-        "member.role": "Rol modificat"
+        "member.role": "Rol modificat",
+        "request.approve": "Cerere aprobată",
+        "request.reject": "Cerere respinsă",
+        "reset.statistics": "Resetare statistici",
+        "reset.schedule": "Resetare program",
+        "reset.members": "Resetare membri",
+        "reset.plans": "Resetare prețuri"
       }
     },
     "roster": "Listă participanți",
@@ -475,6 +481,7 @@
       "payFree": "Gratuit",
       "notes": "Notițe",
       "notesPlaceholder": "Accidentări, preferințe, observații…",
+      "adminRole": "Administrator",
       "receptionRole": "Recepție",
       "receptionHint": "Acces recepție — doar check-in",
       "makeReception": "Fă recepție",

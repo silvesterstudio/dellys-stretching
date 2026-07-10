@@ -18,11 +18,7 @@ export function RenewalsPanel({
     <section>
       <h2 className="mb-3 font-display text-lg font-semibold text-mauve-900">
         {t.title}
-        {rows.length > 0 && (
-          <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-700">
-            {rows.length}
-          </span>
-        )}
+        {rows.length > 0 && <span className="badge-warning ml-2">{rows.length}</span>}
       </h2>
       {rows.length === 0 ? (
         <div className="card p-6 text-center text-sm text-mauve-400">{t.none}</div>
@@ -39,12 +35,12 @@ export function RenewalsPanel({
               </div>
               <div className="flex flex-wrap items-center gap-2">
                 {r.lowBalance && (
-                  <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
+                  <span className="badge-danger">
                     {r.sessionsRemaining} {t.sessionsLeft}
                   </span>
                 )}
                 {r.expiringSoon && (
-                  <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+                  <span className="badge-warning">
                     {t.expires} {formatDate(r.expiresAt, lang)}
                   </span>
                 )}
