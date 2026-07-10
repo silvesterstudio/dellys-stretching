@@ -8,7 +8,6 @@ import {
   searchMembersAction,
   getUsableMembershipsAction,
   walkInCheckInAction,
-  adminBookAction,
   type AdminMemberRow,
 } from "@/app/[lang]/admin/actions";
 import { checkInErrorMessage } from "@/lib/booking-errors";
@@ -72,20 +71,6 @@ export function WalkInCheckIn({
     setError(null);
     startAttend(async () => {
       const { error } = await walkInCheckInAction(sessionId, selected.id, membershipId || null);
-      if (error) {
-        setError(checkInErrorMessage(error, dict));
-        return;
-      }
-      reset();
-      router.refresh();
-    });
-  }
-
-  function reserve() {
-    if (!selected) return;
-    setError(null);
-    startAttend(async () => {
-      const { error } = await adminBookAction(sessionId, selected.id);
       if (error) {
         setError(checkInErrorMessage(error, dict));
         return;
@@ -183,9 +168,6 @@ export function WalkInCheckIn({
             </select>
             <button onClick={attend} disabled={attending} className="btn-primary py-1.5 text-sm">
               {dict.admin.markAttended}
-            </button>
-            <button onClick={reserve} disabled={attending} className="btn-secondary py-1.5 text-sm">
-              {t.reserve}
             </button>
           </div>
           {error && <div className="text-xs text-red-700">{error}</div>}

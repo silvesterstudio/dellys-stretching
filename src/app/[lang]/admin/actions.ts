@@ -114,49 +114,6 @@ export async function walkInCheckInAction(
   return { error: null };
 }
 
-// Admin reserves a seat for a client (phone/desk booking) — books without
-// attending. Respects capacity (unlike a walk-in, who is physically present).
-export async function adminBookAction(
-  sessionId: string,
-  userId: string,
-): Promise<ActionResult> {
-  await requireAdmin();
-  let service;
-  try {
-    service = createAdminClient();
-  } catch {
-    return { error: "NO_SERVICE_KEY" };
-  }
-  const { data: sess } = await service
-    .from("sessions")
-    .select("id, status, capacity, booked_count")
-    .eq("id", sessionId)
-    .maybeSingle();
-  if (!sess) return { error: "SESSION_NOT_FOUND" };
-  if (sess.status !== "scheduled") return { error: "SESSION_CANCELLED" };
-  if ((sess.booked_count as number) >= (sess.capacity as number)) return { error: "SESSION_FULL" };
-
-  const { data: existing } = await service
-    .from("bookings")
-    .select("id")
-    .eq("session_id", sessionId)
-    .eq("user_id", userId)
-    .in("status", ["pending", "booked", "attended"])
-    .maybeSingle();
-  if (existing) return { error: "ALREADY_BOOKED" };
-
-  const { error: insErr } = await service
-    .from("bookings")
-    .insert({ session_id: sessionId, user_id: userId, status: "booked" });
-  if (insErr) return { error: "BOOKING_FAILED" };
-  await service
-    .from("sessions")
-    .update({ booked_count: (sess.booked_count as number) + 1 })
-    .eq("id", sessionId);
-  revalidatePath("/[lang]/admin/sessions/[id]", "page");
-  return { error: null };
-}
-
 // Usable memberships for a member, matching a class audience — for the walk-in
 // check-in picker (mirrors the roster page's membership query).
 export async function getUsableMembershipsAction(
@@ -592,49 +549,6 @@ export async function searchMembersAction(query: string): Promise<AdminMemberRow
   if (q) req = req.or(`email.ilike.%${q}%,full_name.ilike.%${q}%,phone.ilike.%${q}%`);
   const { data } = await req.order("created_at", { ascending: false }).limit(50);
   return (data ?? []) as AdminMemberRow[];
-}
-
-// Admin registers a walk-in member in person. Name + phone required; email is
-// optional — without one we mint a non-routable placeholder so the account can
-// exist (the client can add a real email later, or self-register with the same
-// phone to auto-claim any memberships).
-export async function createMemberAction(input: {
-  fullName: string;
-  phone: string;
-  email: string | null;
-}): Promise<{ error: string | null; userId?: string }> {
-  await requireAdmin();
-  const fullName = input.fullName.trim();
-  const phone = input.phone.trim();
-  if (!fullName) return { error: "NAME_REQUIRED" };
-  if (!phone) return { error: "PHONE_REQUIRED" };
-
-  let service;
-  try {
-    service = createAdminClient();
-  } catch {
-    return { error: "NO_SERVICE_KEY" };
-  }
-
-  const provided = (input.email ?? "").trim().toLowerCase();
-  const email =
-    provided ||
-    `walkin.${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}@dellys.local`;
-
-  const { data, error } = await service.auth.admin.createUser({
-    email,
-    email_confirm: true,
-    user_metadata: { full_name: fullName, phone, preferred_lang: "ro" },
-  });
-  if (error || !data?.user) {
-    const msg = (error?.message ?? "").toLowerCase();
-    if (msg.includes("already") || msg.includes("registered") || msg.includes("exist")) {
-      return { error: "EMAIL_TAKEN" };
-    }
-    return { error: "CREATE_FAILED" };
-  }
-  revalidatePath("/[lang]/admin/members", "page");
-  return { error: null, userId: data.user.id };
 }
 
 type DetailPlan = {
