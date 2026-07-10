@@ -538,6 +538,7 @@ function TransferForm({
   const [month, setMonth] = useState("01");
   const [year, setYear] = useState(() => String(new Date().getFullYear()));
   const [months, setMonths] = useState(1);
+  const [used, setUsed] = useState(0);
   const [working, setWorking] = useState(false);
 
   // Build the start date from the DD / MM / YYYY boxes; expiry = start + months.
@@ -554,7 +555,23 @@ function TransferForm({
         return e;
       })()
     : null;
-  const effectiveSessions = unlimited ? 999 : Math.max(0, Math.trunc(sessions));
+  // Impuls month model: `sessions` is the monthly frequency, so the plan is
+  // worth sessions × months loaded upfront. Full calendar months already
+  // elapsed since the start date are dropped (their sessions are gone), and
+  // whatever was used in the current month is subtracted too.
+  const completedMonths = startDate
+    ? (() => {
+        const today = new Date();
+        const elapsed =
+          (today.getFullYear() - startDate.getFullYear()) * 12 +
+          (today.getMonth() - startDate.getMonth());
+        return Math.min(Math.max(elapsed, 0), months - 1);
+      })()
+    : 0;
+  const usedN = Math.max(0, Math.trunc(used) || 0);
+  const effectiveSessions = unlimited
+    ? 999
+    : Math.max(0, sessions * (months - completedMonths) - usedN);
   const expiresOn = expiry ? ymd(expiry) : "";
   const daysRemaining = expiry
     ? Math.ceil((expiry.getTime() - new Date().setHours(0, 0, 0, 0)) / 86400000)
@@ -579,6 +596,7 @@ function TransferForm({
     setDay("01");
     setMonth("01");
     setMonths(1);
+    setUsed(0);
     setOpen(false);
     onDone();
   }
@@ -627,9 +645,9 @@ function TransferForm({
         </div>
       </div>
 
-      {/* Remaining sessions + unlimited */}
+      {/* Sessions per month + unlimited */}
       <div>
-        <label className="label">{t.sessions}</label>
+        <label className="label">{t.sessionsPerMonth}</label>
         <div className="flex items-center gap-2">
           <input
             type="number"
@@ -706,6 +724,28 @@ function TransferForm({
           <span className="text-sm text-mauve-500">{t.monthsUnit}</span>
         </div>
       </div>
+
+      {/* Sessions already used this month (skipped when unlimited) */}
+      {!unlimited && (
+        <div>
+          <label className="label">{t.usedThisMonth}</label>
+          <input
+            type="number"
+            min={0}
+            value={used}
+            onChange={(e) => setUsed(Math.max(0, parseInt(e.target.value) || 0))}
+            className="input w-24"
+          />
+          {validStart && (
+            <p className="mt-1.5 text-[11px] text-mauve-400">
+              {sessions} × {months - completedMonths} {t.monthsUnit}
+              {usedN > 0 ? ` − ${usedN}` : ""} ={" "}
+              <span className="font-semibold text-brand-600">{effectiveSessions}</span>{" "}
+              {t.remaining.toLowerCase()}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Computed preview */}
       {expiry ? (
