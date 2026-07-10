@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Dictionary } from "@/i18n/get-dictionary";
-import { checkInAction, markNoShowAction } from "@/app/[lang]/admin/actions";
+import { checkInAction, markNoShowAction, undoCheckInAction } from "@/app/[lang]/admin/actions";
 import { checkInErrorMessage } from "@/lib/booking-errors";
 
 interface Booking {
@@ -64,6 +64,18 @@ export function CheckInRow({
     router.refresh();
   }
 
+  async function undo() {
+    setBusy(true);
+    setError(null);
+    const { error } = await undoCheckInAction(booking.id);
+    setBusy(false);
+    if (error) {
+      setError(dict.common.error);
+      return;
+    }
+    router.refresh();
+  }
+
   return (
     <div className="card p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -76,6 +88,13 @@ export function CheckInRow({
           </div>
           <StatusBadge status={booking.status} dict={dict} />
         </div>
+
+        {/* Settled rows can be reverted (refunds the deducted session). */}
+        {(booking.status === "attended" || booking.status === "no_show") && (
+          <button onClick={undo} disabled={busy} className="btn-ghost-danger py-1.5 text-xs">
+            {dict.admin.undoCheckIn}
+          </button>
+        )}
 
         {!settled && (
           <div className="flex flex-wrap items-center gap-2">

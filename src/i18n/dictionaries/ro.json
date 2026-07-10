@@ -373,6 +373,19 @@
     "templates": "Program săptămânal",
     "members": "Membri",
     "checkIn": "Check-in",
+    "todayTab": "Astăzi",
+    "undoCheckIn": "Anulează",
+    "today": {
+      "title": "Ședințele de azi",
+      "subtitle": "Apasă o ședință pentru a face check-in participanților.",
+      "none": "Nicio ședință programată azi.",
+      "checkIn": "Check-in",
+      "done": "Încheiată"
+    },
+    "walkIn": {
+      "open": "Adaugă participant (walk-in)",
+      "title": "Check-in participant nou"
+    },
     "roster": "Listă participanți",
     "assignMembership": "Atribuie abonament",
     "markAttended": "Prezent",

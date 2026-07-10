@@ -26,6 +26,7 @@ export default async function AdminLayout({
 
   const base = `/${locale}/admin`;
   const tabs = [
+    { href: `${base}/today`, label: dict.admin.todayTab },
     { href: `${base}/dashboard`, label: dict.admin.dashboardTab },
     { href: `${base}/templates`, label: dict.admin.templates },
     { href: `${base}/members`, label: dict.admin.members },

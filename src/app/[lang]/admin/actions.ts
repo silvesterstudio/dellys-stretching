@@ -37,6 +37,157 @@ export async function markNoShowAction(bookingId: string): Promise<ActionResult>
   return { error: error?.message ?? null };
 }
 
+// Walk-in check-in: attend a client who didn't pre-book. We create the booking
+// (via the service role, updating booked_count the way book_session does), then
+// reuse the audited check_in_booking RPC through the admin's own session so the
+// membership validation + deduction path is identical to a normal check-in.
+export async function walkInCheckInAction(
+  sessionId: string,
+  userId: string,
+  membershipId: string | null,
+): Promise<ActionResult> {
+  await requireAdmin();
+  let service;
+  try {
+    service = createAdminClient();
+  } catch {
+    return { error: "NO_SERVICE_KEY" };
+  }
+
+  // Session must exist and be a real scheduled class.
+  const { data: sess } = await service
+    .from("sessions")
+    .select("id, status, booked_count")
+    .eq("id", sessionId)
+    .maybeSingle();
+  if (!sess) return { error: "SESSION_NOT_FOUND" };
+  if (sess.status !== "scheduled") return { error: "SESSION_CANCELLED" };
+
+  // If this client is already on the roster, just check that existing booking in
+  // instead of creating a duplicate (bookings_active_uniq would reject it anyway).
+  const { data: existing } = await service
+    .from("bookings")
+    .select("id, status")
+    .eq("session_id", sessionId)
+    .eq("user_id", userId)
+    .in("status", ["pending", "booked", "no_show", "attended"])
+    .maybeSingle();
+
+  let bookingId = existing?.id as string | undefined;
+  if (existing?.status === "attended") return { error: "ALREADY_ATTENDED" };
+
+  if (!bookingId) {
+    const { data: ins, error: insErr } = await service
+      .from("bookings")
+      .insert({ session_id: sessionId, user_id: userId, status: "booked" })
+      .select("id")
+      .single();
+    if (insErr || !ins) return { error: "BOOKING_FAILED" };
+    bookingId = ins.id as string;
+    // Keep occupancy in sync (book_session does this atomically; we're the only
+    // writer at the desk, so a direct increment is safe enough here).
+    await service
+      .from("sessions")
+      .update({ booked_count: (sess.booked_count as number) + 1 })
+      .eq("id", sessionId);
+  }
+
+  // Deduct + mark attended through the admin's authenticated session so
+  // check_in_booking's is_admin() gate and audience/expiry checks apply.
+  const rls = await createClient();
+  const { error } = await rls.rpc("check_in_booking", {
+    p_booking_id: bookingId,
+    p_membership_id: membershipId,
+  });
+  if (error) {
+    // Roll back a booking we just created so a failed deduction leaves no trace.
+    if (!existing) {
+      await service.from("bookings").delete().eq("id", bookingId);
+      await service
+        .from("sessions")
+        .update({ booked_count: sess.booked_count as number })
+        .eq("id", sessionId);
+    }
+    return { error: error.message };
+  }
+  revalidatePath("/[lang]/admin/sessions/[id]", "page");
+  return { error: null };
+}
+
+// Usable memberships for a member, matching a class audience — for the walk-in
+// check-in picker (mirrors the roster page's membership query).
+export async function getUsableMembershipsAction(
+  userId: string,
+  audience: "adult" | "child",
+  lang: "ro" | "ru" = "ro",
+): Promise<{ id: string; label: string }[]> {
+  await requireAdmin();
+  let service;
+  try {
+    service = createAdminClient();
+  } catch {
+    return [];
+  }
+  const { data } = await service
+    .from("user_memberships")
+    .select(
+      "id, sessions_remaining, plan:membership_plans!inner ( name_ro, name_ru, audience )",
+    )
+    .eq("user_id", userId)
+    .eq("plan.audience", audience)
+    .eq("frozen", false)
+    .gt("sessions_remaining", 0)
+    .gt("expires_at", new Date().toISOString());
+  return (data ?? []).map((m: Record<string, unknown>) => {
+    const plan = pickOne(m.plan as never) as { name_ro: string; name_ru: string } | null;
+    const name = plan ? (lang === "ru" ? plan.name_ru : plan.name_ro) : "—";
+    return { id: m.id as string, label: `${name} · ${m.sessions_remaining}` };
+  });
+}
+
+// Undo a check-in: revert an attended booking to "booked" and refund the session
+// that was deducted (if any). The seat stays held, so booked_count is unchanged.
+export async function undoCheckInAction(bookingId: string): Promise<ActionResult> {
+  await requireAdmin();
+  let service;
+  try {
+    service = createAdminClient();
+  } catch {
+    return { error: "NO_SERVICE_KEY" };
+  }
+  const { data: booking } = await service
+    .from("bookings")
+    .select("id, status, membership_id")
+    .eq("id", bookingId)
+    .maybeSingle();
+  if (!booking) return { error: "NOT_FOUND" };
+  // Reverts a wrong "attended" (refunding the session) or a wrong "no-show".
+  if (booking.status !== "attended" && booking.status !== "no_show") {
+    return { error: "NOT_UNDOABLE" };
+  }
+
+  // Refund the deducted session (only an "attended" check-in deducts one).
+  if (booking.status === "attended" && booking.membership_id) {
+    const { data: mem } = await service
+      .from("user_memberships")
+      .select("sessions_remaining")
+      .eq("id", booking.membership_id as string)
+      .maybeSingle();
+    if (mem) {
+      await service
+        .from("user_memberships")
+        .update({ sessions_remaining: (mem.sessions_remaining as number) + 1 })
+        .eq("id", booking.membership_id as string);
+    }
+  }
+  const { error } = await service
+    .from("bookings")
+    .update({ status: "booked", membership_id: null })
+    .eq("id", bookingId);
+  revalidatePath("/[lang]/admin/sessions/[id]", "page");
+  return { error: error?.message ?? null };
+}
+
 export async function assignMembershipAction(
   userId: string,
   planId: string,

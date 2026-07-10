@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatDate, formatTime } from "@/lib/format";
 import { localized } from "@/lib/i18n-data";
 import { CheckInRow } from "@/components/admin/CheckInRow";
+import { WalkInCheckIn } from "@/components/admin/WalkInCheckIn";
 
 export const dynamic = "force-dynamic";
 
@@ -137,6 +138,13 @@ export default async function RosterPage({
           {session.booked_count}/{session.capacity} {dict.admin.participants}
         </div>
       </div>
+
+      <WalkInCheckIn
+        sessionId={session.id}
+        audience={session.class_type.audience}
+        lang={locale}
+        dict={dict}
+      />
 
       <section>
         <h2 className="mb-3 text-lg font-semibold text-mauve-800">
