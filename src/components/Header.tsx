@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { Locale } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { Profile } from "@/lib/auth";
@@ -20,19 +21,46 @@ export function Header({
   profile: Profile | null;
 }) {
   const base = `/${lang}`;
+  const pathname = usePathname();
 
   const isAdmin = profile?.role === "admin";
+  const isStaff = isAdmin || profile?.role === "reception";
+  const onAdminPage = pathname.includes(`${base}/admin`) || pathname.includes("/admin");
   const ctaHref = `${base}#program`;
   const ctaLabel = dict.home.nav.book;
 
-  const links = isAdmin
-    ? [{ href: `${base}/admin`, label: dict.nav.admin }]
-    : [
-        { href: `${base}#discipline`, label: dict.nav.disciplines },
-        { href: `${base}#program`, label: dict.nav.schedule },
-        { href: `${base}#preturi`, label: dict.nav.prices },
-        ...(profile ? [{ href: `${base}/dashboard`, label: dict.nav.dashboard }] : []),
-      ];
+  // On an admin page the island bar itself becomes the admin nav (no separate
+  // tab row): admins get every section, reception staff only check-in.
+  const adminTabs = isAdmin
+    ? [
+        { href: `${base}/admin/today`, label: dict.admin.todayTab },
+        { href: `${base}/admin/dashboard`, label: dict.admin.dashboardTab },
+        { href: `${base}/admin/templates`, label: dict.admin.templates },
+        { href: `${base}/admin/members`, label: dict.admin.members },
+        { href: `${base}/admin/plans`, label: dict.admin.plansTab },
+      ]
+    : [{ href: `${base}/admin/today`, label: dict.admin.todayTab }];
+
+  const showAdminNav = onAdminPage && isStaff;
+
+  const links = showAdminNav
+    ? adminTabs
+    : isAdmin
+      ? [{ href: `${base}/admin`, label: dict.nav.admin }]
+      : [
+          { href: `${base}#discipline`, label: dict.nav.disciplines },
+          { href: `${base}#program`, label: dict.nav.schedule },
+          { href: `${base}#preturi`, label: dict.nav.prices },
+          ...(profile ? [{ href: `${base}/dashboard`, label: dict.nav.dashboard }] : []),
+        ];
+
+  // Active admin tab = the one whose href is the longest prefix of the path.
+  const activeHref = showAdminNav
+    ? links.reduce<string | null>((acc, t) => {
+        const m = pathname === t.href || pathname.startsWith(t.href + "/");
+        return m && t.href.length > (acc?.length ?? -1) ? t.href : acc;
+      }, null)
+    : null;
 
   const navLink: React.CSSProperties = {
     textDecoration: "none",
@@ -40,6 +68,15 @@ export function Header({
     fontWeight: 600,
     fontSize: 15,
     transition: "color .2s",
+  };
+  const activePill: React.CSSProperties = {
+    textDecoration: "none",
+    background: DC.accent,
+    color: "#fff",
+    fontWeight: 700,
+    fontSize: 14,
+    padding: "7px 15px",
+    borderRadius: 999,
   };
 
   return (
@@ -85,9 +122,9 @@ export function Header({
           <LogoMark priority />
         </Link>
 
-        <nav className="hidden md:flex" style={{ alignItems: "center", gap: 26 }}>
+        <nav className="hidden md:flex" style={{ alignItems: "center", gap: showAdminNav ? 6 : 26 }}>
           {links.map((l) => (
-            <Link key={l.href} href={l.href} style={navLink}>
+            <Link key={l.href} href={l.href} style={l.href === activeHref ? activePill : navLink}>
               {l.label}
             </Link>
           ))}
