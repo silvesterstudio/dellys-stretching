@@ -384,7 +384,8 @@
     },
     "walkIn": {
       "open": "Adaugă participant (walk-in)",
-      "title": "Check-in participant nou"
+      "title": "Check-in participant nou",
+      "reserve": "Rezervă"
     },
     "roster": "Listă participanți",
     "assignMembership": "Atribuie abonament",
@@ -430,6 +431,12 @@
       "select": "Selectează un membru pentru a vedea toate detaliile.",
       "searchPlaceholder": "Caută după nume, email sau telefon",
       "noPhone": "Fără telefon",
+      "newMember": "Membru nou",
+      "createMember": "Creează membru",
+      "namePlaceholder": "Nume complet",
+      "phonePlaceholder": "Telefon",
+      "emailOptional": "Email (opțional)",
+      "emailTaken": "Există deja un cont cu acest email.",
       "sessionsShort": "ședințe",
       "freeze": "Îngheață",
       "unfreeze": "Dezgheață",

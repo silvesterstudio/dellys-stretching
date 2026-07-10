@@ -55,6 +55,12 @@ export function checkInErrorMessage(raw: string, dict: Dictionary): string {
   if (code.includes("MEMBERSHIP_WRONG_USER")) return e.wrongUser;
   if (code.includes("MEMBERSHIP_NOT_FOUND")) return e.notFound;
   if (code.includes("NOT_CHECKINABLE")) return e.notCheckinable;
+  // Walk-in / reserve paths surface booking codes here too.
+  if (code.includes("ALREADY_ATTENDED")) return e.notCheckinable;
+  if (code.includes("SESSION_FULL")) return dict.booking.sessionFull;
+  if (code.includes("ALREADY_BOOKED")) return dict.booking.alreadyBooked;
+  if (code.includes("SESSION_CANCELLED") || code.includes("SESSION_NOT_FOUND"))
+    return dict.booking.pastSession;
   return dict.common.error;
 }
 

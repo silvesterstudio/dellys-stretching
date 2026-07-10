@@ -8,6 +8,7 @@ import { formatDate, formatTime, formatPrice } from "@/lib/format";
 import {
   searchMembersAction,
   getMemberDetailAction,
+  createMemberAction,
   assignMembershipAction,
   transferMembershipAction,
   decideMembershipRequestAction,
@@ -81,10 +82,18 @@ export function MembersExplorer({
   const [searching, startSearch] = useTransition();
   const [loadingDetail, startDetail] = useTransition();
   const [busy, startAction] = useTransition();
+  const [showCreate, setShowCreate] = useState(false);
 
   function runSearch(e: React.FormEvent) {
     e.preventDefault();
     startSearch(async () => setResults(await searchMembersAction(query)));
+  }
+
+  // A newly-created member is prepended to the list and opened immediately.
+  function onCreated(row: AdminMemberRow) {
+    setShowCreate(false);
+    setResults((prev) => [row, ...prev.filter((r) => r.id !== row.id)]);
+    open(row.id);
   }
 
   function open(id: string) {
@@ -125,6 +134,13 @@ export function MembersExplorer({
     <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_1fr]">
       {/* ---- List ---- */}
       <div className="space-y-3">
+        {showCreate ? (
+          <NewMemberForm dict={dict} onCreated={onCreated} onCancel={() => setShowCreate(false)} />
+        ) : (
+          <button onClick={() => setShowCreate(true)} className="btn-secondary w-full">
+            + {m.newMember}
+          </button>
+        )}
         <form onSubmit={runSearch} className="flex gap-2">
           <input
             className="input"
@@ -510,6 +526,65 @@ function MembershipRow({
         </button>
       </div>
     </div>
+  );
+}
+
+// Register a walk-in member in person (name + phone; email optional).
+function NewMemberForm({
+  dict,
+  onCreated,
+  onCancel,
+}: {
+  dict: Dictionary;
+  onCreated: (row: AdminMemberRow) => void;
+  onCancel: () => void;
+}) {
+  const m = dict.admin.member;
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSaving(true);
+    const res = await createMemberAction({
+      fullName,
+      phone,
+      email: email.trim() || null,
+    });
+    setSaving(false);
+    if (res.error || !res.userId) {
+      setError(res.error === "EMAIL_TAKEN" ? m.emailTaken : dict.common.error);
+      return;
+    }
+    onCreated({
+      id: res.userId,
+      full_name: fullName.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      created_at: new Date().toISOString(),
+    });
+  }
+
+  return (
+    <form onSubmit={submit} className="card space-y-2.5 p-3.5">
+      <div className="flex items-center justify-between">
+        <h4 className="text-sm font-semibold text-mauve-800">{m.newMember}</h4>
+        <button type="button" onClick={onCancel} className="text-mauve-400 hover:text-mauve-700" aria-label={dict.common.cancel}>
+          ✕
+        </button>
+      </div>
+      <input className="input" placeholder={m.namePlaceholder} value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+      <input className="input" placeholder={m.phonePlaceholder} value={phone} onChange={(e) => setPhone(e.target.value)} required />
+      <input className="input" type="email" placeholder={m.emailOptional} value={email} onChange={(e) => setEmail(e.target.value)} />
+      {error && <div className="text-xs text-red-700">{error}</div>}
+      <button type="submit" disabled={saving || !fullName.trim() || !phone.trim()} className="btn-primary w-full">
+        {saving ? "…" : m.createMember}
+      </button>
+    </form>
   );
 }
 
