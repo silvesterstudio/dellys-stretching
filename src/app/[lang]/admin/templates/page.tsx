@@ -1,6 +1,8 @@
+import { redirect } from "next/navigation";
 import { TIMEZONE, type Locale } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
+import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getWeekRange } from "@/lib/week";
 import { formatDateShort } from "@/lib/format";
@@ -20,6 +22,12 @@ export default async function TemplatesPage({
   const { w } = await searchParams;
   const locale = (isLocale(lang) ? lang : "ro") as Locale;
   const dict = getDictionary(locale);
+  // Admin-only page (the layout now admits reception staff too).
+  try {
+    await requireAdmin();
+  } catch {
+    redirect(`/${locale}/admin/today`);
+  }
   const supabase = await createClient();
 
   // Week to edit (offset from the current week; negative = past, positive = future).

@@ -11,6 +11,7 @@ import {
   assignMembershipAction,
   transferMembershipAction,
   updateMemberNotesAction,
+  setStaffRoleAction,
   decideMembershipRequestAction,
   setMembershipFrozenAction,
   addMembershipSessionsAction,
@@ -135,6 +136,15 @@ export function MembersExplorer({
     startAction(async () => setDetail(await getMemberDetailAction(uid)));
   }
 
+  function toggleReception(makeReception: boolean) {
+    if (!detail) return;
+    const uid = detail.profile.id;
+    startAction(async () => {
+      await setStaffRoleAction(uid, makeReception);
+      setDetail(await getMemberDetailAction(uid));
+    });
+  }
+
   const statusLabel = (map: Record<string, string>, key: string) =>
     (map as Record<string, string>)[key] ?? key;
 
@@ -209,10 +219,36 @@ export function MembersExplorer({
                     </div>
                   </div>
                 </div>
-                {detail.profile.role === "admin" && (
+                {detail.profile.role === "admin" ? (
                   <span className="badge bg-brand-50 text-brand-700">admin</span>
-                )}
+                ) : detail.profile.role === "reception" ? (
+                  <span className="badge bg-brand-50 text-brand-700">{m.receptionRole}</span>
+                ) : null}
               </div>
+
+              {/* Reception (front-desk staff) toggle — never shown for admins. */}
+              {detail.profile.role !== "admin" && (
+                <div className="mt-4 flex items-center justify-between border-t border-mauve-100 pt-3">
+                  <div className="text-xs text-mauve-500">{m.receptionHint}</div>
+                  {detail.profile.role === "reception" ? (
+                    <button
+                      onClick={() => toggleReception(false)}
+                      disabled={busy}
+                      className="btn-ghost-danger px-3 py-1.5 text-xs"
+                    >
+                      {m.removeReception}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => toggleReception(true)}
+                      disabled={busy}
+                      className="btn-secondary px-3 py-1.5 text-xs"
+                    >
+                      {m.makeReception}
+                    </button>
+                  )}
+                </div>
+              )}
 
               {/* Stats */}
               <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">

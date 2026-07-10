@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Locale } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
-import { createClient } from "@/lib/supabase/server";
+import { requireStaff } from "@/lib/auth";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { formatDate, formatTime } from "@/lib/format";
 import { localized } from "@/lib/i18n-data";
 import { CheckInRow } from "@/components/admin/CheckInRow";
@@ -25,7 +26,14 @@ export default async function RosterPage({
   const { lang, id } = await params;
   const locale = (isLocale(lang) ? lang : "ro") as Locale;
   const dict = getDictionary(locale);
-  const supabase = await createClient();
+  // Roster is reachable by reception staff (check-in), so gate on staff and read
+  // with the service role (reception has no direct RLS read on these tables).
+  try {
+    await requireStaff();
+  } catch {
+    redirect(`/${locale}/staff`);
+  }
+  const supabase = createAdminClient();
 
   const { data: sessionRaw } = await supabase
     .from("sessions")

@@ -915,6 +915,38 @@ export async function setMembershipFrozenAction(
   return { error: error?.message ?? null };
 }
 
+// Promote a member to reception (front-desk staff) or demote back to client.
+// Admin-only, and it refuses to touch admin accounts. The guard_profile_role
+// trigger permits this because the service role has no auth.uid().
+export async function setStaffRoleAction(
+  userId: string,
+  makeReception: boolean,
+): Promise<ActionResult> {
+  const actor = await requireAdmin();
+  let service;
+  try {
+    service = createAdminClient();
+  } catch {
+    return { error: "NO_SERVICE_KEY" };
+  }
+  const { data: target } = await service
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!target) return { error: "USER_NOT_FOUND" };
+  if (target.role === "admin") return { error: "CANNOT_MODIFY_ADMIN" };
+
+  const newRole = makeReception ? "reception" : "client";
+  const { error } = await service
+    .from("profiles")
+    .update({ role: newRole })
+    .eq("id", userId);
+  if (!error) await logAudit(actor, "member.role", "member", userId, { role: newRole });
+  revalidatePath("/[lang]/admin/members", "page");
+  return { error: error?.message ?? null };
+}
+
 // Save free-text staff notes on a member (injuries, preferences, etc.).
 export async function updateMemberNotesAction(
   userId: string,

@@ -1,6 +1,8 @@
+import { redirect } from "next/navigation";
 import type { Locale } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
+import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { PlansManager, type AdminPlan } from "@/components/admin/PlansManager";
 import { ResetPanel } from "@/components/admin/ResetPanel";
@@ -15,6 +17,12 @@ export default async function AdminPlansPage({
   const { lang } = await params;
   const locale = (isLocale(lang) ? lang : "ro") as Locale;
   const dict = getDictionary(locale);
+  // Admin-only page (the layout now admits reception staff too).
+  try {
+    await requireAdmin();
+  } catch {
+    redirect(`/${locale}/admin/today`);
+  }
   const supabase = await createClient();
 
   const { data } = await supabase

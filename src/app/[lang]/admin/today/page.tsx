@@ -4,7 +4,7 @@ import type { Locale } from "@/lib/constants";
 import { TIMEZONE } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
-import { requireAdmin } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { bucharestWallToUtc } from "@/lib/week";
 import { formatTime } from "@/lib/format";
@@ -43,7 +43,7 @@ export default async function TodayPage({
   const locale = (isLocale(lang) ? lang : "ro") as Locale;
   const dict = getDictionary(locale);
   try {
-    await requireAdmin();
+    await requireStaff();
   } catch {
     redirect(`/${locale}/staff`);
   }
