@@ -78,6 +78,68 @@ export async function assignMembershipAction(
   return { error: error ? "ASSIGN_FAILED" : null };
 }
 
+// Transfer an EXISTING (offline) membership onto a member's account with a
+// custom remaining-session count and expiry. Unlike assignMembershipAction —
+// which sells a fresh catalog plan at full session count starting today — this
+// hangs the balance off the hidden per-audience "transferred" system plan
+// (system_key = transfer_adult / transfer_child, price 0, inactive), so it
+// stays out of revenue totals and the public price list.
+export async function transferMembershipAction(
+  userId: string,
+  input: {
+    audience: "adult" | "child";
+    sessionsRemaining: number; // computed on the client (999 = unlimited)
+    expiresOn: string; // YYYY-MM-DD (Chisinau calendar day)
+    label: string | null; // plan name as written in the old system
+    startedOn: string | null; // YYYY-MM-DD, kept in the note for context
+  },
+): Promise<ActionResult> {
+  const admin = await requireAdmin();
+  const supabase = await createClient();
+
+  const sessions = Math.trunc(input.sessionsRemaining);
+  if (!Number.isFinite(sessions) || sessions < 0) return { error: "INVALID_SESSIONS" };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.expiresOn)) return { error: "INVALID_DATE" };
+  const audience = input.audience === "child" ? "child" : "adult";
+
+  // Target must be a real client.
+  const { data: target } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!target || target.role !== "client") return { error: "USER_NOT_FOUND" };
+
+  // Hang the balance off the hidden per-audience "transferred" system plan.
+  const { data: plan } = await supabase
+    .from("membership_plans")
+    .select("id")
+    .eq("system_key", `transfer_${audience}`)
+    .maybeSingle();
+  if (!plan) return { error: "TRANSFER_PLAN_MISSING" };
+
+  // Valid through the end of the chosen day (mirrors updateMembershipExpiry).
+  const expires = bucharestWallToUtc(input.expiresOn, "23:59").toISOString();
+
+  const label = (input.label ?? "").trim();
+  const noteParts = ["Transfer"];
+  if (label) noteParts.push(label);
+  if (input.startedOn && /^\d{4}-\d{2}-\d{2}$/.test(input.startedOn)) {
+    noteParts.push(`din ${input.startedOn}`);
+  }
+
+  const { error } = await supabase.from("user_memberships").insert({
+    user_id: userId,
+    plan_id: plan.id as string,
+    sessions_remaining: sessions,
+    expires_at: expires,
+    assigned_by: admin.id,
+    note: noteParts.join(" · "),
+  });
+  revalidatePath("/[lang]/admin/members", "page");
+  return { error: error ? "TRANSFER_FAILED" : null };
+}
+
 // Admin confirms (creates the membership) or rejects a pending purchase request.
 export async function decideMembershipRequestAction(
   requestId: string,

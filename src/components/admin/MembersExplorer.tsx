@@ -9,6 +9,7 @@ import {
   searchMembersAction,
   getMemberDetailAction,
   assignMembershipAction,
+  transferMembershipAction,
   decideMembershipRequestAction,
   setMembershipFrozenAction,
   addMembershipSessionsAction,
@@ -28,6 +29,14 @@ function toDateInput(iso: string): string {
     month: "2-digit",
     day: "2-digit",
   }).format(new Date(iso));
+}
+
+// Local Date -> "YYYY-MM-DD" using its calendar fields (no timezone shift), for
+// dates the admin builds from date-picker inputs in the transfer form.
+function ymd(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+    d.getDate(),
+  ).padStart(2, "0")}`;
 }
 
 type Plan = {
@@ -221,6 +230,15 @@ export function MembersExplorer({
                 </button>
               </div>
             </div>
+
+            {/* Transfer an existing (offline) membership */}
+            <TransferForm
+              userId={detail.profile.id}
+              lang={lang}
+              dict={dict}
+              busy={busy}
+              onDone={reload}
+            />
 
             {/* Requests */}
             <Section title={m.requests}>
@@ -491,6 +509,247 @@ function MembershipRow({
           {dict.admin.delete}
         </button>
       </div>
+    </div>
+  );
+}
+
+const DURATIONS = [
+  { months: 1, key: "month1" as const },
+  { months: 6, key: "months6" as const },
+  { months: 12, key: "months12" as const },
+];
+
+// Transfer an existing offline membership onto this member: enter sessions/month
+// + start date + duration (+ how many were already used this month) and it
+// computes the real remaining balance and expiry, then activates it.
+function TransferForm({
+  userId,
+  lang,
+  dict,
+  busy,
+  onDone,
+}: {
+  userId: string;
+  lang: Locale;
+  dict: Dictionary;
+  busy: boolean;
+  onDone: () => void;
+}) {
+  const t = dict.admin.member.transfer;
+  const [open, setOpen] = useState(false);
+  const [audience, setAudience] = useState<"adult" | "child">("adult");
+  const [sessions, setSessions] = useState(10);
+  const [unlimited, setUnlimited] = useState(false);
+  const [start, setStart] = useState(""); // YYYY-MM-DD
+  const [months, setMonths] = useState(1);
+  const [used, setUsed] = useState(0);
+  const [label, setLabel] = useState("");
+  const [working, setWorking] = useState(false);
+
+  // Month math (mirrors the Impuls custom-transfer flow).
+  const startDate =
+    start && /^\d{4}-\d{2}-\d{2}$/.test(start) ? new Date(start + "T00:00:00") : null;
+  const expiry = startDate
+    ? (() => {
+        const e = new Date(startDate);
+        e.setMonth(e.getMonth() + months);
+        return e;
+      })()
+    : null;
+  // Full calendar months already elapsed since the start date (those months'
+  // sessions are gone if the admin records the transfer mid-plan).
+  const completedMonths = startDate
+    ? (() => {
+        const now = new Date();
+        const elapsed =
+          (now.getFullYear() - startDate.getFullYear()) * 12 +
+          (now.getMonth() - startDate.getMonth());
+        return Math.min(Math.max(elapsed, 0), months - 1);
+      })()
+    : 0;
+  const usedN = Math.max(0, Math.trunc(used) || 0);
+  const effectiveSessions = unlimited
+    ? 999
+    : Math.max(0, sessions * (months - completedMonths) - usedN);
+  const expiresOn = expiry ? ymd(expiry) : "";
+  const daysRemaining = expiry
+    ? Math.ceil((expiry.getTime() - new Date().setHours(0, 0, 0, 0)) / 86400000)
+    : null;
+  const canSubmit =
+    !!expiry && daysRemaining !== null && daysRemaining > 0 && !working && !busy;
+
+  async function submit() {
+    if (!canSubmit) return;
+    setWorking(true);
+    await transferMembershipAction(userId, {
+      audience,
+      sessionsRemaining: effectiveSessions,
+      expiresOn,
+      label: label.trim() || null,
+      startedOn: start || null,
+    });
+    setWorking(false);
+    // Reset for the next entry.
+    setSessions(10);
+    setUnlimited(false);
+    setStart("");
+    setMonths(1);
+    setUsed(0);
+    setLabel("");
+    setOpen(false);
+    onDone();
+  }
+
+  const seg = (active: boolean) =>
+    `flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition ${
+      active
+        ? "border-brand-300 bg-brand-50 text-brand-700"
+        : "border-mauve-200 bg-white text-mauve-500 hover:bg-sand-50"
+    }`;
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)} className="btn-secondary w-full">
+        + {t.open}
+      </button>
+    );
+  }
+
+  return (
+    <div className="card space-y-4 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h4 className="text-sm font-semibold text-mauve-800">{t.title}</h4>
+          <p className="mt-0.5 text-xs text-mauve-400">{t.subtitle}</p>
+        </div>
+        <button
+          onClick={() => setOpen(false)}
+          className="shrink-0 text-mauve-400 hover:text-mauve-700"
+          aria-label={dict.common.cancel}
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Audience */}
+      <div>
+        <label className="label">{t.audience}</label>
+        <div className="flex gap-2">
+          <button onClick={() => setAudience("adult")} className={seg(audience === "adult")}>
+            {t.adult}
+          </button>
+          <button onClick={() => setAudience("child")} className={seg(audience === "child")}>
+            {t.child}
+          </button>
+        </div>
+      </div>
+
+      {/* Sessions per month + unlimited */}
+      <div>
+        <label className="label">{t.sessionsPerMonth}</label>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min={1}
+            value={unlimited ? "" : sessions}
+            disabled={unlimited}
+            placeholder={unlimited ? "∞" : ""}
+            onChange={(e) => setSessions(Math.max(1, parseInt(e.target.value) || 1))}
+            className="input w-24 disabled:opacity-50"
+          />
+          <button
+            onClick={() => setUnlimited((v) => !v)}
+            className={seg(unlimited) + " max-w-[9rem]"}
+          >
+            ∞ {t.unlimited}
+          </button>
+        </div>
+      </div>
+
+      {/* Start date */}
+      <div>
+        <label className="label">{t.startDate}</label>
+        <input
+          type="date"
+          value={start}
+          onChange={(e) => setStart(e.target.value)}
+          className="input"
+        />
+      </div>
+
+      {/* Duration */}
+      <div>
+        <label className="label">{t.duration}</label>
+        <div className="flex gap-2">
+          {DURATIONS.map((d) => (
+            <button key={d.months} onClick={() => setMonths(d.months)} className={seg(months === d.months)}>
+              {t[d.key]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Already used this month (skipped when unlimited) */}
+      {!unlimited && (
+        <div>
+          <label className="label">{t.usedThisMonth}</label>
+          <input
+            type="number"
+            min={0}
+            value={used}
+            onChange={(e) => setUsed(Math.max(0, parseInt(e.target.value) || 0))}
+            className="input w-24"
+          />
+        </div>
+      )}
+
+      {/* Optional plan label */}
+      <div>
+        <label className="label">{t.label}</label>
+        <input
+          type="text"
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          placeholder={t.labelPlaceholder}
+          className="input"
+        />
+      </div>
+
+      {/* Computed preview */}
+      {expiry ? (
+        <div className="grid grid-cols-3 gap-2 rounded-xl bg-sand-50 p-3 text-center">
+          <div>
+            <div className="font-display text-lg font-bold text-brand-600">
+              {unlimited ? "∞" : effectiveSessions}
+            </div>
+            <div className="text-[11px] font-medium text-mauve-500">{t.remaining}</div>
+          </div>
+          <div>
+            <div className="font-display text-sm font-bold text-mauve-900">
+              {formatDate(expiry.toISOString(), lang)}
+            </div>
+            <div className="text-[11px] font-medium text-mauve-500">{t.expiresOn}</div>
+          </div>
+          <div>
+            <div
+              className={`font-display text-lg font-bold ${
+                daysRemaining !== null && daysRemaining <= 0
+                  ? "text-red-500"
+                  : "text-mauve-900"
+              }`}
+            >
+              {daysRemaining !== null && daysRemaining <= 0 ? t.expired : daysRemaining}
+            </div>
+            <div className="text-[11px] font-medium text-mauve-500">{t.daysRemaining}</div>
+          </div>
+        </div>
+      ) : (
+        <p className="text-xs text-mauve-400">{t.needStart}</p>
+      )}
+
+      <button onClick={submit} disabled={!canSubmit} className="btn-primary w-full">
+        {working ? "…" : t.submit}
+      </button>
     </div>
   );
 }
