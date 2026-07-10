@@ -43,16 +43,23 @@ export function Header({
 
   const showAdminNav = onAdminPage && isStaff;
 
+  // Off the admin panel the bar shows the site's own nav. Staff also get an
+  // "Administrare" link back into the panel; regular members get "Dashboard".
+  const publicLinks = [
+    { href: `${base}#discipline`, label: dict.nav.disciplines },
+    { href: `${base}#program`, label: dict.nav.schedule },
+    { href: `${base}#preturi`, label: dict.nav.prices },
+  ];
   const links = showAdminNav
     ? adminTabs
-    : isAdmin
-      ? [{ href: `${base}/admin`, label: dict.nav.admin }]
-      : [
-          { href: `${base}#discipline`, label: dict.nav.disciplines },
-          { href: `${base}#program`, label: dict.nav.schedule },
-          { href: `${base}#preturi`, label: dict.nav.prices },
-          ...(profile ? [{ href: `${base}/dashboard`, label: dict.nav.dashboard }] : []),
-        ];
+    : [
+        ...publicLinks,
+        ...(isStaff
+          ? [{ href: `${base}/admin`, label: dict.nav.admin }]
+          : profile
+            ? [{ href: `${base}/dashboard`, label: dict.nav.dashboard }]
+            : []),
+      ];
 
   // Active admin tab = the one whose href is the longest prefix of the path.
   const activeHref = showAdminNav
@@ -155,7 +162,7 @@ export function Header({
                 {dict.home.nav.login}
               </Link>
             )}
-            {!isAdmin && (
+            {!isStaff && (
               <Link
                 href={ctaHref}
                 style={{
