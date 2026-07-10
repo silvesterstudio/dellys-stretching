@@ -513,15 +513,9 @@ function MembershipRow({
   );
 }
 
-const DURATIONS = [
-  { months: 1, key: "month1" as const },
-  { months: 6, key: "months6" as const },
-  { months: 12, key: "months12" as const },
-];
-
-// Transfer an existing offline membership onto this member: enter sessions/month
-// + start date + duration (+ how many were already used this month) and it
-// computes the real remaining balance and expiry, then activates it.
+// Transfer an existing offline membership onto this member: enter the remaining
+// sessions + a start date (DD/MM/YYYY) + a duration in months, and it computes
+// the expiry, then activates the membership.
 function TransferForm({
   userId,
   lang,
@@ -540,15 +534,19 @@ function TransferForm({
   const [audience, setAudience] = useState<"adult" | "child">("adult");
   const [sessions, setSessions] = useState(10);
   const [unlimited, setUnlimited] = useState(false);
-  const [start, setStart] = useState(""); // YYYY-MM-DD
+  const [day, setDay] = useState("01");
+  const [month, setMonth] = useState("01");
+  const [year, setYear] = useState(() => String(new Date().getFullYear()));
   const [months, setMonths] = useState(1);
-  const [used, setUsed] = useState(0);
-  const [label, setLabel] = useState("");
   const [working, setWorking] = useState(false);
 
-  // Month math (mirrors the Impuls custom-transfer flow).
-  const startDate =
-    start && /^\d{4}-\d{2}-\d{2}$/.test(start) ? new Date(start + "T00:00:00") : null;
+  // Build the start date from the DD / MM / YYYY boxes; expiry = start + months.
+  const dd = parseInt(day, 10);
+  const mm = parseInt(month, 10);
+  const yy = parseInt(year, 10);
+  const validStart =
+    dd >= 1 && dd <= 31 && mm >= 1 && mm <= 12 && yy >= 2015 && yy <= 2100 && months >= 1;
+  const startDate = validStart ? new Date(yy, mm - 1, dd) : null;
   const expiry = startDate
     ? (() => {
         const e = new Date(startDate);
@@ -556,21 +554,7 @@ function TransferForm({
         return e;
       })()
     : null;
-  // Full calendar months already elapsed since the start date (those months'
-  // sessions are gone if the admin records the transfer mid-plan).
-  const completedMonths = startDate
-    ? (() => {
-        const now = new Date();
-        const elapsed =
-          (now.getFullYear() - startDate.getFullYear()) * 12 +
-          (now.getMonth() - startDate.getMonth());
-        return Math.min(Math.max(elapsed, 0), months - 1);
-      })()
-    : 0;
-  const usedN = Math.max(0, Math.trunc(used) || 0);
-  const effectiveSessions = unlimited
-    ? 999
-    : Math.max(0, sessions * (months - completedMonths) - usedN);
+  const effectiveSessions = unlimited ? 999 : Math.max(0, Math.trunc(sessions));
   const expiresOn = expiry ? ymd(expiry) : "";
   const daysRemaining = expiry
     ? Math.ceil((expiry.getTime() - new Date().setHours(0, 0, 0, 0)) / 86400000)
@@ -585,17 +569,16 @@ function TransferForm({
       audience,
       sessionsRemaining: effectiveSessions,
       expiresOn,
-      label: label.trim() || null,
-      startedOn: start || null,
+      label: null,
+      startedOn: startDate ? ymd(startDate) : null,
     });
     setWorking(false);
     // Reset for the next entry.
     setSessions(10);
     setUnlimited(false);
-    setStart("");
+    setDay("01");
+    setMonth("01");
     setMonths(1);
-    setUsed(0);
-    setLabel("");
     setOpen(false);
     onDone();
   }
@@ -644,9 +627,9 @@ function TransferForm({
         </div>
       </div>
 
-      {/* Sessions per month + unlimited */}
+      {/* Remaining sessions + unlimited */}
       <div>
-        <label className="label">{t.sessionsPerMonth}</label>
+        <label className="label">{t.sessions}</label>
         <div className="flex items-center gap-2">
           <input
             type="number"
@@ -666,53 +649,62 @@ function TransferForm({
         </div>
       </div>
 
-      {/* Start date */}
+      {/* Start date (DD / MM / YYYY) */}
       <div>
         <label className="label">{t.startDate}</label>
-        <input
-          type="date"
-          value={start}
-          onChange={(e) => setStart(e.target.value)}
-          className="input"
-        />
+        <div className="grid grid-cols-3 gap-2">
+          <div>
+            <label className="mb-1 block text-[11px] font-medium text-mauve-400">{t.day}</label>
+            <input
+              type="number"
+              min={1}
+              max={31}
+              placeholder="01"
+              value={day}
+              onChange={(e) => setDay(e.target.value)}
+              className="input text-center"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-medium text-mauve-400">{t.month}</label>
+            <input
+              type="number"
+              min={1}
+              max={12}
+              placeholder="01"
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+              className="input text-center"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[11px] font-medium text-mauve-400">{t.year}</label>
+            <input
+              type="number"
+              min={2015}
+              max={2100}
+              placeholder="2026"
+              value={year}
+              onChange={(e) => setYear(e.target.value)}
+              className="input text-center"
+            />
+          </div>
+        </div>
       </div>
 
-      {/* Duration */}
+      {/* Duration (custom months) */}
       <div>
         <label className="label">{t.duration}</label>
-        <div className="flex gap-2">
-          {DURATIONS.map((d) => (
-            <button key={d.months} onClick={() => setMonths(d.months)} className={seg(months === d.months)}>
-              {t[d.key]}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Already used this month (skipped when unlimited) */}
-      {!unlimited && (
-        <div>
-          <label className="label">{t.usedThisMonth}</label>
+        <div className="flex items-center gap-2">
           <input
             type="number"
-            min={0}
-            value={used}
-            onChange={(e) => setUsed(Math.max(0, parseInt(e.target.value) || 0))}
-            className="input w-24"
+            min={1}
+            value={months}
+            onChange={(e) => setMonths(Math.max(1, parseInt(e.target.value) || 1))}
+            className="input w-24 text-center"
           />
+          <span className="text-sm text-mauve-500">{t.monthsUnit}</span>
         </div>
-      )}
-
-      {/* Optional plan label */}
-      <div>
-        <label className="label">{t.label}</label>
-        <input
-          type="text"
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          placeholder={t.labelPlaceholder}
-          className="input"
-        />
       </div>
 
       {/* Computed preview */}
