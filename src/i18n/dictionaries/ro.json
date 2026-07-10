@@ -370,7 +370,7 @@
   "admin": {
     "title": "Panou de administrare",
     "sessions": "Sesiuni",
-    "templates": "Program săptămânal",
+    "templates": "Program",
     "members": "Membri",
     "checkIn": "Check-in",
     "todayTab": "Astăzi",
@@ -380,7 +380,8 @@
       "subtitle": "Apasă o ședință pentru a face check-in participanților.",
       "none": "Nicio ședință programată azi.",
       "checkIn": "Check-in",
-      "done": "Încheiată"
+      "done": "Încheiată",
+      "ongoing": "În curs"
     },
     "walkIn": {
       "open": "Adaugă participant (walk-in)",

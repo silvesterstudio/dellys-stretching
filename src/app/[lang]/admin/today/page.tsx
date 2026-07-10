@@ -56,7 +56,7 @@ export default async function TodayPage({
     const { data } = await admin
       .from("sessions")
       .select(
-        `id, starts_at, capacity, booked_count, status, instructor,
+        `id, starts_at, duration_min, capacity, booked_count, status, instructor,
          class_type:class_types ( name_ro, name_ru, color, audience )`,
       )
       .gte("starts_at", start)
@@ -73,6 +73,8 @@ export default async function TodayPage({
       | { name_ro: string; name_ru: string; color: string; audience: string }
       | null;
     const startsAt = s.starts_at as string;
+    const startMs = new Date(startsAt).getTime();
+    const endMs = startMs + ((s.duration_min as number) || 60) * 60000;
     return {
       id: s.id as string,
       startsAt,
@@ -83,7 +85,10 @@ export default async function TodayPage({
       color: ct?.color ?? "#cbc4ca",
       name: ct ? localized(ct, "name", locale) : "—",
       audience: ct?.audience ?? "adult",
-      past: new Date(startsAt).getTime() < now,
+      // Only "done" once the class has actually ended (start + duration), and
+      // "in progress" while it is running.
+      ended: endMs < now,
+      ongoing: startMs <= now && endMs >= now,
     };
   });
 
@@ -121,12 +126,13 @@ export default async function TodayPage({
                       <span className="ml-2 text-xs text-mauve-400">
                         {dict.audience[r.audience as "adult" | "child"]}
                       </span>
-                      {r.status === "cancelled" && (
+                      {r.status === "cancelled" ? (
                         <span className="badge-muted ml-2">{dict.common.cancel}</span>
-                      )}
-                      {r.past && r.status !== "cancelled" && (
+                      ) : r.ongoing ? (
+                        <span className="badge-success ml-2">{t.ongoing}</span>
+                      ) : r.ended ? (
                         <span className="badge-muted ml-2">{t.done}</span>
-                      )}
+                      ) : null}
                     </div>
                     {r.instructor && (
                       <div className="truncate text-xs text-mauve-400">{r.instructor}</div>
