@@ -128,6 +128,7 @@ export interface Database {
           phone: string | null;
           preferred_lang: Locale;
           role: UserRole;
+          notes: string | null;
           created_at: string;
         };
         Insert: {
@@ -137,6 +138,7 @@ export interface Database {
           phone?: string | null;
           preferred_lang?: Locale;
           role?: UserRole;
+          notes?: string | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
@@ -269,6 +271,7 @@ export interface Database {
           assigned_by: string | null;
           note: string | null;
           frozen: boolean;
+          freeze_start_date: string | null;
           amount_paid: number | null;
           payment_method: string | null;
           created_at: string;
@@ -282,6 +285,7 @@ export interface Database {
           assigned_by?: string | null;
           note?: string | null;
           frozen?: boolean;
+          freeze_start_date?: string | null;
           amount_paid?: number | null;
           payment_method?: string | null;
           created_at?: string;

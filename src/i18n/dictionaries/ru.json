@@ -451,6 +451,8 @@
       "payCard": "Карта",
       "payTransfer": "Перевод",
       "payFree": "Бесплатно",
+      "notes": "Заметки",
+      "notesPlaceholder": "Травмы, предпочтения, заметки…",
       "sessionsShort": "занятий",
       "freeze": "Заморозить",
       "unfreeze": "Разморозить",

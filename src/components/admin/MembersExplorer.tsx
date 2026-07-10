@@ -10,6 +10,7 @@ import {
   getMemberDetailAction,
   assignMembershipAction,
   transferMembershipAction,
+  updateMemberNotesAction,
   decideMembershipRequestAction,
   setMembershipFrozenAction,
   addMembershipSessionsAction,
@@ -281,6 +282,14 @@ export function MembersExplorer({
               onDone={reload}
             />
 
+            {/* Staff notes */}
+            <NotesCard
+              key={detail.profile.id}
+              userId={detail.profile.id}
+              initial={detail.profile.notes}
+              dict={dict}
+            />
+
             {/* Requests */}
             <Section title={m.requests}>
               {detail.requests.length === 0 ? (
@@ -548,6 +557,52 @@ function MembershipRow({
           className="btn-ghost-danger px-3 py-1.5 text-xs"
         >
           {dict.admin.delete}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Free-text staff notes on a member.
+function NotesCard({
+  userId,
+  initial,
+  dict,
+}: {
+  userId: string;
+  initial: string | null;
+  dict: Dictionary;
+}) {
+  const m = dict.admin.member;
+  const [notes, setNotes] = useState(initial ?? "");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const dirty = notes !== (initial ?? "");
+
+  async function save() {
+    setSaving(true);
+    setSaved(false);
+    await updateMemberNotesAction(userId, notes);
+    setSaving(false);
+    setSaved(true);
+  }
+
+  return (
+    <div className="card space-y-2 p-4">
+      <label className="label">{m.notes}</label>
+      <textarea
+        className="input min-h-[72px] resize-y"
+        placeholder={m.notesPlaceholder}
+        value={notes}
+        onChange={(e) => {
+          setNotes(e.target.value);
+          setSaved(false);
+        }}
+      />
+      <div className="flex items-center justify-end gap-2">
+        {saved && !dirty && <span className="text-xs text-green-600">{dict.common.save} ✓</span>}
+        <button onClick={save} disabled={saving || !dirty} className="btn-secondary text-sm">
+          {saving ? "…" : dict.common.save}
         </button>
       </div>
     </div>

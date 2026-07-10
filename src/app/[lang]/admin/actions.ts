@@ -645,6 +645,7 @@ export interface AdminMemberDetail {
     phone: string | null;
     preferred_lang: string;
     role: string;
+    notes: string | null;
     created_at: string;
   };
   stats: {
@@ -693,7 +694,7 @@ export async function getMemberDetailAction(
   const [profileR, memsR, reqsR, bookingsR, childrenR] = await Promise.all([
     admin
       .from("profiles")
-      .select("id, email, full_name, phone, preferred_lang, role, created_at")
+      .select("id, email, full_name, phone, preferred_lang, role, notes, created_at")
       .eq("id", userId)
       .single(),
     admin
@@ -785,6 +786,7 @@ export async function getMemberDetailAction(
       phone: (p.phone as string) ?? null,
       preferred_lang: (p.preferred_lang as string) ?? "ro",
       role: (p.role as string) ?? "client",
+      notes: (p.notes as string) ?? null,
       created_at: p.created_at as string,
     },
     stats: {
@@ -816,10 +818,57 @@ export async function setMembershipFrozenAction(
 ): Promise<ActionResult> {
   await requireAdmin();
   const supabase = await createClient();
+
+  if (frozen) {
+    // Start the freeze: stamp when it began so unfreeze can pay the days back.
+    const { error } = await supabase
+      .from("user_memberships")
+      .update({ frozen: true, freeze_start_date: new Date().toISOString() })
+      .eq("id", membershipId);
+    revalidatePath("/[lang]/admin/members", "page");
+    return { error: error?.message ?? null };
+  }
+
+  // Unfreeze: push expiry out by however many days it was paused, so the member
+  // gets back the time they lost while frozen.
+  const { data: m } = await supabase
+    .from("user_memberships")
+    .select("expires_at, freeze_start_date")
+    .eq("id", membershipId)
+    .maybeSingle();
+  if (!m) return { error: "NOT_FOUND" };
+
+  let newExpiry = m.expires_at as string;
+  if (m.freeze_start_date) {
+    const frozenMs = Date.now() - new Date(m.freeze_start_date as string).getTime();
+    // Round to the nearest whole day: a ~5-day freeze returns exactly 5 days.
+    const frozenDays = Math.max(0, Math.round(frozenMs / 86400000));
+    if (frozenDays > 0) {
+      newExpiry = new Date(
+        new Date(m.expires_at as string).getTime() + frozenDays * 86400000,
+      ).toISOString();
+    }
+  }
   const { error } = await supabase
     .from("user_memberships")
-    .update({ frozen })
+    .update({ frozen: false, freeze_start_date: null, expires_at: newExpiry })
     .eq("id", membershipId);
+  revalidatePath("/[lang]/admin/members", "page");
+  return { error: error?.message ?? null };
+}
+
+// Save free-text staff notes on a member (injuries, preferences, etc.).
+export async function updateMemberNotesAction(
+  userId: string,
+  notes: string,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const supabase = await createClient();
+  const trimmed = notes.trim();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ notes: trimmed || null })
+    .eq("id", userId);
   revalidatePath("/[lang]/admin/members", "page");
   return { error: error?.message ?? null };
 }

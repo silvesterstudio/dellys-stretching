@@ -451,6 +451,8 @@
       "payCard": "Card",
       "payTransfer": "Transfer",
       "payFree": "Gratuit",
+      "notes": "Notițe",
+      "notesPlaceholder": "Accidentări, preferințe, observații…",
       "sessionsShort": "ședințe",
       "freeze": "Îngheață",
       "unfreeze": "Dezgheață",
