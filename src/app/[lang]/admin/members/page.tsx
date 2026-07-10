@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { PendingRequests, type RequestRow } from "@/components/admin/PendingRequests";
 import { MembersExplorer } from "@/components/admin/MembersExplorer";
+import { ExportMembersButton } from "@/components/admin/ExportMembersButton";
 import { ResetPanel } from "@/components/admin/ResetPanel";
 import type { AdminMemberRow } from "@/app/[lang]/admin/actions";
 
@@ -83,6 +84,9 @@ export default async function MembersPage({
 
   return (
     <div className="space-y-8">
+      <div className="flex justify-end">
+        <ExportMembersButton dict={dict} />
+      </div>
       <PendingRequests lang={locale} dict={dict} initial={requests} />
       <MembersExplorer
         lang={locale}

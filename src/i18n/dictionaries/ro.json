@@ -386,6 +386,12 @@
       "open": "Adaugă participant (walk-in)",
       "title": "Check-in participant nou"
     },
+    "renewals": {
+      "title": "De reînnoit",
+      "none": "Niciun abonament pe terminate.",
+      "sessionsLeft": "ședințe rămase",
+      "expires": "expiră"
+    },
     "roster": "Listă participanți",
     "assignMembership": "Atribuie abonament",
     "markAttended": "Prezent",
@@ -430,6 +436,7 @@
       "select": "Selectează un membru pentru a vedea toate detaliile.",
       "searchPlaceholder": "Caută după nume, email sau telefon",
       "noPhone": "Fără telefon",
+      "exportCsv": "Export CSV",
       "sessionsShort": "ședințe",
       "freeze": "Îngheață",
       "unfreeze": "Dezgheață",

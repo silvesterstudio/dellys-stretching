@@ -114,6 +114,61 @@ export async function walkInCheckInAction(
   return { error: null };
 }
 
+// Export all client members as CSV (name, phone, email, joined, and their best
+// active membership). Returned as a string; the browser turns it into a file.
+export async function exportMembersCsvAction(): Promise<{ csv: string | null }> {
+  await requireAdmin();
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    return { csv: null };
+  }
+  const [{ data: members }, { data: mems }] = await Promise.all([
+    admin
+      .from("profiles")
+      .select("id, full_name, email, phone, created_at")
+      .eq("role", "client")
+      .order("created_at", { ascending: false }),
+    admin
+      .from("user_memberships")
+      .select("user_id, sessions_remaining, expires_at, frozen"),
+  ]);
+
+  // Best active membership per member: unexpired, has sessions, not frozen;
+  // pick the one expiring latest.
+  const now = Date.now();
+  const best = new Map<string, { sessions: number; expires: string }>();
+  for (const m of (mems ?? []) as Record<string, unknown>[]) {
+    if (m.frozen) continue;
+    const exp = m.expires_at as string;
+    if (new Date(exp).getTime() <= now) continue;
+    if ((m.sessions_remaining as number) <= 0) continue;
+    const uid = m.user_id as string;
+    const cur = best.get(uid);
+    if (!cur || exp > cur.expires) best.set(uid, { sessions: m.sessions_remaining as number, expires: exp });
+  }
+
+  const esc = (v: string) => `"${(v ?? "").replace(/"/g, '""')}"`;
+  const iso = (s: string | null) => (s ? new Date(s).toISOString().slice(0, 10) : "");
+  const header = ["Name", "Phone", "Email", "Joined", "Active sessions", "Expires"];
+  const lines = [header.map(esc).join(",")];
+  for (const p of (members ?? []) as Record<string, unknown>[]) {
+    const b = best.get(p.id as string);
+    lines.push(
+      [
+        esc((p.full_name as string) ?? ""),
+        esc((p.phone as string) ?? ""),
+        esc((p.email as string) ?? ""),
+        esc(iso(p.created_at as string)),
+        esc(b ? String(b.sessions) : "0"),
+        esc(b ? iso(b.expires) : ""),
+      ].join(","),
+    );
+  }
+  return { csv: lines.join("\r\n") };
+}
+
 // Usable memberships for a member, matching a class audience — for the walk-in
 // check-in picker (mirrors the roster page's membership query).
 export async function getUsableMembershipsAction(

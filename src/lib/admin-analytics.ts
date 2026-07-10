@@ -179,6 +179,68 @@ export async function computeWindowMetrics(
   }
 }
 
+export interface RenewalRow {
+  userId: string;
+  name: string;
+  phone: string | null;
+  sessionsRemaining: number;
+  expiresAt: string;
+  expiringSoon: boolean;
+  lowBalance: boolean;
+}
+
+// Members who need a nudge: an active (non-frozen, unexpired, has-sessions)
+// membership that either expires within `days` or is down to `lowThreshold`
+// sessions. One row per member (their most-urgent membership).
+export async function computeRenewals(
+  now: Date = new Date(),
+  days = 7,
+  lowThreshold = 2,
+): Promise<RenewalRow[]> {
+  try {
+    const admin = createAdminClient();
+    const nowISO = now.toISOString();
+    const horizonISO = new Date(now.getTime() + days * 86400000).toISOString();
+    const { data } = await admin
+      .from("user_memberships")
+      .select(
+        "user_id, sessions_remaining, expires_at, profile:profiles!user_id!inner ( full_name, email, phone, role )",
+      )
+      .eq("frozen", false)
+      .eq("profile.role", "client")
+      .gt("sessions_remaining", 0)
+      .gt("expires_at", nowISO)
+      .or(`expires_at.lt.${horizonISO},sessions_remaining.lte.${lowThreshold}`)
+      .order("expires_at", { ascending: true })
+      .limit(100);
+
+    const seen = new Set<string>();
+    const rows: RenewalRow[] = [];
+    for (const r of (data ?? []) as Record<string, unknown>[]) {
+      const uid = r.user_id as string;
+      if (seen.has(uid)) continue; // keep the soonest-expiring per member
+      seen.add(uid);
+      const p = one(r.profile as never) as
+        | { full_name: string | null; email: string; phone: string | null }
+        | null;
+      const expiresAt = r.expires_at as string;
+      const sessions = r.sessions_remaining as number;
+      rows.push({
+        userId: uid,
+        name: p?.full_name || p?.email || "—",
+        phone: p?.phone ?? null,
+        sessionsRemaining: sessions,
+        expiresAt,
+        expiringSoon: expiresAt < horizonISO,
+        lowBalance: sessions <= lowThreshold,
+      });
+    }
+    return rows;
+  } catch {
+    return [];
+  }
+}
+
 export interface KpiMetrics {
   activeMemberships: number; // not expired & sessions remaining
   totalMembers: number;
