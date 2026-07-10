@@ -445,7 +445,8 @@
         "daysRemaining": "Zile rămase",
         "expired": "Expirat",
         "submit": "Transferă abonamentul",
-        "needStart": "Alege data de început și durata pentru a calcula ședințele și expirarea."
+        "needStart": "Alege data de început și durata pentru a calcula ședințele și expirarea.",
+        "zeroBalance": "Balanța calculată este 0 — ajustează ședințele sau «folosite» înainte de transfer."
       }
     },
     "currentMemberships": "Abonamente active",

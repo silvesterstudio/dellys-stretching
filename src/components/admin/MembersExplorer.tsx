@@ -576,8 +576,11 @@ function TransferForm({
   const daysRemaining = expiry
     ? Math.ceil((expiry.getTime() - new Date().setHours(0, 0, 0, 0)) / 86400000)
     : null;
+  // A 0-session (non-unlimited) transfer would create an unusable membership;
+  // block it so the admin fixes the sessions / used inputs first.
+  const hasBalance = unlimited || effectiveSessions > 0;
   const canSubmit =
-    !!expiry && daysRemaining !== null && daysRemaining > 0 && !working && !busy;
+    !!expiry && daysRemaining !== null && daysRemaining > 0 && hasBalance && !working && !busy;
 
   async function submit() {
     if (!canSubmit) return;
@@ -779,6 +782,9 @@ function TransferForm({
         <p className="text-xs text-mauve-400">{t.needStart}</p>
       )}
 
+      {validStart && !!expiry && !hasBalance && (
+        <p className="text-[11px] text-red-500">{t.zeroBalance}</p>
+      )}
       <button onClick={submit} disabled={!canSubmit} className="btn-primary w-full">
         {working ? "…" : t.submit}
       </button>
