@@ -392,6 +392,14 @@
       "sessionsLeft": "ședințe rămase",
       "expires": "expiră"
     },
+    "transactions": {
+      "title": "Încasări recente",
+      "none": "Nicio încasare încă.",
+      "cash": "Numerar",
+      "card": "Card",
+      "transfer": "Transfer",
+      "free": "Gratuit"
+    },
     "roster": "Listă participanți",
     "assignMembership": "Atribuie abonament",
     "markAttended": "Prezent",
@@ -437,6 +445,12 @@
       "searchPlaceholder": "Caută după nume, email sau telefon",
       "noPhone": "Fără telefon",
       "exportCsv": "Export CSV",
+      "amountPaid": "Sumă încasată",
+      "paymentMethod": "Metodă de plată",
+      "payCash": "Numerar",
+      "payCard": "Card",
+      "payTransfer": "Transfer",
+      "payFree": "Gratuit",
       "sessionsShort": "ședințe",
       "freeze": "Îngheață",
       "unfreeze": "Dezgheață",

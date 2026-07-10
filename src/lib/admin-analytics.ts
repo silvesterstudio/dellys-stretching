@@ -125,7 +125,7 @@ export async function computeWindowMetrics(
     const [sold, sessionsHeld, attendance, newMembers, bookings] = await Promise.all([
       admin
         .from("user_memberships")
-        .select("plan:membership_plans ( price, currency )")
+        .select("amount_paid, plan:membership_plans ( price, currency )")
         .gte("created_at", startISO)
         .lt("created_at", endISO),
       admin
@@ -159,10 +159,11 @@ export async function computeWindowMetrics(
     let currency = "MDL";
     for (const r of soldRows) {
       const plan = one(r.plan as never) as { price: number; currency: string } | null;
-      if (plan) {
-        revenue += Number(plan.price) || 0;
-        if (plan.currency) currency = plan.currency;
-      }
+      // Prefer what was actually collected; fall back to the plan's list price
+      // for legacy rows written before payment capture existed.
+      const paid = r.amount_paid;
+      revenue += paid != null ? Number(paid) || 0 : Number(plan?.price) || 0;
+      if (plan?.currency) currency = plan.currency;
     }
 
     return {
@@ -236,6 +237,54 @@ export async function computeRenewals(
       });
     }
     return rows;
+  } catch {
+    return [];
+  }
+}
+
+export interface TransactionRow {
+  id: string;
+  date: string;
+  member: string;
+  plan: string;
+  amount: number;
+  currency: string;
+  method: string | null;
+}
+
+// Recent membership sales that recorded a payment — the transaction log.
+export async function computeRecentTransactions(
+  lang: "ro" | "ru" = "ro",
+  limit = 20,
+): Promise<TransactionRow[]> {
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin
+      .from("user_memberships")
+      .select(
+        "id, created_at, amount_paid, payment_method, profile:profiles!user_id ( full_name, email ), plan:membership_plans ( name_ro, name_ru, currency )",
+      )
+      .not("amount_paid", "is", null)
+      .gt("amount_paid", 0)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    return ((data ?? []) as Record<string, unknown>[]).map((r) => {
+      const p = one(r.profile as never) as
+        | { full_name: string | null; email: string }
+        | null;
+      const pl = one(r.plan as never) as
+        | { name_ro: string; name_ru: string; currency: string }
+        | null;
+      return {
+        id: r.id as string,
+        date: r.created_at as string,
+        member: p?.full_name || p?.email || "—",
+        plan: pl ? (lang === "ru" ? pl.name_ru : pl.name_ro) : "—",
+        amount: Number(r.amount_paid) || 0,
+        currency: pl?.currency || "MDL",
+        method: (r.payment_method as string) ?? null,
+      };
+    });
   } catch {
     return [];
   }

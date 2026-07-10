@@ -243,10 +243,13 @@ export async function undoCheckInAction(bookingId: string): Promise<ActionResult
   return { error: error?.message ?? null };
 }
 
+const PAYMENT_METHODS = ["cash", "card", "transfer", "free"] as const;
+
 export async function assignMembershipAction(
   userId: string,
   planId: string,
   note: string | null,
+  payment?: { amount: number | null; method: string | null },
 ): Promise<ActionResult> {
   const admin = await requireAdmin();
   const supabase = await createClient();
@@ -261,7 +264,7 @@ export async function assignMembershipAction(
 
   const { data: plan, error: planErr } = await supabase
     .from("membership_plans")
-    .select("session_count, validity_days, active")
+    .select("session_count, validity_days, active, price")
     .eq("id", planId)
     .single();
   if (planErr || !plan) return { error: "PLAN_NOT_FOUND" };
@@ -271,6 +274,17 @@ export async function assignMembershipAction(
     Date.now() + plan.validity_days * 86400000,
   ).toISOString();
 
+  // Default to the plan's list price paid in cash if the admin didn't override.
+  const rawAmount = payment?.amount;
+  const amountPaid =
+    rawAmount != null && Number.isFinite(rawAmount) && rawAmount >= 0
+      ? rawAmount
+      : Number(plan.price) || 0;
+  const method =
+    payment?.method && PAYMENT_METHODS.includes(payment.method as never)
+      ? payment.method
+      : "cash";
+
   const { error } = await supabase.from("user_memberships").insert({
     user_id: userId,
     plan_id: planId,
@@ -278,8 +292,11 @@ export async function assignMembershipAction(
     expires_at: expires,
     assigned_by: admin.id,
     note,
+    amount_paid: amountPaid,
+    payment_method: method,
   });
   revalidatePath("/[lang]/admin/members", "page");
+  revalidatePath("/[lang]/admin/dashboard", "page");
   // Don't leak raw Postgres error text (table/constraint names) to the client.
   return { error: error ? "ASSIGN_FAILED" : null };
 }

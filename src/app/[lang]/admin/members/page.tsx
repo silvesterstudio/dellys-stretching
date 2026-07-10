@@ -37,7 +37,7 @@ export default async function MembersPage({
     const [p, r, mem] = await Promise.all([
       admin
         .from("membership_plans")
-        .select("id, name_ro, name_ru, audience, session_count, validity_days")
+        .select("id, name_ro, name_ru, audience, session_count, validity_days, price, currency")
         .eq("active", true)
         .order("sort_order"),
       admin

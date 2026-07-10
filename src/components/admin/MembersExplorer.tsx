@@ -45,6 +45,8 @@ type Plan = {
   name_ru: string;
   audience: "adult" | "child";
   session_count: number;
+  price: number;
+  currency: string;
 };
 
 const BOOKING_BADGE: Record<string, string> = {
@@ -78,6 +80,9 @@ export function MembersExplorer({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<AdminMemberDetail | null>(null);
   const [planId, setPlanId] = useState(plans[0]?.id ?? "");
+  const selectedPlan = plans.find((p) => p.id === planId) ?? null;
+  const [amount, setAmount] = useState<string>(String(plans[0]?.price ?? ""));
+  const [method, setMethod] = useState("cash");
   const [searching, startSearch] = useTransition();
   const [loadingDetail, startDetail] = useTransition();
   const [busy, startAction] = useTransition();
@@ -93,11 +98,22 @@ export function MembersExplorer({
     startDetail(async () => setDetail(await getMemberDetailAction(id)));
   }
 
+  function selectPlan(id: string) {
+    setPlanId(id);
+    const p = plans.find((pl) => pl.id === id);
+    if (p) setAmount(String(p.price)); // prefill with list price; admin can edit
+  }
+
   function activate() {
     if (!detail || !planId) return;
     const uid = detail.profile.id;
+    const parsed = parseFloat(amount);
+    const payment = {
+      amount: amount.trim() !== "" && Number.isFinite(parsed) ? parsed : null,
+      method,
+    };
     startAction(async () => {
-      await assignMembershipAction(uid, planId, null);
+      await assignMembershipAction(uid, planId, null, payment);
       setDetail(await getMemberDetailAction(uid));
     });
   }
@@ -210,14 +226,14 @@ export function MembersExplorer({
               </div>
             </div>
 
-            {/* Activate membership */}
-            <div className="card p-4">
-              <label className="label">{m.activate}</label>
-              <div className="flex flex-wrap gap-2">
+            {/* Activate membership (sell a plan + record payment) */}
+            <div className="card space-y-3 p-4">
+              <div>
+                <label className="label">{m.activate}</label>
                 <select
-                  className="input sm:max-w-xs"
+                  className="input"
                   value={planId}
-                  onChange={(e) => setPlanId(e.target.value)}
+                  onChange={(e) => selectPlan(e.target.value)}
                 >
                   {plans.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -225,10 +241,35 @@ export function MembersExplorer({
                     </option>
                   ))}
                 </select>
-                <button onClick={activate} disabled={busy} className="btn-primary whitespace-nowrap">
-                  {dict.admin.assign}
-                </button>
               </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="label">{m.amountPaid}</label>
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      className="input"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                    />
+                    <span className="text-xs text-mauve-400">{selectedPlan?.currency ?? "MDL"}</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="label">{m.paymentMethod}</label>
+                  <select className="input" value={method} onChange={(e) => setMethod(e.target.value)}>
+                    <option value="cash">{m.payCash}</option>
+                    <option value="card">{m.payCard}</option>
+                    <option value="transfer">{m.payTransfer}</option>
+                    <option value="free">{m.payFree}</option>
+                  </select>
+                </div>
+              </div>
+              <button onClick={activate} disabled={busy} className="btn-primary w-full">
+                {dict.admin.assign}
+              </button>
             </div>
 
             {/* Transfer an existing (offline) membership */}

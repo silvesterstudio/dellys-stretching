@@ -392,6 +392,14 @@
       "sessionsLeft": "занятий осталось",
       "expires": "истекает"
     },
+    "transactions": {
+      "title": "Последние платежи",
+      "none": "Платежей пока нет.",
+      "cash": "Наличные",
+      "card": "Карта",
+      "transfer": "Перевод",
+      "free": "Бесплатно"
+    },
     "roster": "Список участников",
     "assignMembership": "Назначить абонемент",
     "markAttended": "Присутствовал",
@@ -437,6 +445,12 @@
       "searchPlaceholder": "Поиск по имени, email или телефону",
       "noPhone": "Без телефона",
       "exportCsv": "Экспорт CSV",
+      "amountPaid": "Сумма оплаты",
+      "paymentMethod": "Способ оплаты",
+      "payCash": "Наличные",
+      "payCard": "Карта",
+      "payTransfer": "Перевод",
+      "payFree": "Бесплатно",
       "sessionsShort": "занятий",
       "freeze": "Заморозить",
       "unfreeze": "Разморозить",

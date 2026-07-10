@@ -269,6 +269,8 @@ export interface Database {
           assigned_by: string | null;
           note: string | null;
           frozen: boolean;
+          amount_paid: number | null;
+          payment_method: string | null;
           created_at: string;
         };
         Insert: {
@@ -280,6 +282,8 @@ export interface Database {
           assigned_by?: string | null;
           note?: string | null;
           frozen?: boolean;
+          amount_paid?: number | null;
+          payment_method?: string | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["user_memberships"]["Insert"]>;
