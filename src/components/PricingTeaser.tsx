@@ -6,7 +6,7 @@ import type { Locale } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { DC } from "@/lib/dc";
 
-type Plan = { name: string; meta: string; price: number };
+type Plan = { name: string; meta: string; price: number; offer?: boolean };
 
 // Fixed price list (no DB round-trip): the landing teaser shows the studio's
 // standard packages; the full purchase flow stays on /memberships.
@@ -14,15 +14,17 @@ export function PricingTeaser({ lang, dict }: { lang: Locale; dict: Dictionary }
   const p = dict.home.price;
   const [group, setGroup] = useState<"adult" | "child">("adult");
 
+  // Monthly packages read "pe lună"; the 2-month bundle is the standout offer.
   const adults: Plan[] = [
-    { name: `4 ${p.sessions}`, meta: dict.audience.adult, price: 650 },
-    { name: `8 ${p.sessions}`, meta: dict.audience.adult, price: 1050 },
-    { name: `12 ${p.sessions}`, meta: dict.audience.adult, price: 1300 },
-    { name: p.unlimited, meta: dict.audience.adult, price: 1700 },
+    { name: `4 ${p.sessions}`, meta: p.perMonth, price: 650 },
+    { name: `8 ${p.sessions}`, meta: p.perMonth, price: 1050 },
+    { name: `12 ${p.sessions}`, meta: p.perMonth, price: 1300 },
+    { name: p.unlimited, meta: p.perMonth, price: 1700 },
+    { name: `16 ${p.sessions}`, meta: p.twoMonths, price: 999, offer: true },
   ];
   const kids: Plan[] = [
-    { name: p.kids37, meta: `12 ${p.sessions}`, price: 550 },
-    { name: p.kids813, meta: `12 ${p.sessions}`, price: 600 },
+    { name: p.kids37, meta: `12 ${p.sessions} · ${p.perMonth}`, price: 550 },
+    { name: p.kids813, meta: `12 ${p.sessions} · ${p.perMonth}`, price: 600 },
   ];
 
   const groups: { key: "adult" | "child"; label: string }[] = [
@@ -89,8 +91,32 @@ export function PricingTeaser({ lang, dict }: { lang: Locale; dict: Dictionary }
           <div
             key={plan.name}
             className="dc-lift"
-            style={{ background: "#fff", border: `1px solid ${DC.border}`, borderRadius: DC.radius, padding: "30px 28px" }}
+            style={{
+              position: "relative",
+              background: "#fff",
+              border: `${plan.offer ? 2 : 1}px solid ${plan.offer ? DC.accent : DC.border}`,
+              borderRadius: DC.radius,
+              padding: "30px 28px",
+            }}
           >
+            {plan.offer && (
+              <div
+                style={{
+                  position: "absolute",
+                  top: -11,
+                  left: 24,
+                  background: DC.accent,
+                  color: "#fff",
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: "4px 12px",
+                  borderRadius: 999,
+                  fontFamily: DC.sans,
+                }}
+              >
+                {p.best}
+              </div>
+            )}
             <div style={{ fontSize: 16, fontWeight: 700, color: DC.ink }}>{plan.name}</div>
             <div style={{ fontSize: 13.5, color: DC.faint, marginTop: 2 }}>{plan.meta}</div>
             <div style={{ margin: "16px 0 0", display: "flex", alignItems: "baseline", gap: 8 }}>
