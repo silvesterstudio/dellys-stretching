@@ -60,6 +60,25 @@ export async function createGuestBooking(input: {
   const ct = Array.isArray(s.class_type) ? s.class_type[0] : s.class_type;
   const className = ct ? (lang === "ru" ? ct.name_ru : ct.name_ro) : null;
 
+  // Idempotency: a repeat submit (double-tap / refresh) for the same class from
+  // the same phone must not hold a second seat.
+  const { data: existing } = await admin
+    .from("guest_bookings")
+    .select("id")
+    .eq("session_id", input.sessionId)
+    .eq("phone", phone)
+    .neq("status", "cancelled")
+    .maybeSingle();
+  if (existing) return { ok: true };
+
+  // Atomically hold a seat: the conditional update only succeeds while a spot is
+  // free (and the class is still open), so concurrent guests can't oversell it.
+  const { data: held, error: holdErr } = await admin.rpc("hold_guest_seat", {
+    p_session_id: input.sessionId,
+  });
+  if (holdErr) return { ok: false, error: "server" };
+  if (held !== true) return { ok: false, error: "unavailable" };
+
   const { data: inserted, error } = await admin
     .from("guest_bookings")
     .insert({
@@ -73,7 +92,11 @@ export async function createGuestBooking(input: {
     .select("id")
     .single();
 
-  if (error || !inserted) return { ok: false, error: "server" };
+  if (error || !inserted) {
+    // Release the seat we just held so a failed insert doesn't strand it.
+    await admin.rpc("release_guest_seat", { p_session_id: input.sessionId });
+    return { ok: false, error: "server" };
+  }
 
   // Forward to an external messaging automation (WhatsApp/Make/n8n/Zapier/…).
   // Fire-and-forget: a webhook failure must not fail the reservation — the lead

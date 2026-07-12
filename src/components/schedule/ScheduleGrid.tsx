@@ -11,6 +11,7 @@ import { formatTime } from "@/lib/format";
 import { dayKey } from "@/lib/week";
 import { localized } from "@/lib/i18n-data";
 import { refreshScheduleAction } from "@/app/[lang]/actions";
+import { GuestBookingModal } from "@/components/booking/GuestBookingModal";
 import { DC } from "@/lib/dc";
 
 const btnBase: React.CSSProperties = {
@@ -73,6 +74,13 @@ export function ScheduleGrid({
   // Audience toggle: Adults / Kids only (no "all") — defaults to adults.
   const [audience, setAudience] = useState<"adult" | "child">("adult");
   const visible = sessions.filter((s) => s.class_type.audience === audience);
+
+  // Anonymous "Rezervă" opens a name+phone popup instead of navigating away.
+  const [guestSession, setGuestSession] = useState<SessionWithType | null>(null);
+  const bumpBooked = (id: string) =>
+    setSessions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, booked_count: s.booked_count + 1 } : s)),
+    );
 
   const byDay = new Map<string, SessionWithType[]>();
   for (const s of visible) {
@@ -229,13 +237,33 @@ export function ScheduleGrid({
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {slots.map((s) => (
-                  <Slot key={s.id} s={s} lang={lang} dict={dict} now={now} loggedIn={loggedIn} />
+                  <Slot
+                    key={s.id}
+                    s={s}
+                    lang={lang}
+                    dict={dict}
+                    now={now}
+                    loggedIn={loggedIn}
+                    onReserve={setGuestSession}
+                  />
                 ))}
               </div>
             )}
           </div>
         ))}
       </div>
+
+      {guestSession && (
+        <GuestBookingModal
+          lang={lang}
+          dict={dict}
+          sessionId={guestSession.id}
+          className={localized(guestSession.class_type, "name", lang)}
+          timeLabel={formatTime(guestSession.starts_at, lang)}
+          onClose={() => setGuestSession(null)}
+          onBooked={bumpBooked}
+        />
+      )}
     </div>
   );
 }
@@ -246,12 +274,14 @@ function Slot({
   dict,
   now,
   loggedIn,
+  onReserve,
 }: {
   s: SessionWithType;
   lang: Locale;
   dict: Dictionary;
   now: number | null;
   loggedIn: boolean;
+  onReserve: (s: SessionWithType) => void;
 }) {
   const left = Math.max(0, s.capacity - s.booked_count);
   const full = left <= 0;
@@ -303,13 +333,21 @@ function Slot({
         <div style={{ ...btnBase, background: "#F3F2F5", color: "#AEACB4", cursor: "not-allowed" }}>
           {dict.common.full}
         </div>
-      ) : (
+      ) : loggedIn ? (
         <Link
-          href={loggedIn ? `/${lang}/book/${s.id}` : `/${lang}/reserve/${s.id}`}
+          href={`/${lang}/book/${s.id}`}
           style={{ ...btnBase, background: DC.accent, color: "#fff" }}
         >
           {dict.schedule.bookCta}
         </Link>
+      ) : (
+        <button
+          type="button"
+          onClick={() => onReserve(s)}
+          style={{ ...btnBase, background: DC.accent, color: "#fff", cursor: "pointer" }}
+        >
+          {dict.schedule.bookCta}
+        </button>
       )}
     </div>
   );

@@ -426,6 +426,14 @@ export interface Database {
         Args: Record<string, never>;
         Returns: number; // how many rows were auto-linked
       };
+      hold_guest_seat: {
+        Args: { p_session_id: string };
+        Returns: boolean; // true if a seat was held (class still open)
+      };
+      release_guest_seat: {
+        Args: { p_session_id: string };
+        Returns: undefined;
+      };
     };
     Enums: {
       [_ in never]: never;

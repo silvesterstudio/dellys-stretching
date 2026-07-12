@@ -50,15 +50,32 @@ export async function setGuestBookingStatusAction(
   } catch {
     return { error: "NO_SERVICE_KEY" };
   }
+  // Read the current row first so cancelling a still-active lead releases the
+  // seat it was holding (and we never double-release an already-cancelled one).
+  const { data: current } = await service
+    .from("guest_bookings")
+    .select("status, session_id")
+    .eq("id", id)
+    .maybeSingle();
+
   const { error } = await service
     .from("guest_bookings")
     .update({ status })
     .eq("id", id);
-  if (!error) {
-    await logAudit(actor, "guest_booking.status", "guest_booking", id, { status });
+  if (error) return { error: error.message };
+
+  if (
+    status === "cancelled" &&
+    current &&
+    current.status !== "cancelled" &&
+    current.session_id
+  ) {
+    await service.rpc("release_guest_seat", { p_session_id: current.session_id });
   }
+
+  await logAudit(actor, "guest_booking.status", "guest_booking", id, { status });
   revalidatePath("/[lang]/admin/today", "page");
-  return { error: error?.message ?? null };
+  return { error: null };
 }
 
 export async function checkInAction(

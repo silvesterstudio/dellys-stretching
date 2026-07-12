@@ -118,14 +118,14 @@
   },
   "reserve": {
     "title": "Rezervă locul tău",
-    "subtitle": "Lasă-ne numele și numărul de telefon — te contactăm ca să-ți confirmăm rezervarea.",
+    "subtitle": "Introdu numele și numărul de telefon pentru a rezerva locul.",
     "nameLabel": "Nume complet",
     "namePlaceholder": "ex. Maria Popescu",
     "phoneLabel": "Număr de telefon",
     "phonePlaceholder": "ex. 069 123 456",
     "submit": "Rezervă",
-    "success": "Gata! Rezervarea ta a fost înregistrată.",
-    "successNote": "Te contactăm în curând pentru a confirma ziua și ora.",
+    "success": "Locul tău este rezervat!",
+    "successNote": "Ne vedem la ședință!",
     "errorInvalid": "Verifică numele și numărul de telefon.",
     "errorUnavailable": "Această ședință nu mai este disponibilă.",
     "haveAccount": "Ai deja cont?"
