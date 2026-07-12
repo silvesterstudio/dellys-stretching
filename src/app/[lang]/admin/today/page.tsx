@@ -9,6 +9,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { bucharestWallToUtc } from "@/lib/week";
 import { formatTime } from "@/lib/format";
 import { localized } from "@/lib/i18n-data";
+import { GuestLeadsPanel, type GuestLead } from "@/components/admin/GuestLeadsPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +52,7 @@ export default async function TodayPage({
 
   const { start, end } = todayRange();
   let sessions: Record<string, unknown>[] = [];
+  let leads: GuestLead[] = [];
   try {
     const admin = createAdminClient();
     const { data } = await admin
@@ -63,6 +65,15 @@ export default async function TodayPage({
       .lt("starts_at", end)
       .order("starts_at", { ascending: true });
     sessions = (data ?? []) as Record<string, unknown>[];
+
+    // Open guest-booking leads (funnel captures) — newest first, still active.
+    const { data: leadRows } = await admin
+      .from("guest_bookings")
+      .select("id, full_name, phone, class_name, starts_at, status, created_at")
+      .in("status", ["new", "contacted"])
+      .order("created_at", { ascending: false })
+      .limit(50);
+    leads = (leadRows ?? []) as GuestLead[];
   } catch {
     // Missing service key / blip → render empty, not a 500.
   }
@@ -98,6 +109,8 @@ export default async function TodayPage({
         <h2 className="font-display text-2xl font-semibold text-mauve-900">{t.title}</h2>
         <p className="mt-0.5 text-sm text-mauve-500">{t.subtitle}</p>
       </div>
+
+      <GuestLeadsPanel leads={leads} lang={locale} dict={dict} />
 
       {rows.length === 0 ? (
         <div className="card p-8 text-center text-sm text-mauve-500">{t.none}</div>

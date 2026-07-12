@@ -116,6 +116,20 @@
     "tooManyOpen": "Ai prea multe rezervări active fără abonament. Vino la recepție.",
     "pastSession": "Această sesiune a început deja."
   },
+  "reserve": {
+    "title": "Rezervă locul tău",
+    "subtitle": "Lasă-ne numele și numărul de telefon — te contactăm ca să-ți confirmăm rezervarea.",
+    "nameLabel": "Nume complet",
+    "namePlaceholder": "ex. Maria Popescu",
+    "phoneLabel": "Număr de telefon",
+    "phonePlaceholder": "ex. 069 123 456",
+    "submit": "Rezervă",
+    "success": "Gata! Rezervarea ta a fost înregistrată.",
+    "successNote": "Te contactăm în curând pentru a confirma ziua și ora.",
+    "errorInvalid": "Verifică numele și numărul de telefon.",
+    "errorUnavailable": "Această ședință nu mai este disponibilă.",
+    "haveAccount": "Ai deja cont?"
+  },
   "dashboard": {
     "title": "Contul meu",
     "myBookings": "Rezervările mele",
@@ -324,7 +338,8 @@
       "kids37": "Copii 3–7 ani",
       "kids813": "Copii 8–13 ani",
       "perMonth": "pe lună",
-      "twoMonths": "2 luni"
+      "twoMonths": "2 luni",
+      "note": "Îți poți rezerva un abonament din contul tău, după ce îți creezi cont."
     },
     "faq": {
       "eyebrow": "Întrebări",
@@ -360,6 +375,7 @@
     "footer": {
       "tagline": "Studio de fitness pentru adulți și copii în Chișinău. Pilates, stretching, gimnastică și Fit Ball.",
       "studio": "Studio",
+      "social": "Social",
       "contact": "Contact",
       "hours": "Program",
       "addr": "str. Gheorghe Asachi 65, Chișinău",
@@ -384,6 +400,19 @@
       "checkIn": "Check-in",
       "done": "Încheiată",
       "ongoing": "În curs"
+    },
+    "guestLeads": {
+      "title": "Rezervări noi",
+      "none": "Nicio rezervare nouă.",
+      "markContacted": "Contactat",
+      "markConfirmed": "Confirmă",
+      "dismiss": "Renunță",
+      "status": {
+        "new": "Nou",
+        "contacted": "Contactat",
+        "confirmed": "Confirmat",
+        "cancelled": "Anulat"
+      }
     },
     "walkIn": {
       "open": "Adaugă participant (walk-in)",

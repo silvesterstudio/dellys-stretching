@@ -32,10 +32,16 @@ export default async function AdminDashboardPage({
   // The admin layout already gates this, but re-verify before touching the
   // service-role analytics queries (defense in depth around RLS-bypassing reads).
   // Mirror the layout: a non-admin gets redirected, not an error.
+  let me;
   try {
-    await requireAdmin();
+    me = await requireAdmin();
   } catch {
     redirect(`/${locale}/staff`);
+  }
+  // Restricted admins (dashboard_access=false, e.g. the dellys_admin operator
+  // account) can manage everything except the financial dashboard.
+  if (!me.dashboard_access) {
+    redirect(`/${locale}/admin/today`);
   }
 
   const initialPreset: RangePreset = "7d";

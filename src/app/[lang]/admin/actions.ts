@@ -37,6 +37,30 @@ async function logAudit(
   }
 }
 
+// Move a guest booking lead through its pipeline (new → contacted → confirmed,
+// or cancelled). Staff-only; writes via the service role after the gate.
+export async function setGuestBookingStatusAction(
+  id: string,
+  status: "new" | "contacted" | "confirmed" | "cancelled",
+): Promise<ActionResult> {
+  const actor = await requireStaff();
+  let service;
+  try {
+    service = createAdminClient();
+  } catch {
+    return { error: "NO_SERVICE_KEY" };
+  }
+  const { error } = await service
+    .from("guest_bookings")
+    .update({ status })
+    .eq("id", id);
+  if (!error) {
+    await logAudit(actor, "guest_booking.status", "guest_booking", id, { status });
+  }
+  revalidatePath("/[lang]/admin/today", "page");
+  return { error: error?.message ?? null };
+}
+
 export async function checkInAction(
   bookingId: string,
   membershipId: string | null,

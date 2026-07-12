@@ -70,9 +70,9 @@ export function ScheduleGrid({
     };
   }, [weekStartISO, weekEndISO]);
 
-  const [audience, setAudience] = useState<"all" | "adult" | "child">("all");
-  const visible =
-    audience === "all" ? sessions : sessions.filter((s) => s.class_type.audience === audience);
+  // Audience toggle: Adults / Kids only (no "all") — defaults to adults.
+  const [audience, setAudience] = useState<"adult" | "child">("adult");
+  const visible = sessions.filter((s) => s.class_type.audience === audience);
 
   const byDay = new Map<string, SessionWithType[]>();
   for (const s of visible) {
@@ -98,8 +98,7 @@ export function ScheduleGrid({
   // keeps the same rhythm regardless of how full the week is.
   const dayCards = days.map((dISO) => ({ dISO, k: dayKey(dISO), slots: byDay.get(dayKey(dISO)) ?? [] }));
 
-  const filters: { key: "all" | "adult" | "child"; label: string }[] = [
-    { key: "all", label: dict.schedule.filterAll },
+  const filters: { key: "adult" | "child"; label: string }[] = [
     { key: "adult", label: dict.schedule.filterAdults },
     { key: "child", label: dict.schedule.filterKids },
   ];
@@ -306,7 +305,7 @@ function Slot({
         </div>
       ) : (
         <Link
-          href={loggedIn ? `/${lang}/book/${s.id}` : `/${lang}/login?session=${s.id}`}
+          href={loggedIn ? `/${lang}/book/${s.id}` : `/${lang}/reserve/${s.id}`}
           style={{ ...btnBase, background: DC.accent, color: "#fff" }}
         >
           {dict.schedule.bookCta}

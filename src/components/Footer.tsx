@@ -57,28 +57,14 @@ export function Footer({ lang, dict }: { lang: Locale; dict: Dictionary }) {
           </div>
 
           <div>
-            <div style={label}>{f.contact}</div>
+            <div style={label}>{f.social}</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 11, marginTop: 16 }}>
-              <span style={{ fontSize: 14.5, color: "#4A4954" }}>{f.addr}</span>
-              <a href={`tel:${f.phone.replace(/\s/g, "")}`} style={link}>
-                {f.phone}
-              </a>
-              <a href={`mailto:${f.email}`} style={link}>
-                {f.email}
-              </a>
               <a href="https://facebook.com/Caracas.md" target="_blank" rel="noopener noreferrer" style={link}>
                 Facebook
               </a>
               <a href="https://instagram.com/caracas.md" target="_blank" rel="noopener noreferrer" style={link}>
                 Instagram
               </a>
-            </div>
-          </div>
-
-          <div>
-            <div style={label}>{f.hours}</div>
-            <div style={{ marginTop: 16, fontSize: 14.5, lineHeight: 1.6, color: "#4A4954" }}>
-              {f.hoursVal}
             </div>
           </div>
         </div>

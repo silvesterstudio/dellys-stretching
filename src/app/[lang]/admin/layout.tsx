@@ -3,6 +3,7 @@ import type { Locale } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { requireStaff } from "@/lib/auth";
+import { LiveRefresh } from "@/components/admin/LiveRefresh";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +28,7 @@ export default async function AdminLayout({
 
   return (
     <div className="container-page safe-x py-8 sm:py-10">
+      <LiveRefresh />
       <h1 className="mb-6 font-display text-3xl font-semibold tracking-tight text-mauve-900">
         {dict.admin.title}
       </h1>

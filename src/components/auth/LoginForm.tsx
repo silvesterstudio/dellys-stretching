@@ -28,9 +28,10 @@ export function LoginForm({
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
-  // Typing "admin" in the email field reveals the password box and switches to
-  // staff login — the only entry point for admins (no separate /staff link).
-  const adminMode = email.trim().toLowerCase() === "admin";
+  // Any bare username (no "@") reveals the password box and switches to staff
+  // login — the only entry point for staff accounts (admin, dellys_admin,
+  // reception…). Regular members always sign in with an email address.
+  const adminMode = email.trim().length > 0 && !email.includes("@");
   // Name + phone are collected only when signing up (and never for admin login).
   const showProfileFields = mode === "signup" && !adminMode;
 
@@ -46,7 +47,7 @@ export function LoginForm({
 
     if (adminMode) {
       const { error } = await supabase.auth.signInWithPassword({
-        email: usernameToEmail("admin"),
+        email: usernameToEmail(email.trim().toLowerCase()),
         password,
       });
       if (error) {

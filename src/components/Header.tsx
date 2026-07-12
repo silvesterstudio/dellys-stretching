@@ -31,10 +31,15 @@ export function Header({
 
   // On an admin page the island bar itself becomes the admin nav (no separate
   // tab row): admins get every section, reception staff only check-in.
+  // Restricted admins (dashboard_access=false) keep every section except the
+  // financial dashboard.
+  const canDashboard = isAdmin && profile?.dashboard_access !== false;
   const adminTabs = isAdmin
     ? [
         { href: `${base}/admin/today`, label: dict.admin.todayTab },
-        { href: `${base}/admin/dashboard`, label: dict.admin.dashboardTab },
+        ...(canDashboard
+          ? [{ href: `${base}/admin/dashboard`, label: dict.admin.dashboardTab }]
+          : []),
         { href: `${base}/admin/templates`, label: dict.admin.templates },
         { href: `${base}/admin/members`, label: dict.admin.members },
         { href: `${base}/admin/plans`, label: dict.admin.plansTab },
@@ -187,6 +192,30 @@ export function Header({
               </Link>
             )}
           </div>
+          {/* Mobile-only quick calendar shortcut straight to the program. */}
+          {!showAdminNav && (
+            <a
+              href={`${base}#program`}
+              aria-label={dict.nav.schedule}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-mauve-200 bg-white/80 text-mauve-700 md:hidden"
+            >
+              <svg
+                width="19"
+                height="19"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <rect x="3" y="4.5" width="18" height="16" rx="2.5" />
+                <path d="M3 9h18M8 2.5v4M16 2.5v4" />
+                <path d="M7.5 13h2M11 13h2M14.5 13h2M7.5 16.5h2M11 16.5h2" />
+              </svg>
+            </a>
+          )}
           <MobileNav
             lang={lang}
             links={links}

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import Link from "next/link";
 import type { Locale } from "@/lib/constants";
 import { SITE_URL } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
@@ -259,28 +258,6 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
               <a href="#program" className="dc-btn" style={btnPrimary}>
                 {h.hero.cta1}
               </a>
-              <a
-                href="#preturi"
-                className="dc-btn"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 8,
-                  background: "rgba(255,255,255,.06)",
-                  color: "#fff",
-                  fontWeight: 700,
-                  fontSize: 16,
-                  padding: "16px 30px",
-                  border: "1px solid rgba(255,255,255,.34)",
-                  borderRadius: 999,
-                  textDecoration: "none",
-                  backdropFilter: "blur(6px)",
-                  WebkitBackdropFilter: "blur(6px)",
-                }}
-              >
-                {h.hero.cta2}
-              </a>
             </div>
           </div>
         </div>
@@ -394,9 +371,9 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
             <div>
               <h2 style={{ ...h2, fontSize: "clamp(28px,3.6vw,40px)", lineHeight: 1.08 }}>{h.offer.title}</h2>
               <p style={{ margin: "16px 0 0", maxWidth: 440, fontSize: 16, lineHeight: 1.62, color: DC.sub }}>{h.offer.sub}</p>
-              <Link href={loggedIn ? "#program" : `${base}/login?mode=signup`} className="dc-btn" style={{ ...btnPrimary, marginTop: 26 }}>
+              <a href="#program" className="dc-btn" style={{ ...btnPrimary, marginTop: 26 }}>
                 {h.offer.cta}
-              </Link>
+              </a>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 22 }}>
               {h.offer.benefits.map((b, i) => (
@@ -450,12 +427,10 @@ export default async function HomePage({ params }: { params: Promise<{ lang: str
           <h2 style={h2}>{h.price.title}</h2>
           <p style={subText}>{h.price.sub}</p>
         </div>
-        <PricingTeaser lang={locale} dict={dict} />
-        <div style={{ textAlign: "center", marginTop: 34 }}>
-          <Link href={`${base}/memberships`} className="dc-link" style={{ fontWeight: 700, fontSize: 15, color: DC.accent, textDecoration: "none" }}>
-            {h.price.all} <span aria-hidden>→</span>
-          </Link>
-        </div>
+        <PricingTeaser dict={dict} />
+        <p style={{ textAlign: "center", marginTop: 30, fontSize: 14.5, color: DC.faint }}>
+          {h.price.note}
+        </p>
       </section>
 
       {/* DARK CTA */}

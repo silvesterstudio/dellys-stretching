@@ -1,16 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import type { Locale } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { DC } from "@/lib/dc";
 
 type Plan = { name: string; meta: string; price: number; offer?: boolean };
 
-// Fixed price list (no DB round-trip): the landing teaser shows the studio's
-// standard packages; the full purchase flow stays on /memberships.
-export function PricingTeaser({ lang, dict }: { lang: Locale; dict: Dictionary }) {
+// Fixed price list (no DB round-trip): the landing teaser just shows the
+// studio's standard packages. There are no buy buttons — a member reserves a
+// plan from their account after signing up.
+export function PricingTeaser({ dict }: { dict: Dictionary }) {
   const p = dict.home.price;
   const [group, setGroup] = useState<"adult" | "child">("adult");
 
@@ -125,25 +124,6 @@ export function PricingTeaser({ lang, dict }: { lang: Locale; dict: Dictionary }
               </span>
               <span style={{ fontSize: 15, fontWeight: 600, color: DC.faint }}>MDL</span>
             </div>
-            <div style={{ height: 1, background: DC.border2, margin: "20px 0" }} />
-            <Link
-              href={`/${lang}/memberships`}
-              className="dc-btn"
-              style={{
-                display: "block",
-                textAlign: "center",
-                background: "#fff",
-                color: DC.ink,
-                fontWeight: 700,
-                fontSize: 15,
-                padding: 13,
-                border: `1px solid ${DC.border}`,
-                borderRadius: 999,
-                textDecoration: "none",
-              }}
-            >
-              {p.choose}
-            </Link>
           </div>
         ))}
       </div>

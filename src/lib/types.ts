@@ -52,6 +52,34 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["class_types"]["Insert"]>;
         Relationships: [];
       };
+      guest_bookings: {
+        Row: {
+          id: string;
+          session_id: string | null;
+          full_name: string;
+          phone: string;
+          status: "new" | "contacted" | "confirmed" | "cancelled";
+          lang: Locale;
+          class_name: string | null;
+          starts_at: string | null;
+          note: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          session_id?: string | null;
+          full_name: string;
+          phone: string;
+          status?: "new" | "contacted" | "confirmed" | "cancelled";
+          lang?: Locale;
+          class_name?: string | null;
+          starts_at?: string | null;
+          note?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["guest_bookings"]["Insert"]>;
+        Relationships: [];
+      };
       free_trial_usage: {
         Row: {
           user_id: string;
@@ -129,6 +157,7 @@ export interface Database {
           preferred_lang: Locale;
           role: UserRole;
           notes: string | null;
+          dashboard_access: boolean;
           created_at: string;
         };
         Insert: {
@@ -139,6 +168,7 @@ export interface Database {
           preferred_lang?: Locale;
           role?: UserRole;
           notes?: string | null;
+          dashboard_access?: boolean;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
