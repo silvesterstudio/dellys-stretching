@@ -9,6 +9,7 @@ import { formatDate, formatTime } from "@/lib/format";
 import { localized } from "@/lib/i18n-data";
 import { CheckInRow } from "@/components/admin/CheckInRow";
 import { WalkInCheckIn } from "@/components/admin/WalkInCheckIn";
+import { GuestLeadsPanel, type GuestLead } from "@/components/admin/GuestLeadsPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +73,16 @@ export default async function RosterPage({
     )
     .eq("session_id", id)
     .order("created_at", { ascending: true });
+
+  // No-login guest reservations for this session (name + phone) — these hold a
+  // seat but aren't real accounts, so they live in guest_bookings, not bookings.
+  const { data: guestRaw } = await supabase
+    .from("guest_bookings")
+    .select("id, full_name, phone, class_name, starts_at, status, created_at")
+    .eq("session_id", id)
+    .neq("status", "cancelled")
+    .order("created_at", { ascending: true });
+  const guestLeads = (guestRaw ?? []) as GuestLead[];
 
   const one = (v: unknown) => (Array.isArray(v) ? v[0] : v);
   const bookings = (bookingsRaw ?? []).map((b: Record<string, unknown>) => {
@@ -153,6 +164,10 @@ export default async function RosterPage({
         lang={locale}
         dict={dict}
       />
+
+      {guestLeads.length > 0 && (
+        <GuestLeadsPanel leads={guestLeads} lang={locale} dict={dict} />
+      )}
 
       <section>
         <h2 className="mb-3 text-lg font-semibold text-mauve-800">

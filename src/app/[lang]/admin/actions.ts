@@ -75,6 +75,7 @@ export async function setGuestBookingStatusAction(
 
   await logAudit(actor, "guest_booking.status", "guest_booking", id, { status });
   revalidatePath("/[lang]/admin/today", "page");
+  revalidatePath("/[lang]/admin/sessions/[id]", "page");
   return { error: null };
 }
 
