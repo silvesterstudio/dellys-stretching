@@ -165,18 +165,17 @@ export default async function RosterPage({
         dict={dict}
       />
 
-      {guestLeads.length > 0 && (
-        <GuestLeadsPanel leads={guestLeads} lang={locale} dict={dict} />
-      )}
-
       <section>
         <h2 className="mb-3 text-lg font-semibold text-mauve-800">
           {dict.admin.roster}
         </h2>
-        {bookings.length === 0 ? (
+        {bookings.length === 0 && guestLeads.length === 0 ? (
           <div className="card p-5 text-sm text-mauve-500">{dict.admin.noResults}</div>
         ) : (
           <div className="space-y-2">
+            {/* No-login guest reservations (name + phone) share the roster with
+                real account bookings so staff see one complete participant list. */}
+            <GuestLeadsPanel leads={guestLeads} lang={locale} dict={dict} bare showClassTime={false} />
             {bookings.map((b) => (
               <CheckInRow
                 key={b.id}
