@@ -69,7 +69,7 @@ export default async function TodayPage({
     // Open guest-booking leads (funnel captures) — newest first, still active.
     const { data: leadRows } = await admin
       .from("guest_bookings")
-      .select("id, full_name, child_name, phone, class_name, starts_at, status, created_at")
+      .select("id, full_name, child_name, phone, class_name, starts_at, status, claimed_by, created_at")
       .in("status", ["new", "contacted"])
       .order("created_at", { ascending: false })
       .limit(50);

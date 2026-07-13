@@ -45,7 +45,7 @@ export async function createGuestBooking(input: {
     .from("sessions")
     .select(
       `id, starts_at, status,
-       class_type:class_types ( name_ro, name_ru, audience )`,
+       class_type:class_types ( name_ro, name_ru, audience, category )`,
     )
     .eq("id", input.sessionId)
     .maybeSingle();
@@ -55,8 +55,8 @@ export async function createGuestBooking(input: {
     starts_at: string;
     status: string;
     class_type:
-      | { name_ro: string; name_ru: string; audience: string }
-      | { name_ro: string; name_ru: string; audience: string }[]
+      | { name_ro: string; name_ru: string; audience: string; category: string }
+      | { name_ro: string; name_ru: string; audience: string; category: string }[]
       | null;
   };
   if (s.status !== "scheduled" || new Date(s.starts_at).getTime() <= Date.now()) {
@@ -99,6 +99,7 @@ export async function createGuestBooking(input: {
       child_name: isChild ? childName : null,
       lang,
       class_name: className,
+      category: ct?.category ?? null,
       starts_at: s.starts_at,
     })
     .select("id")

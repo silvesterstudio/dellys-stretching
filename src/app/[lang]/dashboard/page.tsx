@@ -19,6 +19,7 @@ import { localized } from "@/lib/i18n-data";
 import { CancelButton } from "@/components/dashboard/CancelButton";
 import { CancelRequestButton } from "@/components/dashboard/CancelRequestButton";
 import { ProfileForm } from "@/components/dashboard/ProfileForm";
+import { PixelSignupTracker } from "@/components/PixelSignupTracker";
 
 export const dynamic = "force-dynamic";
 
@@ -106,6 +107,7 @@ export default async function DashboardPage({
 
   return (
     <div className="container-page safe-x space-y-8 py-8 sm:py-12">
+      <PixelSignupTracker />
       <h1 className="font-display text-3xl font-bold text-mauve-900">
         {dict.dashboard.title}
       </h1>

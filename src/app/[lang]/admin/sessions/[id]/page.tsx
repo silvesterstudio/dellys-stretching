@@ -78,7 +78,7 @@ export default async function RosterPage({
   // seat but aren't real accounts, so they live in guest_bookings, not bookings.
   const { data: guestRaw } = await supabase
     .from("guest_bookings")
-    .select("id, full_name, child_name, phone, class_name, starts_at, status, created_at")
+    .select("id, full_name, child_name, phone, class_name, starts_at, status, claimed_by, created_at")
     .eq("session_id", id)
     .neq("status", "cancelled")
     .order("created_at", { ascending: true });

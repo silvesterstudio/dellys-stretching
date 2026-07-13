@@ -396,6 +396,13 @@
     "checkIn": "Check-in",
     "todayTab": "Astăzi",
     "undoCheckIn": "Anulează",
+    "funnel": {
+      "title": "Funnel de conversie",
+      "subtitle": "De la rezervare fără cont, la cont, la abonament.",
+      "guests": "Rezervări fără cont",
+      "accounts": "Conturi create",
+      "memberships": "Abonamente cumpărate"
+    },
     "today": {
       "title": "Ședințele de azi",
       "subtitle": "Apasă o ședință pentru a face check-in participanților.",
@@ -409,6 +416,10 @@
       "none": "Nicio rezervare fără cont.",
       "booked": "Rezervat",
       "parent": "Părinte",
+      "hasAccount": "Cont creat",
+      "createAccount": "Creează cont",
+      "emailLabel": "Email pentru cont",
+      "emailPlaceholder": "ex. maria@email.com",
       "markContacted": "Contactat",
       "markConfirmed": "Confirmă",
       "dismiss": "Șterge",

@@ -328,6 +328,29 @@ export async function computeRecentAudit(limit = 40): Promise<AuditRow[]> {
   }
 }
 
+// Acquisition funnel from the no-login guest bookings: how many unique guests
+// booked → became accounts → bought a membership. Powers the dashboard funnel.
+export interface GuestFunnel {
+  guests: number;
+  accounts: number;
+  memberships: number;
+}
+
+export async function computeGuestFunnel(): Promise<GuestFunnel> {
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin.rpc("guest_funnel_stats");
+    const f = (data ?? {}) as Partial<GuestFunnel>;
+    return {
+      guests: f.guests ?? 0,
+      accounts: f.accounts ?? 0,
+      memberships: f.memberships ?? 0,
+    };
+  } catch {
+    return { guests: 0, accounts: 0, memberships: 0 };
+  }
+}
+
 export interface KpiMetrics {
   activeMemberships: number; // not expired & sessions remaining
   totalMembers: number;

@@ -24,9 +24,16 @@ export async function GET(
   if (code && isSupabaseConfigured()) {
     try {
       const supabase = await createClient();
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
       if (!error) {
-        return NextResponse.redirect(`${origin}${next}`);
+        // First-ever sign-in ⇒ a freshly created account. Flag it so the client
+        // can fire the Meta "CompleteRegistration" conversion once on arrival.
+        const u = data?.user;
+        const createdMs = u?.created_at ? new Date(u.created_at).getTime() : 0;
+        const isNew = createdMs > 0 && Date.now() - createdMs < 5 * 60 * 1000;
+        const sep = next.includes("?") ? "&" : "?";
+        const dest = isNew ? `${next}${sep}welcome=1` : next;
+        return NextResponse.redirect(`${origin}${dest}`);
       }
     } catch {
       // fall through to the error redirect below

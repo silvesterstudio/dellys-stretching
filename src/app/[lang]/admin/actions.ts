@@ -79,6 +79,75 @@ export async function setGuestBookingStatusAction(
   return { error: null };
 }
 
+// Front-desk conversion: turn a no-login guest booking into a real account by
+// capturing an email. Creates (or reuses) the auth user with the guest's name +
+// phone, then links their prior guest bookings and remembers their free session.
+export async function convertGuestToAccountAction(
+  guestBookingId: string,
+  email: string,
+): Promise<ActionResult> {
+  const actor = await requireStaff();
+  const cleanEmail = email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) return { error: "INVALID_EMAIL" };
+
+  let service;
+  try {
+    service = createAdminClient();
+  } catch {
+    return { error: "NO_SERVICE_KEY" };
+  }
+
+  const { data: gb } = await service
+    .from("guest_bookings")
+    .select("id, full_name, phone, claimed_by")
+    .eq("id", guestBookingId)
+    .maybeSingle();
+  if (!gb) return { error: "NOT_FOUND" };
+  if (gb.claimed_by) return { error: null }; // already converted
+
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return { error: "NO_SERVICE_KEY" };
+
+  // Create a confirmed account. If the email already exists, fall back to that user.
+  let userId: string | null = null;
+  const res = await fetch(`${url}/auth/v1/admin/users`, {
+    method: "POST",
+    headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: cleanEmail,
+      email_confirm: true,
+      user_metadata: { full_name: gb.full_name, phone: gb.phone, preferred_lang: "ro" },
+    }),
+  });
+  if (res.ok) {
+    const user = (await res.json()) as { id?: string };
+    userId = user.id ?? null;
+  } else {
+    const body = await res.text();
+    if (body.includes("already") || body.includes("registered") || res.status === 422) {
+      const { data: existing } = await service
+        .from("profiles")
+        .select("id")
+        .eq("email", cleanEmail)
+        .maybeSingle();
+      userId = existing?.id ?? null;
+    }
+    if (!userId) return { error: "EMAIL_FAILED" };
+  }
+  if (!userId) return { error: "EMAIL_FAILED" };
+
+  // Link prior guest bookings (by phone) + remember the free trial. Also ensure
+  // THIS booking is attached even if phone normalisation misses.
+  await service.rpc("link_guest_bookings", { p_user: userId, p_phone: gb.phone });
+  await service.from("guest_bookings").update({ claimed_by: userId }).eq("id", guestBookingId);
+
+  await logAudit(actor, "guest_booking.convert", "guest_booking", guestBookingId, { email: cleanEmail });
+  revalidatePath("/[lang]/admin/today", "page");
+  revalidatePath("/[lang]/admin/sessions/[id]", "page");
+  return { error: null };
+}
+
 export async function checkInAction(
   bookingId: string,
   membershipId: string | null,

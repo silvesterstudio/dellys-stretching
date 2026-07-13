@@ -7,6 +7,7 @@ import type { Dictionary } from "@/i18n/get-dictionary";
 import { localized } from "@/lib/i18n-data";
 import { formatPrice } from "@/lib/format";
 import { requestMembershipAction } from "@/app/[lang]/memberships/actions";
+import { trackPixel } from "@/components/MetaPixel";
 
 export type PlanCard = {
   id: string;
@@ -40,17 +41,19 @@ export function MembershipPlans({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [errorId, setErrorId] = useState<string | null>(null);
 
-  async function buy(planId: string) {
-    setBusyId(planId);
+  async function buy(plan: PlanCard) {
+    setBusyId(plan.id);
     setErrorId(null);
-    const { error } = await requestMembershipAction(planId);
+    const { error } = await requestMembershipAction(plan.id);
     setBusyId(null);
     if (error) {
-      setErrorId(planId);
+      setErrorId(plan.id);
       return;
     }
-    setPending((prev) => new Set(prev).add(planId));
-    setJustSent((prev) => new Set(prev).add(planId));
+    // Ad-conversion signal: a membership purchase request (last funnel step).
+    trackPixel("Purchase", { value: plan.price, currency: plan.currency || "MDL" });
+    setPending((prev) => new Set(prev).add(plan.id));
+    setJustSent((prev) => new Set(prev).add(plan.id));
   }
 
   const groups: { audience: "adult" | "child"; items: PlanCard[] }[] = [
@@ -127,7 +130,7 @@ export function MembershipPlans({
                         </button>
                       ) : (
                         <button
-                          onClick={() => buy(p.id)}
+                          onClick={() => buy(p)}
                           disabled={busyId === p.id}
                           className={`w-full ${p.featured ? "btn-primary" : "btn-secondary"}`}
                         >

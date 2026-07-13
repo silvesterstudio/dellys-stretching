@@ -62,6 +62,8 @@ export interface Database {
           status: "new" | "contacted" | "confirmed" | "cancelled";
           lang: Locale;
           class_name: string | null;
+          category: string | null;
+          claimed_by: string | null;
           starts_at: string | null;
           note: string | null;
           created_at: string;
@@ -75,6 +77,8 @@ export interface Database {
           status?: "new" | "contacted" | "confirmed" | "cancelled";
           lang?: Locale;
           class_name?: string | null;
+          category?: string | null;
+          claimed_by?: string | null;
           starts_at?: string | null;
           note?: string | null;
           created_at?: string;
@@ -435,6 +439,14 @@ export interface Database {
       release_guest_seat: {
         Args: { p_session_id: string };
         Returns: undefined;
+      };
+      link_guest_bookings: {
+        Args: { p_user: string; p_phone: string };
+        Returns: number;
+      };
+      guest_funnel_stats: {
+        Args: Record<string, never>;
+        Returns: { guests: number; accounts: number; memberships: number };
       };
     };
     Enums: {

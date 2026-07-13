@@ -10,9 +10,11 @@ import {
   computeRenewals,
   computeRecentTransactions,
   computeRecentAudit,
+  computeGuestFunnel,
   type RangePreset,
 } from "@/lib/admin-analytics";
 import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
+import { FunnelPanel } from "@/components/admin/FunnelPanel";
 import { RenewalsPanel } from "@/components/admin/RenewalsPanel";
 import { TransactionsPanel } from "@/components/admin/TransactionsPanel";
 import { AuditPanel } from "@/components/admin/AuditPanel";
@@ -46,12 +48,13 @@ export default async function AdminDashboardPage({
 
   const initialPreset: RangePreset = "7d";
   const { startISO, endISO, startDate, endDate } = resolveRange({ preset: initialPreset });
-  const [kpis, metrics, renewals, transactions, audit] = await Promise.all([
+  const [kpis, metrics, renewals, transactions, audit, funnel] = await Promise.all([
     computeKpis(),
     computeWindowMetrics(startISO, endISO),
     computeRenewals(),
     computeRecentTransactions(locale),
     computeRecentAudit(),
+    computeGuestFunnel(),
   ]);
 
   return (
@@ -65,6 +68,7 @@ export default async function AdminDashboardPage({
         initialStart={startDate}
         initialEnd={endDate}
       />
+      <FunnelPanel funnel={funnel} dict={dict} />
       <RenewalsPanel rows={renewals} lang={locale} dict={dict} />
       <TransactionsPanel rows={transactions} lang={locale} dict={dict} />
       <AuditPanel rows={audit} lang={locale} dict={dict} />
