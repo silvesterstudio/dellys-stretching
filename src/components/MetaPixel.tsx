@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 
 // Facebook / Meta Pixel. The id is public (it ships in the browser either way),
 // so it's fine to hardcode with an env override for other environments.
-export const FB_PIXEL_ID = process.env.NEXT_PUBLIC_FB_PIXEL_ID || "1017492417550617";
+export const FB_PIXEL_ID = process.env.NEXT_PUBLIC_FB_PIXEL_ID || "1934391913925341";
 
 // Fire a Meta standard/custom event (e.g. "Lead") from anywhere client-side.
 // No-ops safely before the pixel script has loaded.
