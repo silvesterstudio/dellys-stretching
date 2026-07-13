@@ -58,6 +58,7 @@ export interface Database {
           session_id: string | null;
           full_name: string;
           phone: string;
+          child_name: string | null;
           status: "new" | "contacted" | "confirmed" | "cancelled";
           lang: Locale;
           class_name: string | null;
@@ -70,6 +71,7 @@ export interface Database {
           session_id?: string | null;
           full_name: string;
           phone: string;
+          child_name?: string | null;
           status?: "new" | "contacted" | "confirmed" | "cancelled";
           lang?: Locale;
           class_name?: string | null;

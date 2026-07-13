@@ -74,6 +74,7 @@ export default async function ReservePage({
           lang={locale}
           dict={dict}
           sessionId={session.id}
+          isChild={session.class_type.audience === "child"}
           loginHref={`/${locale}/login?session=${session.id}`}
         />
       </div>

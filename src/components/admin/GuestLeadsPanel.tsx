@@ -9,6 +9,7 @@ import { setGuestBookingStatusAction } from "@/app/[lang]/admin/actions";
 export interface GuestLead {
   id: string;
   full_name: string;
+  child_name: string | null;
   phone: string;
   class_name: string | null;
   starts_at: string | null;
@@ -61,10 +62,13 @@ export function GuestLeadsPanel({
           >
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-medium text-mauve-900">{l.full_name}</span>
+                <span className="font-medium text-mauve-900">
+                  {l.child_name || l.full_name}
+                </span>
                 <span className="badge-success">{t.booked}</span>
               </div>
               <div className="mt-0.5 text-sm text-mauve-500">
+                {l.child_name && <>{t.parent}: {l.full_name} · </>}
                 <a href={`tel:${l.phone.replace(/\s/g, "")}`} className="text-brand-600 hover:underline">
                   {l.phone}
                 </a>

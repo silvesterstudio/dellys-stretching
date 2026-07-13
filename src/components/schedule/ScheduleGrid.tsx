@@ -260,6 +260,7 @@ export function ScheduleGrid({
           sessionId={guestSession.id}
           className={localized(guestSession.class_type, "name", lang)}
           timeLabel={formatTime(guestSession.starts_at, lang)}
+          isChild={guestSession.class_type.audience === "child"}
           onClose={() => setGuestSession(null)}
           onBooked={bumpBooked}
         />

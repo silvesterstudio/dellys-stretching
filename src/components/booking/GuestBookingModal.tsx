@@ -16,6 +16,7 @@ export function GuestBookingModal({
   sessionId,
   className,
   timeLabel,
+  isChild = false,
   onClose,
   onBooked,
 }: {
@@ -24,11 +25,13 @@ export function GuestBookingModal({
   sessionId: string;
   className: string;
   timeLabel: string;
+  isChild?: boolean;
   onClose: () => void;
   onBooked: (sessionId: string) => void;
 }) {
   const r = dict.reserve;
   const [fullName, setFullName] = useState("");
+  const [childName, setChildName] = useState("");
   const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +55,7 @@ export function GuestBookingModal({
     e.preventDefault();
     setError(null);
     setBusy(true);
-    const res = await createGuestBooking({ sessionId, fullName, phone, lang });
+    const res = await createGuestBooking({ sessionId, fullName, phone, childName, lang });
     setBusy(false);
     if (!res.ok) {
       setError(res.error === "unavailable" ? r.errorUnavailable : r.errorInvalid);
@@ -138,7 +141,9 @@ export function GuestBookingModal({
             <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5, color: DC.muted }}>{r.subtitle}</p>
             {error && <div className="alert-error">{error}</div>}
             <div>
-              <label className="label" htmlFor="gName">{r.nameLabel}</label>
+              <label className="label" htmlFor="gName">
+                {isChild ? r.parentNameLabel : r.nameLabel}
+              </label>
               <input
                 id="gName"
                 ref={firstFieldRef}
@@ -151,6 +156,20 @@ export function GuestBookingModal({
                 onChange={(e) => setFullName(e.target.value)}
               />
             </div>
+            {isChild && (
+              <div>
+                <label className="label" htmlFor="gChild">{r.childNameLabel}</label>
+                <input
+                  id="gChild"
+                  type="text"
+                  required
+                  className="input"
+                  placeholder={r.childNamePlaceholder}
+                  value={childName}
+                  onChange={(e) => setChildName(e.target.value)}
+                />
+              </div>
+            )}
             <div>
               <label className="label" htmlFor="gPhone">{r.phoneLabel}</label>
               <input
@@ -167,7 +186,12 @@ export function GuestBookingModal({
             </div>
             <button
               type="submit"
-              disabled={busy || fullName.trim().length < 2 || phone.replace(/\D/g, "").length < 6}
+              disabled={
+                busy ||
+                fullName.trim().length < 2 ||
+                (isChild && childName.trim().length < 2) ||
+                phone.replace(/\D/g, "").length < 6
+              }
               className="btn-primary w-full"
             >
               {busy ? dict.common.loading : r.submit}

@@ -17,10 +17,12 @@ export async function createGuestBooking(input: {
   sessionId: string;
   fullName: string;
   phone: string;
+  childName?: string;
   lang: Locale;
 }): Promise<GuestBookingResult> {
   const fullName = input.fullName?.trim() ?? "";
   const phone = input.phone?.trim() ?? "";
+  const childName = input.childName?.trim() ?? "";
   const lang: Locale = input.lang === "ru" ? "ru" : "ro";
 
   // Basic validation: a real name and a phone with at least 6 digits.
@@ -43,7 +45,7 @@ export async function createGuestBooking(input: {
     .from("sessions")
     .select(
       `id, starts_at, status,
-       class_type:class_types ( name_ro, name_ru )`,
+       class_type:class_types ( name_ro, name_ru, audience )`,
     )
     .eq("id", input.sessionId)
     .maybeSingle();
@@ -52,13 +54,22 @@ export async function createGuestBooking(input: {
   const s = session as unknown as {
     starts_at: string;
     status: string;
-    class_type: { name_ro: string; name_ru: string } | { name_ro: string; name_ru: string }[] | null;
+    class_type:
+      | { name_ro: string; name_ru: string; audience: string }
+      | { name_ro: string; name_ru: string; audience: string }[]
+      | null;
   };
   if (s.status !== "scheduled" || new Date(s.starts_at).getTime() <= Date.now()) {
     return { ok: false, error: "unavailable" };
   }
   const ct = Array.isArray(s.class_type) ? s.class_type[0] : s.class_type;
   const className = ct ? (lang === "ru" ? ct.name_ru : ct.name_ro) : null;
+
+  // Kids classes: full_name is the parent, and we also need the child's name.
+  const isChild = ct?.audience === "child";
+  if (isChild && childName.length < 2) {
+    return { ok: false, error: "invalid" };
+  }
 
   // Idempotency: a repeat submit (double-tap / refresh) for the same class from
   // the same phone must not hold a second seat.
@@ -85,6 +96,7 @@ export async function createGuestBooking(input: {
       session_id: input.sessionId,
       full_name: fullName,
       phone,
+      child_name: isChild ? childName : null,
       lang,
       class_name: className,
       starts_at: s.starts_at,
@@ -116,6 +128,7 @@ export async function createGuestBooking(input: {
           id: inserted.id,
           full_name: fullName,
           phone,
+          child_name: isChild ? childName : null,
           lang,
           class_name: className,
           starts_at: s.starts_at,

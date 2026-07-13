@@ -15,16 +15,19 @@ export function GuestBookingForm({
   lang,
   dict,
   sessionId,
+  isChild = false,
   loginHref,
 }: {
   lang: Locale;
   dict: Dictionary;
   sessionId: string;
+  isChild?: boolean;
   loginHref: string;
 }) {
   const router = useRouter();
   const r = dict.reserve;
   const [fullName, setFullName] = useState("");
+  const [childName, setChildName] = useState("");
   const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +37,7 @@ export function GuestBookingForm({
     e.preventDefault();
     setError(null);
     setBusy(true);
-    const res = await createGuestBooking({ sessionId, fullName, phone, lang });
+    const res = await createGuestBooking({ sessionId, fullName, phone, childName, lang });
     setBusy(false);
     if (!res.ok) {
       setError(res.error === "unavailable" ? r.errorUnavailable : r.errorInvalid);
@@ -65,7 +68,7 @@ export function GuestBookingForm({
 
       <div>
         <label className="label" htmlFor="guestName">
-          {r.nameLabel}
+          {isChild ? r.parentNameLabel : r.nameLabel}
         </label>
         <input
           id="guestName"
@@ -78,6 +81,23 @@ export function GuestBookingForm({
           onChange={(e) => setFullName(e.target.value)}
         />
       </div>
+
+      {isChild && (
+        <div>
+          <label className="label" htmlFor="guestChild">
+            {r.childNameLabel}
+          </label>
+          <input
+            id="guestChild"
+            type="text"
+            required
+            className="input"
+            placeholder={r.childNamePlaceholder}
+            value={childName}
+            onChange={(e) => setChildName(e.target.value)}
+          />
+        </div>
+      )}
 
       <div>
         <label className="label" htmlFor="guestPhone">
@@ -98,7 +118,12 @@ export function GuestBookingForm({
 
       <button
         type="submit"
-        disabled={busy || fullName.trim().length < 2 || phone.replace(/\D/g, "").length < 6}
+        disabled={
+          busy ||
+          fullName.trim().length < 2 ||
+          (isChild && childName.trim().length < 2) ||
+          phone.replace(/\D/g, "").length < 6
+        }
         className="btn-primary w-full"
       >
         {busy ? dict.common.loading : r.submit}

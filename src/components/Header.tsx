@@ -26,6 +26,9 @@ export function Header({
   const isAdmin = profile?.role === "admin";
   const isStaff = isAdmin || profile?.role === "reception";
   const onAdminPage = pathname.includes(`${base}/admin`) || pathname.includes("/admin");
+  // The root IS the Program page, so the "jump to program" shortcut is pointless
+  // there — show the RO/RU toggle in its place instead.
+  const onProgramPage = pathname === base || pathname === `${base}/`;
   // The site root is the Program (booking) page — the book CTA lands there.
   const ctaHref = base;
   const ctaLabel = dict.home.nav.book;
@@ -194,30 +197,36 @@ export function Header({
               </Link>
             )}
           </div>
-          {/* Mobile-only quick calendar shortcut straight to the program. */}
-          {!showAdminNav && (
-            <a
-              href={base}
-              aria-label={dict.nav.schedule}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-mauve-200 bg-white/80 text-mauve-700 md:hidden"
-            >
-              <svg
-                width="19"
-                height="19"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
+          {/* Mobile-only: on the Program page (root) show the RO/RU toggle; on
+              other pages show a quick calendar shortcut to the program. */}
+          {!showAdminNav &&
+            (onProgramPage ? (
+              <div className="md:hidden">
+                <LanguageSwitcher current={lang} variant="light" />
+              </div>
+            ) : (
+              <a
+                href={base}
+                aria-label={dict.nav.schedule}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-mauve-200 bg-white/80 text-mauve-700 md:hidden"
               >
-                <rect x="3" y="4.5" width="18" height="16" rx="2.5" />
-                <path d="M3 9h18M8 2.5v4M16 2.5v4" />
-                <path d="M7.5 13h2M11 13h2M14.5 13h2M7.5 16.5h2M11 16.5h2" />
-              </svg>
-            </a>
-          )}
+                <svg
+                  width="19"
+                  height="19"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <rect x="3" y="4.5" width="18" height="16" rx="2.5" />
+                  <path d="M3 9h18M8 2.5v4M16 2.5v4" />
+                  <path d="M7.5 13h2M11 13h2M14.5 13h2M7.5 16.5h2M11 16.5h2" />
+                </svg>
+              </a>
+            ))}
           <MobileNav
             lang={lang}
             links={links}
