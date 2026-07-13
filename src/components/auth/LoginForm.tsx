@@ -11,18 +11,13 @@ export function LoginForm({
   lang,
   dict,
   nextSession,
-  mode = "login",
 }: {
   lang: Locale;
   dict: Dictionary;
   nextSession: string | null;
-  // "login" asks only for email; "signup" also collects name + phone.
-  mode?: "login" | "signup";
 }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,8 +27,6 @@ export function LoginForm({
   // login — the only entry point for staff accounts (admin, dellys_admin,
   // reception…). Regular members always sign in with an email address.
   const adminMode = email.trim().length > 0 && !email.includes("@");
-  // Name + phone are collected only when signing up (and never for admin login).
-  const showProfileFields = mode === "signup" && !adminMode;
 
   function nextPath() {
     return nextSession ? `/${lang}/book/${nextSession}` : `/${lang}/dashboard`;
@@ -69,20 +62,28 @@ export function LoginForm({
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {
-        shouldCreateUser: true,
+        // No public sign-up: accounts are created at the studio (book a session,
+        // give reception your email). Login only works for existing accounts.
+        shouldCreateUser: false,
         emailRedirectTo: redirectTo,
-        // Stored on the new profile by the handle_new_user trigger.
-        data: { preferred_lang: lang, full_name: fullName.trim(), phone: phone.trim() },
       },
     });
     setBusy(false);
     if (error) {
-      // Supabase throttles the built-in mailer (and without custom SMTP it's
-      // only a couple of emails/hour) — say so instead of a generic error.
       const m = `${error.message ?? ""} ${(error as { code?: string }).code ?? ""}`.toLowerCase();
       const rateLimited =
         error.status === 429 || m.includes("rate limit") || m.includes("over_email_send");
-      setError(rateLimited ? dict.auth.rateLimited : dict.common.error);
+      // shouldCreateUser:false → an unknown email comes back as "signups not
+      // allowed" / "user not found": tell them to book first.
+      const noAccount =
+        m.includes("signup") || m.includes("not allowed") || m.includes("user not found");
+      setError(
+        rateLimited
+          ? dict.auth.rateLimited
+          : noAccount
+            ? dict.auth.noAccountFound
+            : dict.common.error,
+      );
       return;
     }
     setSent(true);
@@ -146,48 +147,9 @@ export function LoginForm({
         </div>
       )}
 
-      {showProfileFields && (
-        <>
-          <div>
-            <label className="label" htmlFor="fullName">
-              {dict.auth.fullNameLabel}
-            </label>
-            <input
-              id="fullName"
-              type="text"
-              required
-              autoComplete="name"
-              className="input"
-              placeholder={dict.auth.namePlaceholder}
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="label" htmlFor="phone">
-              {dict.auth.phoneLabel}
-            </label>
-            <input
-              id="phone"
-              type="tel"
-              required
-              autoComplete="tel"
-              className="input"
-              placeholder={dict.auth.phonePlaceholder}
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-          </div>
-        </>
-      )}
-
       <button
         type="submit"
-        disabled={
-          busy ||
-          !email ||
-          (adminMode ? !password : showProfileFields && (!fullName || !phone))
-        }
+        disabled={busy || !email || (adminMode && !password)}
         className="btn-primary w-full"
       >
         {busy ? dict.common.loading : adminMode ? dict.auth.staffLogin : dict.auth.sendLink}

@@ -97,6 +97,8 @@
     "createAccount": "Cont nou? Completează datele de mai jos.",
     "noAccount": "Nu ai cont? Înregistrează-te",
     "haveAccount": "Ai deja cont? Autentifică-te",
+    "noSignup": "Contul se creează la studio: rezervă o ședință și lasă-ți emailul la recepție.",
+    "noAccountFound": "Nu există cont cu acest email. Rezervă mai întâi o ședință.",
     "rateLimited": "Prea multe cereri de email acum. Așteaptă câteva minute și încearcă din nou."
   },
   "booking": {
@@ -138,6 +140,7 @@
     "myBookings": "Rezervările mele",
     "upcoming": "Următoarele sesiuni",
     "past": "Istoric",
+    "booked": "Rezervat",
     "myMemberships": "Abonamentele mele",
     "sessionsRemaining": "sesiuni rămase",
     "expiresOn": "Expiră la",

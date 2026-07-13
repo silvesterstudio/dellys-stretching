@@ -7,6 +7,29 @@ import { DC } from "@/lib/dc";
 import { createGuestBooking } from "@/app/[lang]/reserve/[sessionId]/actions";
 import { trackPixel } from "@/components/MetaPixel";
 
+// Country codes we serve, each with its national-number length + an example.
+const COUNTRIES = [
+  { code: "+373", flag: "🇲🇩", len: 8, ex: "69 123 456" },
+  { code: "+380", flag: "🇺🇦", len: 9, ex: "50 123 4567" },
+  { code: "+7", flag: "🇷🇺", len: 10, ex: "912 345 6789" },
+] as const;
+
+type Country = (typeof COUNTRIES)[number];
+
+// Normalise a typed phone to just the national digits for the chosen country:
+// drop the country code if pasted, the trunk prefix (0, or 8 for RU), and cap.
+function normalizeLocal(raw: string, country: Country): string {
+  let d = raw.replace(/\D/g, "");
+  const cc = country.code.replace("+", "");
+  if (d.startsWith(cc)) d = d.slice(cc.length);
+  if (country.code === "+7") {
+    if (d.startsWith("8")) d = d.slice(1);
+  } else {
+    d = d.replace(/^0+/, "");
+  }
+  return d.slice(0, country.len);
+}
+
 // No-login "first reservation": a lightweight popup asking only for full name +
 // phone. On success a real seat is held (spots-left drops live) and the lead is
 // forwarded to the studio's messaging automation.
@@ -32,7 +55,10 @@ export function GuestBookingModal({
   const r = dict.reserve;
   const [fullName, setFullName] = useState("");
   const [childName, setChildName] = useState("");
+  const [dialCode, setDialCode] = useState<string>(COUNTRIES[0].code);
   const [phone, setPhone] = useState("");
+  const country = COUNTRIES.find((c) => c.code === dialCode) ?? COUNTRIES[0];
+  const phoneValid = phone.length === country.len;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -55,7 +81,13 @@ export function GuestBookingModal({
     e.preventDefault();
     setError(null);
     setBusy(true);
-    const res = await createGuestBooking({ sessionId, fullName, phone, childName, lang });
+    const res = await createGuestBooking({
+      sessionId,
+      fullName,
+      phone: `${dialCode}${phone}`,
+      childName,
+      lang,
+    });
     setBusy(false);
     if (!res.ok) {
       setError(res.error === "unavailable" ? r.errorUnavailable : r.errorInvalid);
@@ -174,17 +206,34 @@ export function GuestBookingModal({
             )}
             <div>
               <label className="label" htmlFor="gPhone">{r.phoneLabel}</label>
-              <input
-                id="gPhone"
-                type="tel"
-                inputMode="tel"
-                required
-                autoComplete="tel"
-                className="input"
-                placeholder={r.phonePlaceholder}
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-              />
+              <div className="flex gap-2">
+                <select
+                  aria-label="Country code"
+                  className="input w-auto shrink-0 pr-2"
+                  value={dialCode}
+                  onChange={(e) => {
+                    setDialCode(e.target.value);
+                    setPhone("");
+                  }}
+                >
+                  {COUNTRIES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.flag} {c.code}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  id="gPhone"
+                  type="tel"
+                  inputMode="numeric"
+                  required
+                  autoComplete="tel-national"
+                  className="input"
+                  placeholder={country.ex}
+                  value={phone}
+                  onChange={(e) => setPhone(normalizeLocal(e.target.value, country))}
+                />
+              </div>
             </div>
             <button
               type="submit"
@@ -192,7 +241,7 @@ export function GuestBookingModal({
                 busy ||
                 fullName.trim().length < 2 ||
                 (isChild && childName.trim().length < 2) ||
-                phone.replace(/\D/g, "").length < 6
+                !phoneValid
               }
               className="btn-primary w-full"
             >

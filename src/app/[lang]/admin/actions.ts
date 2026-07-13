@@ -138,9 +138,14 @@ export async function convertGuestToAccountAction(
   if (!userId) return { error: "EMAIL_FAILED" };
 
   // Link prior guest bookings (by phone) + remember the free trial. Also ensure
-  // THIS booking is attached even if phone normalisation misses.
+  // THIS booking is attached even if phone normalisation misses. Surface a
+  // failure here instead of reporting a false success to the UI.
   await service.rpc("link_guest_bookings", { p_user: userId, p_phone: gb.phone });
-  await service.from("guest_bookings").update({ claimed_by: userId }).eq("id", guestBookingId);
+  const { error: linkErr } = await service
+    .from("guest_bookings")
+    .update({ claimed_by: userId })
+    .eq("id", guestBookingId);
+  if (linkErr) return { error: "LINK_FAILED" };
 
   await logAudit(actor, "guest_booking.convert", "guest_booking", guestBookingId, { email: cleanEmail });
   revalidatePath("/[lang]/admin/today", "page");

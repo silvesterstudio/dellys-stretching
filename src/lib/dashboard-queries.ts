@@ -4,6 +4,9 @@ export interface MyBooking {
   id: string;
   status: string;
   child_name: string | null;
+  // True for a no-login reservation later linked to this account — it lives in
+  // guest_bookings, not bookings, so it can't be cancelled from the dashboard.
+  guest?: boolean;
   session: {
     id: string;
     starts_at: string;
@@ -59,6 +62,47 @@ export async function fetchMyBookings(): Promise<MyBooking[]> {
       id: r.id as string,
       status: r.status as string,
       child_name: child?.name ?? null,
+      session,
+    };
+  });
+}
+
+// No-login reservations that were linked to this account (by phone or via the
+// front-desk convert). Shown as read-only upcoming/past entries in the dashboard.
+export async function fetchMyGuestBookings(): Promise<MyBooking[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("guest_bookings")
+    .select(
+      `id, status, child_name, starts_at, class_name,
+       session:sessions ( id, starts_at, status,
+         class_type:class_types ( name_ro, name_ru, color, audience ) )`,
+    )
+    .neq("status", "cancelled")
+    .order("created_at", { ascending: false });
+
+  if (error || !data) return [];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data as any[]).map((r) => {
+    const sRaw = one(r.session);
+    // Fall back to the booking's snapshot if the live session was deleted.
+    const session: MyBooking["session"] = sRaw
+      ? { id: sRaw.id, starts_at: sRaw.starts_at, status: sRaw.status, class_type: one(sRaw.class_type) }
+      : r.starts_at
+        ? {
+            id: "",
+            starts_at: r.starts_at,
+            status: "scheduled",
+            class_type: r.class_name
+              ? { name_ro: r.class_name, name_ru: r.class_name, color: "#cbc4ca", audience: "adult" }
+              : null,
+          }
+        : null;
+    return {
+      id: r.id as string,
+      status: "booked",
+      guest: true,
+      child_name: (r.child_name as string) ?? null,
       session,
     };
   });

@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
   fetchMyBookings,
+  fetchMyGuestBookings,
   fetchMyMemberships,
   fetchMyChildren,
   fetchMyRequests,
@@ -65,7 +66,8 @@ export default async function DashboardPage({
   }
 
   const [
-    bookings,
+    accountBookings,
+    guestBookings,
     memberships,
     children,
     requests,
@@ -73,12 +75,15 @@ export default async function DashboardPage({
     availableTrials,
   ] = await Promise.all([
     fetchMyBookings(),
+    fetchMyGuestBookings(),
     fetchMyMemberships(),
     fetchMyChildren(),
     fetchMyRequests(),
     supabase.from("profiles").select("full_name, phone").eq("id", userId).maybeSingle(),
     fetchAvailableTrials(supabase, userId),
   ]);
+  // No-login reservations linked to this account show alongside real bookings.
+  const bookings = [...accountBookings, ...guestBookings];
 
   const now = Date.now();
   const isUpcoming = (b: MyBooking) =>
@@ -263,11 +268,15 @@ export default async function DashboardPage({
                       {formatTime(b.session!.starts_at, locale)}
                     </div>
                   </div>
-                  <CancelButton
-                    bookingId={b.id}
-                    dict={dict}
-                    withinWindow={withinWindow}
-                  />
+                  {b.guest ? (
+                    <span className="badge-success shrink-0">{dict.dashboard.booked}</span>
+                  ) : (
+                    <CancelButton
+                      bookingId={b.id}
+                      dict={dict}
+                      withinWindow={withinWindow}
+                    />
+                  )}
                 </div>
               );
             })}
