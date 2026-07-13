@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { Locale } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { createGuestBooking } from "@/app/[lang]/reserve/[sessionId]/actions";
+import { trackPixel } from "@/components/MetaPixel";
 
 // No-login "first reservation" funnel: collect full name + phone and hand the
 // lead to the studio's messaging automation. No account, no seat is held here —
@@ -39,6 +40,7 @@ export function GuestBookingForm({
       setError(res.error === "unavailable" ? r.errorUnavailable : r.errorInvalid);
       return;
     }
+    trackPixel("Lead");
     setDone(true);
   }
 

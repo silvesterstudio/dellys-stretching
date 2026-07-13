@@ -26,7 +26,8 @@ export function Header({
   const isAdmin = profile?.role === "admin";
   const isStaff = isAdmin || profile?.role === "reception";
   const onAdminPage = pathname.includes(`${base}/admin`) || pathname.includes("/admin");
-  const ctaHref = `${base}#program`;
+  // The site root is the Program (booking) page — the book CTA lands there.
+  const ctaHref = base;
   const ctaLabel = dict.home.nav.book;
 
   // On an admin page the island bar itself becomes the admin nav (no separate
@@ -50,10 +51,11 @@ export function Header({
 
   // Off the admin panel the bar shows the site's own nav. Staff also get an
   // "Administrare" link back into the panel; regular members get "Dashboard".
+  // Root = Program (booking); the marketing sections live on /landing.
   const publicLinks = [
-    { href: `${base}#discipline`, label: dict.nav.disciplines },
-    { href: `${base}#program`, label: dict.nav.schedule },
+    { href: base, label: dict.nav.schedule },
     { href: `${base}#preturi`, label: dict.nav.prices },
+    { href: `${base}/landing#discipline`, label: dict.nav.disciplines },
   ];
   const links = showAdminNav
     ? adminTabs
@@ -113,7 +115,7 @@ export function Header({
         }}
       >
         <Link
-          href={base}
+          href={`${base}/landing`}
           aria-label={dict.brand}
           style={{
             textDecoration: "none",
@@ -195,7 +197,7 @@ export function Header({
           {/* Mobile-only quick calendar shortcut straight to the program. */}
           {!showAdminNav && (
             <a
-              href={`${base}#program`}
+              href={base}
               aria-label={dict.nav.schedule}
               className="flex h-10 w-10 items-center justify-center rounded-full border border-mauve-200 bg-white/80 text-mauve-700 md:hidden"
             >

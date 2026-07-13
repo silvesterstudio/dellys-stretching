@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { LOCALES, DEFAULT_LOCALE } from "@/lib/constants";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { isSupabaseConfigured, AUTH_COOKIE_OPTIONS } from "@/lib/supabase/config";
 
 function hasLocalePrefix(pathname: string): boolean {
   return LOCALES.some(
@@ -50,6 +50,7 @@ export async function middleware(req: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: AUTH_COOKIE_OPTIONS,
       cookies: {
         getAll() {
           return req.cookies.getAll();

@@ -402,11 +402,12 @@
       "ongoing": "În curs"
     },
     "guestLeads": {
-      "title": "Rezervări noi",
-      "none": "Nicio rezervare nouă.",
+      "title": "Rezervări fără cont",
+      "none": "Nicio rezervare fără cont.",
+      "booked": "Rezervat",
       "markContacted": "Contactat",
       "markConfirmed": "Confirmă",
-      "dismiss": "Renunță",
+      "dismiss": "Șterge",
       "status": {
         "new": "Nou",
         "contacted": "Contactat",

@@ -16,12 +16,6 @@ export interface GuestLead {
   created_at: string;
 }
 
-const BADGE: Record<GuestLead["status"], string> = {
-  new: "badge-brand",
-  contacted: "badge-muted",
-  confirmed: "badge-success",
-  cancelled: "badge-muted",
-};
 
 // Renders the guest-reservation rows. Reused two ways:
 //  - `bare`: just the rows (no heading/empty state) — merged into a session's
@@ -68,7 +62,7 @@ export function GuestLeadsPanel({
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <span className="font-medium text-mauve-900">{l.full_name}</span>
-                <span className={BADGE[l.status]}>{t.status[l.status]}</span>
+                <span className="badge-success">{t.booked}</span>
               </div>
               <div className="mt-0.5 text-sm text-mauve-500">
                 <a href={`tel:${l.phone.replace(/\s/g, "")}`} className="text-brand-600 hover:underline">
@@ -81,35 +75,17 @@ export function GuestLeadsPanel({
               </div>
             </div>
 
-            <div className="flex shrink-0 gap-2">
-              {l.status === "new" && (
-                <button
-                  disabled={busy}
-                  onClick={() => move(l.id, "contacted")}
-                  className="btn-secondary px-3 py-1.5 text-xs"
-                >
-                  {t.markContacted}
-                </button>
-              )}
-              {(l.status === "new" || l.status === "contacted") && (
-                <button
-                  disabled={busy}
-                  onClick={() => move(l.id, "confirmed")}
-                  className="btn-primary px-3 py-1.5 text-xs"
-                >
-                  {t.markConfirmed}
-                </button>
-              )}
-              {l.status !== "cancelled" && (
-                <button
-                  disabled={busy}
-                  onClick={() => move(l.id, "cancelled")}
-                  className="rounded-full px-3 py-1.5 text-xs font-medium text-mauve-400 hover:text-mauve-700"
-                >
-                  {t.dismiss}
-                </button>
-              )}
-            </div>
+            {/* Guests are just booked — the only action is removing them (which
+                frees the held seat). No contact/confirm pipeline. */}
+            {l.status !== "cancelled" && (
+              <button
+                disabled={busy}
+                onClick={() => move(l.id, "cancelled")}
+                className="shrink-0 rounded-full px-3 py-1.5 text-xs font-medium text-mauve-400 hover:text-mauve-700"
+              >
+                {t.dismiss}
+              </button>
+            )}
           </div>
         );
       })}
@@ -122,9 +98,7 @@ export function GuestLeadsPanel({
     <section>
       <div className="mb-3 flex items-center gap-2">
         <h2 className="text-lg font-semibold text-mauve-800">{t.title}</h2>
-        {leads.length > 0 && (
-          <span className="badge-brand">{leads.filter((l) => l.status === "new").length}</span>
-        )}
+        {leads.length > 0 && <span className="badge-brand">{leads.length}</span>}
       </div>
       {leads.length === 0 ? (
         <div className="card p-5 text-sm text-mauve-500">{t.none}</div>

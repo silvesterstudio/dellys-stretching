@@ -5,6 +5,7 @@ import type { Locale } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { DC } from "@/lib/dc";
 import { createGuestBooking } from "@/app/[lang]/reserve/[sessionId]/actions";
+import { trackPixel } from "@/components/MetaPixel";
 
 // No-login "first reservation": a lightweight popup asking only for full name +
 // phone. On success a real seat is held (spots-left drops live) and the lead is
@@ -57,6 +58,8 @@ export function GuestBookingModal({
       setError(res.error === "unavailable" ? r.errorUnavailable : r.errorInvalid);
       return;
     }
+    // Ad-conversion signal: a no-login reservation is a lead.
+    trackPixel("Lead", { content_name: className });
     onBooked(sessionId);
     setDone(true);
   }

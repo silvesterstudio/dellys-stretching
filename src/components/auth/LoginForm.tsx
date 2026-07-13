@@ -55,8 +55,11 @@ export function LoginForm({
         setError(dict.auth.invalidLogin);
         return;
       }
-      router.refresh();
-      router.replace(`/${lang}/admin`);
+      // Hard navigation (not router.replace): the header/profile live in the
+      // shared root layout, which a client-side navigation would NOT re-render —
+      // it'd keep showing the logged-out public nav. A full load re-runs the
+      // layout with the freshly-set admin session cookie.
+      window.location.assign(`/${lang}/admin`);
       return;
     }
 
