@@ -43,7 +43,8 @@ export function GuestBookingForm({
       setError(res.error === "unavailable" ? r.errorUnavailable : r.errorInvalid);
       return;
     }
-    trackPixel("Lead");
+    // Same booking-success conversion as the modal (Meta "Schedule" event).
+    trackPixel("Schedule");
     setDone(true);
   }
 

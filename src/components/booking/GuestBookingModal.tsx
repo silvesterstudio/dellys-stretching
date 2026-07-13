@@ -61,8 +61,10 @@ export function GuestBookingModal({
       setError(res.error === "unavailable" ? r.errorUnavailable : r.errorInvalid);
       return;
     }
-    // Ad-conversion signal: a no-login reservation is a lead.
-    trackPixel("Lead", { content_name: className });
+    // Ad-conversion signal — fires exactly once, right after the booking
+    // succeeds (before the success state renders). A booking = a scheduled
+    // appointment, so it's the Meta "Schedule" standard event.
+    trackPixel("Schedule", { content_name: className });
     onBooked(sessionId);
     setDone(true);
   }
