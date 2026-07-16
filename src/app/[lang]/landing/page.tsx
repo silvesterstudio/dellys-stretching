@@ -208,13 +208,15 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
           background: HERO_BG,
         }}
       >
+        {/* Stock hero (Pexels free license): dark studio, subject right of
+            center so the left-side headline + gradient sit over near-black. */}
         <Image
-          src="/hero-image-dellys.webp"
+          src="/photos/hero-stretch.jpg"
           alt=""
           fill
           priority
           sizes="100vw"
-          style={{ objectFit: "cover", objectPosition: "center 26%", zIndex: 0 }}
+          style={{ objectFit: "cover", objectPosition: "64% 50%", zIndex: 0 }}
         />
         <div
           aria-hidden
