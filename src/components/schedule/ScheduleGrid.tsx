@@ -50,6 +50,14 @@ export function ScheduleGrid({
   useEffect(() => setNow(Date.now()), []);
   useEffect(() => setSessions(initialSessions), [initialSessions]);
 
+  // Accordion open/closed per day. Days already behind us start collapsed;
+  // today and everything after (including all of next week) start expanded.
+  const [expanded, setExpanded] = useState<Record<string, boolean>>(() => {
+    const todayK = dayKey(new Date());
+    return Object.fromEntries(days.map((d) => [dayKey(d), dayKey(d) >= todayK]));
+  });
+  const toggleDay = (k: string) => setExpanded((prev) => ({ ...prev, [k]: !prev[k] }));
+
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
     const supabase = createClient();
@@ -102,8 +110,8 @@ export function ScheduleGrid({
       .replace(".", "")
       .toUpperCase();
 
-  // Every weekday gets a card — empty days show a placeholder so the grid
-  // keeps the same rhythm regardless of how full the week is.
+  // Every day gets an accordion section — empty days show a placeholder so
+  // the fortnight keeps the same rhythm regardless of how full it is.
   const dayCards = days.map((dISO) => ({ dISO, k: dayKey(dISO), slots: byDay.get(dayKey(dISO)) ?? [] }));
 
   const filters: { key: "adult" | "child"; label: string }[] = [
@@ -166,91 +174,166 @@ export function ScheduleGrid({
 
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))",
-          // Every row shares the height of the tallest card, so all six day
-          // cards stay the same size no matter how many sessions they hold.
-          gridAutoRows: "1fr",
-          gap: 22,
+          maxWidth: 860,
+          margin: "0 auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: 14,
         }}
       >
-        {dayCards.map(({ dISO, k, slots }) => (
-          <div
-            key={k}
-            style={{
-              background: "#fff",
-              border: `1px solid ${DC.border}`,
-              borderRadius: DC.radius,
-              padding: 24,
-              minHeight: 280,
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "baseline",
-                  justifyContent: "space-between",
-                  gap: 10,
-                  padding: "2px 4px 16px",
-                }}
-              >
-                <span
+        {dayCards.map(({ dISO, k, slots }, i) => {
+          const open = !!expanded[k];
+          return (
+            <div key={k} style={{ display: "contents" }}>
+              {/* Divider between the current week (7 days) and the next one. */}
+              {i === 7 && (
+                <div
                   style={{
-                    fontWeight: 700,
-                    fontSize: 13,
-                    letterSpacing: ".13em",
-                    textTransform: "uppercase",
-                    color: DC.ink,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 14,
+                    margin: "14px 0 4px",
                   }}
                 >
-                  {dayName(dISO)}
-                </span>
-                <span
-                  style={{
-                    fontWeight: 700,
-                    fontSize: 12,
-                    letterSpacing: ".1em",
-                    color: DC.faint,
-                  }}
-                >
-                  {dayDate(dISO)}
-                </span>
-              </div>
-            {slots.length === 0 ? (
+                  <span style={{ flex: 1, height: 1, background: DC.border }} />
+                  <span
+                    style={{
+                      fontWeight: 700,
+                      fontSize: 12,
+                      letterSpacing: ".13em",
+                      textTransform: "uppercase",
+                      color: DC.faint,
+                    }}
+                  >
+                    {dict.schedule.nextWeek}
+                  </span>
+                  <span style={{ flex: 1, height: 1, background: DC.border }} />
+                </div>
+              )}
               <div
                 style={{
-                  flex: 1,
-                  display: "grid",
-                  placeItems: "center",
-                  border: `1px dashed ${DC.border}`,
-                  borderRadius: 16,
-                  color: DC.faint,
-                  fontSize: 13.5,
-                  textAlign: "center",
-                  padding: 16,
+                  background: "#fff",
+                  border: `1px solid ${DC.border}`,
+                  borderRadius: DC.radius,
                 }}
               >
-                {dict.schedule.noSessionsDay}
+                <button
+                  type="button"
+                  aria-expanded={open}
+                  aria-controls={`day-${k}`}
+                  onClick={() => toggleDay(k)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                    width: "100%",
+                    padding: "18px 22px",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    fontFamily: DC.sans,
+                    textAlign: "left",
+                  }}
+                >
+                  <span style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
+                    <span
+                      style={{
+                        fontWeight: 700,
+                        fontSize: 13,
+                        letterSpacing: ".13em",
+                        textTransform: "uppercase",
+                        color: DC.ink,
+                      }}
+                    >
+                      {dayName(dISO)}
+                    </span>
+                    <span
+                      style={{
+                        fontWeight: 700,
+                        fontSize: 12,
+                        letterSpacing: ".1em",
+                        color: DC.faint,
+                      }}
+                    >
+                      {dayDate(dISO)}
+                    </span>
+                  </span>
+                  <svg
+                    aria-hidden
+                    width="16"
+                    height="16"
+                    viewBox="0 0 16 16"
+                    style={{
+                      flex: "none",
+                      color: DC.faint,
+                      transform: open ? "rotate(180deg)" : "none",
+                      transition: "transform .25s ease",
+                    }}
+                  >
+                    <path
+                      d="M3 6l5 5 5-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+                {/* 0fr→1fr grid rows animate the fold without measuring heights. */}
+                <div
+                  id={`day-${k}`}
+                  style={{
+                    display: "grid",
+                    gridTemplateRows: open ? "1fr" : "0fr",
+                    transition: "grid-template-rows .28s ease",
+                  }}
+                >
+                  <div style={{ overflow: "hidden" }}>
+                    {slots.length === 0 ? (
+                      <div style={{ padding: "0 22px 20px" }}>
+                        <div
+                          style={{
+                            border: `1px dashed ${DC.border}`,
+                            borderRadius: 16,
+                            color: DC.faint,
+                            fontSize: 13.5,
+                            textAlign: "center",
+                            padding: 16,
+                          }}
+                        >
+                          {dict.schedule.noSessionsDay}
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "repeat(auto-fill,minmax(250px,1fr))",
+                          gap: 12,
+                          padding: "0 22px 20px",
+                        }}
+                      >
+                        {slots.map((s) => (
+                          <Slot
+                            key={s.id}
+                            s={s}
+                            lang={lang}
+                            dict={dict}
+                            now={now}
+                            loggedIn={loggedIn}
+                            onReserve={setGuestSession}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {slots.map((s) => (
-                  <Slot
-                    key={s.id}
-                    s={s}
-                    lang={lang}
-                    dict={dict}
-                    now={now}
-                    loggedIn={loggedIn}
-                    onReserve={setGuestSession}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+            </div>
+          );
+        })}
       </div>
 
       {guestSession && (

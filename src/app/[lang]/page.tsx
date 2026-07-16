@@ -4,7 +4,6 @@ import { SITE_URL } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { getWeekRange } from "@/lib/week";
-import { weekdayInTz } from "@/lib/format";
 import { fetchSessions } from "@/lib/queries";
 import { getCurrentUserId } from "@/lib/auth";
 import { ScheduleGrid } from "@/components/schedule/ScheduleGrid";
@@ -77,12 +76,13 @@ export default async function ProgramPage({ params }: { params: Promise<{ lang: 
   const dict = getDictionary(locale);
   const h = dict.home;
 
-  const onSunday = weekdayInTz(new Date().toISOString()) === 0;
-  const range = getWeekRange(onSunday ? 1 : 0);
-  const days = range.days.slice(0, 6).map((d) => d.toISOString());
-  const weekEnd = range.days[6];
+  // Two full weeks, Monday through Sunday: the rest of the current week plus
+  // the whole next one, so there is always a fortnight of booking runway.
+  const range = getWeekRange(0);
+  const nextWeek = getWeekRange(1);
+  const days = [...range.days, ...nextWeek.days].map((d) => d.toISOString());
   const [sessions, userId] = await Promise.all([
-    fetchSessions(range.start, weekEnd),
+    fetchSessions(range.start, nextWeek.end),
     getCurrentUserId(),
   ]);
   const loggedIn = !!userId;
@@ -106,7 +106,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ lang: 
           days={days}
           initialSessions={sessions}
           weekStartISO={range.start.toISOString()}
-          weekEndISO={weekEnd.toISOString()}
+          weekEndISO={nextWeek.end.toISOString()}
           loggedIn={loggedIn}
         />
       </section>
