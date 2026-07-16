@@ -12,7 +12,7 @@ import { dayKey } from "@/lib/week";
 import { localized } from "@/lib/i18n-data";
 import { refreshScheduleAction } from "@/app/[lang]/actions";
 import { GuestBookingModal } from "@/components/booking/GuestBookingModal";
-import { DC } from "@/lib/dc";
+import { DC, tint } from "@/lib/dc";
 
 const btnBase: React.CSSProperties = {
   display: "block",
@@ -109,6 +109,23 @@ export function ScheduleGrid({
       .format(new Date(iso))
       .replace(".", "")
       .toUpperCase();
+  // "20 iul – 26 iul 2026" — concrete dates for the next-week divider, so the
+  // label is never ambiguous. Year appears once (twice when the week straddles
+  // New Year).
+  const dayMonth = (iso: string, withYear: boolean) =>
+    new Intl.DateTimeFormat(intlLocale, {
+      day: "numeric",
+      month: "short",
+      ...(withYear ? { year: "numeric" as const } : {}),
+      timeZone: TIMEZONE,
+    })
+      .format(new Date(iso))
+      .replace(".", "");
+  const yearOf = (iso: string) =>
+    Number(new Intl.DateTimeFormat("en-US", { year: "numeric", timeZone: TIMEZONE }).format(new Date(iso)));
+  const week2Start = days[7];
+  const week2End = days[days.length - 1];
+  const week2Label = `${dayMonth(week2Start, yearOf(week2Start) !== yearOf(week2End))} – ${dayMonth(week2End, true)}`;
 
   // Every day gets an accordion section — empty days show a placeholder so
   // the fortnight keeps the same rhythm regardless of how full it is.
@@ -198,14 +215,40 @@ export function ScheduleGrid({
                   <span style={{ flex: 1, height: 1, background: DC.border }} />
                   <span
                     style={{
-                      fontWeight: 700,
-                      fontSize: 12,
-                      letterSpacing: ".13em",
-                      textTransform: "uppercase",
-                      color: DC.faint,
+                      display: "inline-flex",
+                      alignItems: "baseline",
+                      flexWrap: "wrap",
+                      justifyContent: "center",
+                      columnGap: 8,
+                      rowGap: 2,
+                      padding: "8px 18px",
+                      borderRadius: 999,
+                      background: tint(6),
                     }}
                   >
-                    {dict.schedule.nextWeek}
+                    <span
+                      style={{
+                        fontWeight: 700,
+                        fontSize: 12,
+                        letterSpacing: ".13em",
+                        textTransform: "uppercase",
+                        color: DC.ink,
+                      }}
+                    >
+                      {dict.schedule.nextWeek}
+                    </span>
+                    <span
+                      style={{
+                        fontWeight: 700,
+                        fontSize: 12,
+                        letterSpacing: ".1em",
+                        textTransform: "uppercase",
+                        color: DC.muted2,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {week2Label}
+                    </span>
                   </span>
                   <span style={{ flex: 1, height: 1, background: DC.border }} />
                 </div>
