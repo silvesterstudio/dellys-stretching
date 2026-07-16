@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { usernameToEmail } from "@/lib/staff";
 import type { Locale } from "@/lib/constants";
@@ -59,7 +60,25 @@ export function LoginForm({
     const redirectTo = `${window.location.origin}/${lang}/auth/callback?next=${encodeURIComponent(
       nextPath(),
     )}`;
-    const { error } = await supabase.auth.signInWithOtp({
+    // Send the link from an implicit-flow client — the shared @supabase/ssr
+    // client is locked to PKCE, whose links only open in the browser that
+    // requested them (the code_verifier cookie lives there). Implicit links
+    // carry the tokens in the URL fragment, so they sign in from ANY browser:
+    // Gmail/Instagram in-app browsers included. This client sends the email
+    // and is thrown away; the session is stored by /auth/confirm on arrival.
+    const emailAuth = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          flowType: "implicit",
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+        },
+      },
+    );
+    const { error } = await emailAuth.auth.signInWithOtp({
       email: email.trim(),
       options: {
         // No public sign-up: accounts are created at the studio (book a session,
