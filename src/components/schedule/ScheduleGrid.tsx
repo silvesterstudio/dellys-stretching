@@ -123,9 +123,12 @@ export function ScheduleGrid({
       .replace(".", "");
   const yearOf = (iso: string) =>
     Number(new Intl.DateTimeFormat("en-US", { year: "numeric", timeZone: TIMEZONE }).format(new Date(iso)));
+  // Guarded: a caller passing a single week (< 8 days) simply gets no divider.
   const week2Start = days[7];
   const week2End = days[days.length - 1];
-  const week2Label = `${dayMonth(week2Start, yearOf(week2Start) !== yearOf(week2End))} – ${dayMonth(week2End, true)}`;
+  const week2Label = week2Start
+    ? `${dayMonth(week2Start, yearOf(week2Start) !== yearOf(week2End))} – ${dayMonth(week2End, true)}`
+    : "";
 
   // Every day gets an accordion section — empty days show a placeholder so
   // the fortnight keeps the same rhythm regardless of how full it is.

@@ -5,7 +5,6 @@ import { SITE_URL } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { getWeekRange } from "@/lib/week";
-import { weekdayInTz } from "@/lib/format";
 import { fetchSessions } from "@/lib/queries";
 import { getCurrentUserId } from "@/lib/auth";
 import { ScheduleGrid } from "@/components/schedule/ScheduleGrid";
@@ -118,6 +117,15 @@ const BEN_ICONS = [
   <BIcon key="k"><path d="M20 6L9 17l-5-5" /></BIcon>,
 ];
 
+// Stock photos for the age-category cards (Pexels free license), in the same
+// order as h.age.items: adults, kids 3–7, kids 8–13. objectPosition keeps the
+// subject in frame at the banner crop.
+const AGE_PHOTOS = [
+  { src: "/photos/age-adults.jpg", pos: "center 45%" },
+  { src: "/photos/age-kids-3-7.jpg", pos: "center 38%" },
+  { src: "/photos/age-kids-8-13.jpg", pos: "center 62%" },
+];
+
 function PhotoBox({ style }: { style?: React.CSSProperties }) {
   return (
     <div style={{ background: "#F3F2F6", display: "grid", placeItems: "center", ...style }}>
@@ -148,12 +156,12 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
   const h = dict.home;
   const base = `/${locale}`;
 
-  const onSunday = weekdayInTz(new Date().toISOString()) === 0;
-  const range = getWeekRange(onSunday ? 1 : 0);
-  const days = range.days.slice(0, 6).map((d) => d.toISOString());
-  const weekEnd = range.days[6];
+  // Same two-week Mon–Sun window as the root program page.
+  const range = getWeekRange(0);
+  const nextWeek = getWeekRange(1);
+  const days = [...range.days, ...nextWeek.days].map((d) => d.toISOString());
   const [sessions, userId] = await Promise.all([
-    fetchSessions(range.start, weekEnd),
+    fetchSessions(range.start, nextWeek.end),
     getCurrentUserId(),
   ]);
   const loggedIn = !!userId;
@@ -299,13 +307,25 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
             <p style={subText}>{h.age.sub}</p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(288px,1fr))", gap: 24 }}>
-            {h.age.items.map((a) => (
+            {h.age.items.map((a, i) => (
               <div
                 key={a.t}
                 className="dc-lift"
                 style={{ background: "#fff", border: `1px solid ${DC.border}`, borderRadius: DC.radius, overflow: "hidden" }}
               >
-                <PhotoBox style={{ width: "100%", height: 150 }} />
+                {AGE_PHOTOS[i] ? (
+                  <div style={{ position: "relative", width: "100%", height: 190, background: "#F3F2F6" }}>
+                    <Image
+                      src={AGE_PHOTOS[i].src}
+                      alt={a.t}
+                      fill
+                      sizes="(max-width: 680px) 100vw, 384px"
+                      style={{ objectFit: "cover", objectPosition: AGE_PHOTOS[i].pos }}
+                    />
+                  </div>
+                ) : (
+                  <PhotoBox style={{ width: "100%", height: 190 }} />
+                )}
                 <div style={{ padding: 26 }}>
                   <span
                     style={{
@@ -408,7 +428,7 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
             days={days}
             initialSessions={sessions}
             weekStartISO={range.start.toISOString()}
-            weekEndISO={weekEnd.toISOString()}
+            weekEndISO={nextWeek.end.toISOString()}
             loggedIn={loggedIn}
           />
         </div>
