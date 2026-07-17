@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
-import { usernameToEmail } from "@/lib/staff";
+import { isStaffUsername, usernameToEmail } from "@/lib/staff";
 import type { Locale } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
 
@@ -24,10 +24,10 @@ export function LoginForm({
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
-  // Any bare username (no "@") reveals the password box and switches to staff
-  // login — the only entry point for staff accounts (admin, dellys_admin,
-  // reception…). Regular members always sign in with an email address.
-  const adminMode = email.trim().length > 0 && !email.includes("@");
+  // Only an exact staff username (admin, dellys_admin…) reveals the password
+  // box and switches to staff login. Matching on "no @ yet" would flash the
+  // password field on the first letter of every member's email.
+  const adminMode = isStaffUsername(email);
 
   function nextPath() {
     return nextSession ? `/${lang}/book/${nextSession}` : `/${lang}/dashboard`;
@@ -136,9 +136,13 @@ export function LoginForm({
         <label className="label" htmlFor="email">
           {dict.auth.emailLabel}
         </label>
+        {/* type stays "text": toggling type email↔text while the user types
+            makes the browser reset the caret to the start of the field. Email
+            format is enforced via `pattern` instead, lifted in staff mode. */}
         <input
           id="email"
-          type={adminMode ? "text" : "email"}
+          type="text"
+          pattern={adminMode ? undefined : "[^@\\s]+@[^@\\s]+\\.[^@\\s]+"}
           inputMode="email"
           required
           autoComplete="email"
