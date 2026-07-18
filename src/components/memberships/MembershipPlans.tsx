@@ -97,7 +97,10 @@ export function MembershipPlans({
 
                       <div className="mt-2 space-y-1 text-sm text-mauve-500">
                         <div>
-                          {p.session_count} {dict.memberships.sessions}
+                          {/* 999 = the app's "unlimited" convention (see transfers). */}
+                          {p.session_count >= 999
+                            ? `∞ ${dict.memberships.unlimitedSessions}`
+                            : `${p.session_count} ${dict.memberships.sessions}`}
                         </div>
                         <div>
                           {dict.memberships.validity}: {p.validity_days}{" "}

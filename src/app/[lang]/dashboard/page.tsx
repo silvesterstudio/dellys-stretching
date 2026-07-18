@@ -173,7 +173,8 @@ export default async function DashboardPage({
                   <div
                     className={`mt-1 text-2xl font-bold ${usable ? "text-brand-600" : "text-mauve-300"}`}
                   >
-                    {m.sessions_remaining}
+                    {/* >900 ≈ the 999 "unlimited" convention (minus check-ins). */}
+                    {m.sessions_remaining > 900 ? "∞" : m.sessions_remaining}
                     <span className="ml-1 text-xs font-normal text-mauve-400">
                       {dict.dashboard.sessionsRemaining}
                     </span>

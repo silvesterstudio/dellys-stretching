@@ -180,6 +180,7 @@
     "sessions": "sesiuni",
     "validity": "valabilitate",
     "days": "zile",
+    "unlimitedSessions": "Ședințe nelimitate",
     "buyNote": "Vino la recepție pentru a cumpăra acest abonament.",
     "featured": "Cea mai bună ofertă",
     "buyOnline": "Cumpără abonamentul",
@@ -345,6 +346,10 @@
       "kids813": "Copii 8–13 ani",
       "perMonth": "pe lună",
       "twoMonths": "2 luni",
+      "oneSession": "1 ședință",
+      "single": "vizită unică",
+      "summer": "Ofertă de vară",
+      "summerNote": "Prețuri speciale valabile doar pe perioada verii.",
       "note": "Îți poți rezerva un abonament din contul tău, după ce îți creezi cont."
     },
     "faq": {
