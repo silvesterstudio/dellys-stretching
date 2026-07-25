@@ -38,7 +38,7 @@ export default async function ReservePage({
     return (
       <div className="mx-auto max-w-md px-4 py-10 text-center">
         <p className="text-mauve-600">{dict.booking.pastSession}</p>
-        <Link href={`/${locale}`} className="btn-primary mt-4">
+        <Link href={`/${locale}/program`} className="btn-primary mt-4">
           {dict.common.back}
         </Link>
       </div>

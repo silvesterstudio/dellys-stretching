@@ -3,8 +3,9 @@ import { LOCALES, SITE_URL } from "@/lib/constants";
 
 // Public, indexable routes per locale. Admin/dashboard/login are auth-gated and
 // intentionally excluded (see robots.ts).
-// "" = Program (booking) page · "/landing" = marketing landing.
-const PUBLIC_PATHS = ["", "/landing", "/memberships"] as const;
+// "" = studio chooser (site root) · "/program" = the booking schedule for the
+// chosen studio · "/landing" = marketing landing.
+const PUBLIC_PATHS = ["", "/program", "/landing", "/memberships"] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return LOCALES.flatMap((locale) =>

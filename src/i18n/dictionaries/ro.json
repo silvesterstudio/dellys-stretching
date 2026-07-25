@@ -396,11 +396,19 @@
       "social": "Social",
       "contact": "Contact",
       "hours": "Program",
-      "addr": "str. Gheorghe Asachi 65, Chișinău",
+      "addr": "str. Trandafirilor 20, Chișinău",
       "hoursVal": "Luni–Vineri 8:00–19:00 · Sâmbătă 8:00–13:00 · Duminică închis",
       "rights": "Toate drepturile rezervate.",
       "phone": "+373 68 344 333",
       "email": "info@caracas.md"
+    },
+    "choose": {
+      "title": "Alege sala",
+      "sub": "Avem două săli în Chișinău. Alege-o pe cea mai apropiată de tine ca să vezi programul și să rezervi.",
+      "cta": "Vezi programul",
+      "adults": "Adulți",
+      "kids": "Copii",
+      "classesSoon": "Programul se completează în curând"
     }
   },
   "admin": {

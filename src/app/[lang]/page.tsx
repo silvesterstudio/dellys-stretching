@@ -1,16 +1,13 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import type { Locale } from "@/lib/constants";
 import { SITE_URL } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
-import { getWeekRange } from "@/lib/week";
-import { fetchSessions } from "@/lib/queries";
-import { fetchLocations, resolveLocation } from "@/lib/locations-server";
-import { getCurrentUserId } from "@/lib/auth";
-import { ScheduleGrid } from "@/components/schedule/ScheduleGrid";
-import { PricingTeaser } from "@/components/PricingTeaser";
+import { fetchLocations } from "@/lib/locations-server";
+import { localizedAddress } from "@/lib/locations";
 import { Footer } from "@/components/Footer";
-import { DC } from "@/lib/dc";
+import { DC, tint } from "@/lib/dc";
 
 export const dynamic = "force-dynamic";
 
@@ -43,101 +40,154 @@ export async function generateMetadata({
       title: dict.home.meta.title,
       description: dict.home.meta.description,
     },
-    twitter: { card: "summary_large_image", title: dict.home.meta.title, description: dict.home.meta.description },
+    twitter: {
+      card: "summary_large_image",
+      title: dict.home.meta.title,
+      description: dict.home.meta.description,
+    },
   };
 }
 
-const h2: React.CSSProperties = {
-  margin: 0,
-  fontFamily: DC.display,
-  fontWeight: 600,
-  fontSize: "clamp(30px,4vw,44px)",
-  lineHeight: 1.06,
-  letterSpacing: "-.02em",
-  color: DC.ink,
-};
-const subText: React.CSSProperties = { margin: "12px 0 0", fontSize: 17, lineHeight: 1.6, color: DC.muted };
-
-// Hover/lift helpers used by ScheduleGrid + PricingTeaser, and smooth anchor
-// scrolling to the prices section.
-const DC_CSS = `
+const CSS = `
 .dc-btn{transition:transform .15s,box-shadow .25s}
 .dc-btn:hover{transform:translateY(-2px)}
 .dc-lift{transition:transform .2s,box-shadow .25s,border-color .2s}
 .dc-lift:hover{transform:translateY(-4px);box-shadow:0 22px 48px -28px rgba(20,18,26,.3);border-color:#E3E1E7}
-html{scroll-behavior:smooth;scroll-padding-top:92px}
-@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+.loc-card:hover .loc-cta{background:${DC.accent};color:#fff}
 `;
 
-// The site root is now the Program (booking) page — ads and returning visitors
-// land straight on the weekly schedule. Marketing content lives on /landing.
-export default async function ProgramPage({
+// The site root is the studio chooser. The two gyms run entirely separate
+// timetables and price lists, so making the visitor pick one up front is what
+// makes every page after this unambiguous — rather than showing a mixed
+// schedule and hoping they notice a filter.
+export default async function ChooseLocationPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ lang: string }>;
-  searchParams: Promise<{ loc?: string }>;
 }) {
   const { lang } = await params;
-  const { loc } = await searchParams;
   const locale = resolveLocale(lang);
   const dict = getDictionary(locale);
-  const h = dict.home;
+  const c = dict.home.choose;
 
-  // Two full weeks, Monday through Sunday: the rest of the current week plus
-  // the whole next one, so there is always a fortnight of booking runway.
-  const range = getWeekRange(0);
-  const nextWeek = getWeekRange(1);
-  const days = [...range.days, ...nextWeek.days].map((d) => d.toISOString());
-
-  // The two studios run separate timetables, so the schedule is always scoped
-  // to one of them — ?loc=key, else the visitor's remembered choice, else the
-  // first gym.
   const locations = await fetchLocations();
-  const active = await resolveLocation(locations, loc ?? null);
-
-  const [sessions, userId] = await Promise.all([
-    fetchSessions(range.start, nextWeek.end, active?.id ?? null),
-    getCurrentUserId(),
-  ]);
-  const loggedIn = !!userId;
 
   return (
-    <div style={{ fontFamily: DC.sans, color: DC.ink, background: "#fff" }}>
-      <style dangerouslySetInnerHTML={{ __html: DC_CSS }} />
+    <div style={{ fontFamily: DC.sans, color: DC.ink, background: "#fff", minHeight: "70vh" }}>
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
-      {/* HEADING */}
-      <section style={{ maxWidth: 1200, margin: "0 auto", padding: "40px 24px 8px", textAlign: "center" }}>
-        <h1 style={{ ...h2, fontSize: "clamp(34px,5vw,52px)" }}>{h.prog.title}</h1>
-        <p style={{ ...subText, maxWidth: 620, margin: "12px auto 0" }}>{h.prog.sub}</p>
-        <p style={{ margin: "14px 0 0", fontSize: 14.5, fontWeight: 600, color: DC.accent }}>{h.hero.note}</p>
-      </section>
-
-      {/* SCHEDULE — the primary content */}
-      <section style={{ maxWidth: 1200, margin: "0 auto", padding: "28px 24px 56px" }}>
-        <ScheduleGrid
-          lang={locale}
-          dict={dict}
-          days={days}
-          initialSessions={sessions}
-          weekStartISO={range.start.toISOString()}
-          weekEndISO={nextWeek.end.toISOString()}
-          loggedIn={loggedIn}
-          locations={locations}
-          initialLocationId={active?.id ?? null}
-        />
-      </section>
-
-      {/* PRICES */}
-      <section id="preturi" className="dc-screen" style={{ scrollMarginTop: 92, maxWidth: 1160, margin: "0 auto", padding: "8px 24px 64px" }}>
-        <div style={{ textAlign: "center", maxWidth: 640, margin: "0 auto 40px" }}>
-          <h2 style={h2}>{h.price.title}</h2>
-          <p style={subText}>{h.price.sub}</p>
-        </div>
-        <PricingTeaser dict={dict} />
-        <p style={{ textAlign: "center", marginTop: 30, fontSize: 14.5, color: DC.faint }}>
-          {h.price.note}
+      <section
+        style={{ maxWidth: 1100, margin: "0 auto", padding: "56px 24px 12px", textAlign: "center" }}
+      >
+        <h1
+          style={{
+            margin: 0,
+            fontFamily: DC.display,
+            fontWeight: 600,
+            fontSize: "clamp(34px,5vw,52px)",
+            lineHeight: 1.06,
+            letterSpacing: "-.02em",
+            color: DC.ink,
+          }}
+        >
+          {c.title}
+        </h1>
+        <p
+          style={{
+            margin: "14px auto 0",
+            maxWidth: 560,
+            fontSize: 17,
+            lineHeight: 1.6,
+            color: DC.muted,
+          }}
+        >
+          {c.sub}
         </p>
+      </section>
+
+      <section style={{ maxWidth: 1000, margin: "0 auto", padding: "36px 24px 72px" }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))",
+            gap: 20,
+          }}
+        >
+          {locations.map((l) => (
+            <Link
+              key={l.id}
+              href={`/${locale}/program?loc=${encodeURIComponent(l.key)}`}
+              className="dc-lift loc-card"
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                background: "#fff",
+                border: `1px solid ${DC.border}`,
+                borderRadius: DC.radius,
+                padding: 28,
+                textDecoration: "none",
+                color: "inherit",
+              }}
+            >
+              <span
+                aria-hidden
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 46,
+                  height: 46,
+                  borderRadius: 14,
+                  background: tint(8),
+                  color: DC.accent,
+                  marginBottom: 18,
+                }}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path
+                    d="M21 10c0 6-9 12-9 12S3 16 3 10a9 9 0 1118 0z"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+              </span>
+
+              <span
+                style={{
+                  fontFamily: DC.display,
+                  fontWeight: 600,
+                  fontSize: 25,
+                  letterSpacing: "-.01em",
+                  color: DC.ink,
+                }}
+              >
+                {l.name}
+              </span>
+              <span style={{ marginTop: 8, fontSize: 15.5, lineHeight: 1.55, color: DC.muted }}>
+                {localizedAddress(l, locale)}
+              </span>
+
+              <span
+                className="loc-cta dc-btn"
+                style={{
+                  marginTop: 24,
+                  alignSelf: "flex-start",
+                  padding: "11px 22px",
+                  borderRadius: 999,
+                  border: `1px solid ${DC.accent}`,
+                  color: DC.accent,
+                  background: "transparent",
+                  fontWeight: 700,
+                  fontSize: 14.5,
+                  transition: "background .2s,color .2s",
+                }}
+              >
+                {c.cta} →
+              </span>
+            </Link>
+          ))}
+        </div>
       </section>
 
       <Footer lang={locale} dict={dict} />

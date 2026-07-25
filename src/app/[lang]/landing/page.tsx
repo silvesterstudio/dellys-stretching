@@ -176,7 +176,7 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
       image: `${SITE_URL}/dellys-logo.webp`,
       address: {
         "@type": "PostalAddress",
-        streetAddress: "str. Gheorghe Asachi 65",
+        streetAddress: "str. Trandafirilor 20",
         addressLocality: "Chișinău",
         addressCountry: "MD",
       },

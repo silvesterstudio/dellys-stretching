@@ -21,7 +21,7 @@ export function Footer({ lang, dict }: { lang: Locale; dict: Dictionary }) {
   };
   const nav = [
     { href: `${base}#discipline`, label: dict.nav.disciplines },
-    { href: `${base}#program`, label: dict.nav.schedule },
+    { href: `${base}/program`, label: dict.nav.schedule },
     { href: `${base}#preturi`, label: dict.nav.prices },
   ];
 

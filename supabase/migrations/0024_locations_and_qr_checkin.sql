@@ -4,7 +4,7 @@
 -- Two things land together because they are entangled: a scan must resolve to a
 -- class AT THE TABLET'S GYM, so check-in cannot be built before locations exist.
 --
---   1. locations           — Asachi 65 (existing) + Moscova 6 et.3 (new).
+--   1. locations           — Trandafirilor 20 (existing) + Moscova 6 et.3 (new).
 --   2. location_id         — on sessions, weekly_templates, membership_plans and
 --                            profiles. The two gyms are run as SEPARATE
 --                            operations: a member belongs to one gym and a
@@ -44,7 +44,7 @@ create table if not exists public.locations (
 );
 
 insert into public.locations (key, name, address_ro, address_ru, sort_order) values
-  ('asachi',  'Dellys Asachi',  'str. Gheorghe Asachi 65, Chișinău',   'ул. Георге Асаки 65, Кишинэу',        1),
+  ('trandafirilor', 'Dellys Trandafirilor', 'str. Trandafirilor 20, Chișinău', 'ул. Трандафирилор 20, Кишинэу', 1),
   ('moscova', 'Dellys Moscova', 'bd. Moscova 6, et. 3, Chișinău',      'бул. Московя 6, эт. 3, Кишинэу',      2)
 on conflict (key) do nothing;
 
@@ -71,7 +71,7 @@ create policy locations_write on public.locations
 alter table public.weekly_templates
   add column if not exists location_id uuid references public.locations(id) on delete restrict;
 update public.weekly_templates
-   set location_id = (select id from public.locations where key = 'asachi')
+   set location_id = (select id from public.locations where key = 'trandafirilor')
  where location_id is null;
 alter table public.weekly_templates alter column location_id set not null;
 create index if not exists weekly_templates_location_idx
@@ -81,7 +81,7 @@ create index if not exists weekly_templates_location_idx
 alter table public.sessions
   add column if not exists location_id uuid references public.locations(id) on delete restrict;
 update public.sessions
-   set location_id = (select id from public.locations where key = 'asachi')
+   set location_id = (select id from public.locations where key = 'trandafirilor')
  where location_id is null;
 alter table public.sessions alter column location_id set not null;
 create index if not exists sessions_location_starts_idx
@@ -92,7 +92,7 @@ create index if not exists sessions_location_starts_idx
 alter table public.membership_plans
   add column if not exists location_id uuid references public.locations(id) on delete restrict;
 update public.membership_plans
-   set location_id = (select id from public.locations where key = 'asachi')
+   set location_id = (select id from public.locations where key = 'trandafirilor')
  where location_id is null;
 alter table public.membership_plans alter column location_id set not null;
 -- The old uniqueness was (audience, name_ro) — global across the business, which
@@ -115,7 +115,7 @@ create unique index if not exists membership_plans_loc_aud_name_uniq
 alter table public.profiles
   add column if not exists location_id uuid references public.locations(id) on delete set null;
 update public.profiles
-   set location_id = (select id from public.locations where key = 'asachi')
+   set location_id = (select id from public.locations where key = 'trandafirilor')
  where location_id is null and role = 'client';
 create index if not exists profiles_location_idx on public.profiles (location_id);
 
