@@ -95,9 +95,17 @@ update public.membership_plans
    set location_id = (select id from public.locations where key = 'asachi')
  where location_id is null;
 alter table public.membership_plans alter column location_id set not null;
--- The old uniqueness was (audience, name_ro); the same plan name must now be
--- allowed once per gym.
+-- The old uniqueness was (audience, name_ro) — global across the business, which
+-- would stop the second studio from ever selling a plan by the same name.
+-- Replace it with the same rule scoped per gym.
+--
+-- It exists in two shapes: the inline table constraint from 0001, and a
+-- hand-made index of the same columns that was created directly against the
+-- database and never checked in. Both must go, or "8 ședințe" can only exist at
+-- one studio.
 alter table public.membership_plans drop constraint if exists membership_plans_audience_name_ro_key;
+alter table public.membership_plans drop constraint if exists membership_plans_audience_name_uniq;
+drop index if exists public.membership_plans_audience_name_uniq;
 create unique index if not exists membership_plans_loc_aud_name_uniq
   on public.membership_plans (location_id, audience, name_ro);
 
