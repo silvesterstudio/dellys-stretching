@@ -46,6 +46,7 @@ export function WeeklyScheduleManager({
   weekEndISO,
   weekLabel,
   isCurrentWeek,
+  locationId,
 }: {
   lang: Locale;
   dict: Dictionary;
@@ -57,6 +58,9 @@ export function WeeklyScheduleManager({
   weekEndISO: string;
   weekLabel: string;
   isCurrentWeek: boolean;
+  // Which studio this week belongs to. Every write carries it so a class can
+  // never be filed under the wrong gym.
+  locationId: string | null;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -84,7 +88,7 @@ export function WeeklyScheduleManager({
     if (!window.confirm(dict.admin.saveAsDefaultConfirm)) return;
     setBusy(true);
     setMsg(null);
-    const { error } = await saveWeekAsTemplateAction(weekStartISO, weekEndISO);
+    const { error } = await saveWeekAsTemplateAction(weekStartISO, weekEndISO, locationId);
     setBusy(false);
     setMsg(error ? dict.common.error : dict.admin.savedDefault);
     router.refresh();
@@ -130,6 +134,7 @@ export function WeeklyScheduleManager({
             classTypes={classTypes}
             lang={lang}
             dict={dict}
+            locationId={locationId}
           />
         ))}
       </div>
@@ -143,12 +148,14 @@ function DayEditor({
   classTypes,
   lang,
   dict,
+  locationId,
 }: {
   day: Day;
   sessions: Session[];
   classTypes: ClassType[];
   lang: Locale;
   dict: Dictionary;
+  locationId: string | null;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -170,6 +177,7 @@ function DayEditor({
       durationMin: duration,
       capacity,
       instructor: instructor.trim() || null,
+      locationId,
     });
     setBusy(false);
     if (!error) {

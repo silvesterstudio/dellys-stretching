@@ -17,9 +17,121 @@ export type MembershipRequestStatus =
 export type UserRole = "client" | "admin" | "reception";
 export type Locale = "ro" | "ru";
 
+// Every outcome the kiosk can show. Mirrors the codes returned by kiosk_scan()
+// in migration 0024 — keep the two in sync.
+export type KioskScanCode =
+  | "ok"
+  | "not_found" // QR belongs to no account
+  | "wrong_location" // member of the other gym
+  | "already_checked_in"
+  | "no_class" // nothing running now they could join
+  | "class_full"
+  | "no_membership"; // no sessions left and the free trial is spent
+
+// Failures produced by the API route itself, before or instead of kiosk_scan:
+// a tablet whose token isn't recognised, throttling, or a dead connection.
+export type KioskTransportCode =
+  | "device_unknown"
+  | "rate_limited"
+  | "bad_request"
+  | "server_error"
+  | "connection";
+
+export type KioskResultCode = KioskScanCode | KioskTransportCode;
+
+export interface KioskScanResult {
+  ok: boolean;
+  code: KioskResultCode;
+  clientName?: string | null;
+  homeLocation?: string | null;
+  className_ro?: string | null;
+  className_ru?: string | null;
+  color?: string | null;
+  startsAt?: string | null;
+  walkIn?: boolean;
+  freeTrial?: boolean;
+  sessionsRemaining?: number | null;
+}
+
 export interface Database {
   public: {
     Tables: {
+      locations: {
+        Row: {
+          id: string;
+          key: string;
+          name: string;
+          address_ro: string;
+          address_ru: string;
+          phone: string | null;
+          maps_url: string | null;
+          active: boolean;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          key: string;
+          name: string;
+          address_ro?: string;
+          address_ru?: string;
+          phone?: string | null;
+          maps_url?: string | null;
+          active?: boolean;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["locations"]["Insert"]>;
+        Relationships: [];
+      };
+      kiosk_devices: {
+        Row: {
+          id: string;
+          token: string;
+          label: string | null;
+          location_id: string;
+          active: boolean;
+          last_seen_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          token: string;
+          label?: string | null;
+          location_id: string;
+          active?: boolean;
+          last_seen_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["kiosk_devices"]["Insert"]>;
+        Relationships: [];
+      };
+      checkin_logs: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          booking_id: string | null;
+          session_id: string | null;
+          location_id: string | null;
+          membership_id: string | null;
+          device_id: string | null;
+          result: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          booking_id?: string | null;
+          session_id?: string | null;
+          location_id?: string | null;
+          membership_id?: string | null;
+          device_id?: string | null;
+          result: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["checkin_logs"]["Insert"]>;
+        Relationships: [];
+      };
       class_types: {
         Row: {
           id: string;
@@ -104,6 +216,7 @@ export interface Database {
         Row: {
           id: string;
           class_type_id: string;
+          location_id: string;
           weekday: number; // 0=Sunday .. 6=Saturday
           start_time: string; // "HH:MM"
           duration_min: number;
@@ -115,6 +228,7 @@ export interface Database {
         Insert: {
           id?: string;
           class_type_id: string;
+          location_id: string;
           weekday: number;
           start_time: string;
           duration_min?: number;
@@ -130,6 +244,7 @@ export interface Database {
         Row: {
           id: string;
           class_type_id: string;
+          location_id: string;
           template_id: string | null;
           starts_at: string; // timestamptz ISO
           duration_min: number;
@@ -142,6 +257,7 @@ export interface Database {
         Insert: {
           id?: string;
           class_type_id: string;
+          location_id: string;
           template_id?: string | null;
           starts_at: string;
           duration_min?: number;
@@ -164,6 +280,11 @@ export interface Database {
           role: UserRole;
           notes: string | null;
           dashboard_access: boolean;
+          // Client: their home gym. Staff: the gym they run — null means all gyms.
+          location_id: string | null;
+          // Permanent QR identity. Bearer credential: never render it anywhere
+          // other than the owner's own dashboard.
+          qr_uuid: string;
           created_at: string;
         };
         Insert: {
@@ -175,6 +296,8 @@ export interface Database {
           role?: UserRole;
           notes?: string | null;
           dashboard_access?: boolean;
+          location_id?: string | null;
+          qr_uuid?: string;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
@@ -201,6 +324,7 @@ export interface Database {
       membership_plans: {
         Row: {
           id: string;
+          location_id: string;
           audience: ClassAudience;
           name_ro: string;
           name_ru: string;
@@ -216,6 +340,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
+          location_id: string;
           audience: ClassAudience;
           name_ro: string;
           name_ru: string;
@@ -447,6 +572,12 @@ export interface Database {
       guest_funnel_stats: {
         Args: Record<string, never>;
         Returns: { guests: number; accounts: number; memberships: number };
+      };
+      // Front-door QR check-in. Service role only — the API route validates the
+      // tablet's device token and resolves it to p_location first.
+      kiosk_scan: {
+        Args: { p_qr: string; p_location: string; p_device?: string | null };
+        Returns: KioskScanResult;
       };
     };
     Enums: {

@@ -29,8 +29,9 @@ export default async function RosterPage({
   const dict = getDictionary(locale);
   // Roster is reachable by reception staff (check-in), so gate on staff and read
   // with the service role (reception has no direct RLS read on these tables).
+  let actor;
   try {
-    await requireStaff();
+    actor = await requireStaff();
   } catch {
     redirect(`/${locale}/staff`);
   }
@@ -39,12 +40,14 @@ export default async function RosterPage({
   const { data: sessionRaw } = await supabase
     .from("sessions")
     .select(
-      `id, starts_at, capacity, booked_count, status, instructor,
+      `id, starts_at, capacity, booked_count, status, instructor, location_id,
        class_type:class_types ( name_ro, name_ru, color, audience, category )`,
     )
     .eq("id", id)
     .maybeSingle();
   if (!sessionRaw) notFound();
+  // A studio's staff can only open its own rosters, even by direct URL.
+  if (actor.location_id && sessionRaw.location_id !== actor.location_id) notFound();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sRaw = sessionRaw as any;
   const session = {

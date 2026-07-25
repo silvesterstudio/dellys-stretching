@@ -9,7 +9,9 @@ export function usernameToEmail(input: string): string {
 
 // Usernames that unlock the password (staff) login on the login page. Add any
 // new staff account's username here or its owner won't get a password field.
-export const STAFF_USERNAMES = ["admin", "dellys_admin"];
+// `moscova_admin` is the Moscova studio's own manager: same powers, but pinned
+// to that gym via profiles.location_id (see migration 0024).
+export const STAFF_USERNAMES = ["admin", "dellys_admin", "moscova_admin"];
 
 export function isStaffUsername(input: string): boolean {
   return STAFF_USERNAMES.includes(input.trim().toLowerCase());

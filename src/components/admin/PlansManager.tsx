@@ -29,10 +29,14 @@ export function PlansManager({
   lang,
   dict,
   initial,
+  locationId,
 }: {
   lang: Locale;
   dict: Dictionary;
   initial: AdminPlan[];
+  // The studio a NEW plan is created for. Editing an existing plan leaves its
+  // studio untouched.
+  locationId: string | null;
 }) {
   const [adding, setAdding] = useState(false);
   const nextSort = (initial.at(-1)?.sort_order ?? 0) + 1;
@@ -55,12 +59,20 @@ export function PlansManager({
           id={null}
           initialData={blankPlan(nextSort)}
           onDone={() => setAdding(false)}
+          locationId={locationId}
         />
       )}
 
       <div className="space-y-3">
         {initial.map((p) => (
-          <PlanRow key={p.id} lang={lang} dict={dict} id={p.id} initialData={p} />
+          <PlanRow
+            key={p.id}
+            lang={lang}
+            dict={dict}
+            id={p.id}
+            initialData={p}
+            locationId={locationId}
+          />
         ))}
       </div>
     </div>
@@ -72,12 +84,14 @@ function PlanRow({
   id,
   initialData,
   onDone,
+  locationId,
 }: {
   lang: Locale;
   dict: Dictionary;
   id: string | null;
   initialData: PlanInput;
   onDone?: () => void;
+  locationId: string | null;
 }) {
   const router = useRouter();
   const [d, setD] = useState<PlanInput>(initialData);
@@ -90,7 +104,7 @@ function PlanRow({
   async function save() {
     setBusy(true);
     setError(null);
-    const { error } = await upsertPlanAction(id, d);
+    const { error } = await upsertPlanAction(id, d, locationId);
     setBusy(false);
     if (error) {
       setError(dict.common.error);

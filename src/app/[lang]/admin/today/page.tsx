@@ -10,6 +10,13 @@ import { bucharestWallToUtc } from "@/lib/week";
 import { formatTime } from "@/lib/format";
 import { localized } from "@/lib/i18n-data";
 import { GuestLeadsPanel, type GuestLead } from "@/components/admin/GuestLeadsPanel";
+import { LocationBar } from "@/components/admin/LocationBar";
+import {
+  KioskPanel,
+  type KioskDeviceInfo,
+  type CheckinLogRow,
+} from "@/components/admin/KioskPanel";
+import { getAdminScope } from "@/lib/locations-server";
 
 export const dynamic = "force-dynamic";
 
@@ -43,37 +50,101 @@ export default async function TodayPage({
   const { lang } = await params;
   const locale = (isLocale(lang) ? lang : "ro") as Locale;
   const dict = getDictionary(locale);
+  let profile;
   try {
-    await requireStaff();
+    profile = await requireStaff();
   } catch {
     redirect(`/${locale}/staff`);
   }
   const t = dict.admin.today;
+  // Front desk sees only its own studio's classes.
+  const scope = await getAdminScope(profile);
+
+  // The tablet's setup link is a bearer credential, so it is admin-only —
+  // reception can run check-in but must not be able to provision a device.
+  const isAdmin = profile.role === "admin";
 
   const { start, end } = todayRange();
   let sessions: Record<string, unknown>[] = [];
   let leads: GuestLead[] = [];
+  let device: KioskDeviceInfo | null = null;
+  let recent: CheckinLogRow[] = [];
   try {
     const admin = createAdminClient();
-    const { data } = await admin
+    let sessionQuery = admin
       .from("sessions")
       .select(
         `id, starts_at, duration_min, capacity, booked_count, status, instructor,
          class_type:class_types ( name_ro, name_ru, color, audience )`,
       )
       .gte("starts_at", start)
-      .lt("starts_at", end)
-      .order("starts_at", { ascending: true });
+      .lt("starts_at", end);
+    if (scope.activeId) sessionQuery = sessionQuery.eq("location_id", scope.activeId);
+    const { data } = await sessionQuery.order("starts_at", { ascending: true });
     sessions = (data ?? []) as Record<string, unknown>[];
 
     // Open guest-booking leads (funnel captures) — newest first, still active.
+    // A lead belongs to the studio whose class it was for; leads with no session
+    // attached aren't tied to a gym, so they stay visible to everyone.
     const { data: leadRows } = await admin
       .from("guest_bookings")
-      .select("id, full_name, child_name, phone, class_name, starts_at, status, claimed_by, created_at")
+      .select(
+        "id, full_name, child_name, phone, class_name, starts_at, status, claimed_by, created_at, session:sessions ( location_id )",
+      )
       .in("status", ["new", "contacted"])
       .order("created_at", { ascending: false })
       .limit(50);
-    leads = (leadRows ?? []) as GuestLead[];
+    leads = ((leadRows ?? []) as Record<string, unknown>[])
+      .filter((r) => {
+        if (!scope.activeId) return true;
+        const sess = one(r.session as never) as { location_id: string } | null;
+        return !sess || sess.location_id === scope.activeId;
+      })
+      .map(({ session: _session, ...rest }) => rest) as unknown as GuestLead[];
+
+    if (isAdmin && scope.activeId) {
+      const { data: dev } = await admin
+        .from("kiosk_devices")
+        .select("label, token, last_seen_at")
+        .eq("location_id", scope.activeId)
+        .eq("active", true)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      device = dev
+        ? {
+            label: (dev.label as string) ?? null,
+            token: dev.token as string,
+            lastSeenAt: (dev.last_seen_at as string) ?? null,
+          }
+        : null;
+
+      const { data: logs } = await admin
+        .from("checkin_logs")
+        .select(
+          `id, created_at, result,
+           profile:profiles ( full_name, email ),
+           session:sessions ( class_type:class_types ( name_ro, name_ru ) )`,
+        )
+        .eq("location_id", scope.activeId)
+        .gte("created_at", start)
+        .order("created_at", { ascending: false })
+        .limit(15);
+      recent = ((logs ?? []) as Record<string, unknown>[]).map((r) => {
+        const p = one(r.profile as never) as
+          | { full_name: string | null; email: string }
+          | null;
+        const sess = one(r.session as never) as { class_type: unknown } | null;
+        const ct = sess ? (one(sess.class_type as never) as { name_ro: string; name_ru: string } | null) : null;
+        return {
+          id: r.id as string,
+          createdAt: r.created_at as string,
+          result: r.result as string,
+          member: p?.full_name || p?.email || null,
+          className: ct ? localized(ct, "name", locale) : null,
+        };
+      });
+    }
   } catch {
     // Missing service key / blip → render empty, not a 500.
   }
@@ -106,9 +177,20 @@ export default async function TodayPage({
   return (
     <div className="space-y-5">
       <div>
+        <LocationBar
+          locations={scope.locations}
+          activeId={scope.activeId}
+          canSwitch={scope.canSwitch}
+          lang={locale}
+          dict={dict}
+        />
         <h2 className="font-display text-2xl font-semibold text-mauve-900">{t.title}</h2>
         <p className="mt-0.5 text-sm text-mauve-500">{t.subtitle}</p>
       </div>
+
+      {isAdmin && (
+        <KioskPanel device={device} recent={recent} lang={locale} dict={dict} />
+      )}
 
       <GuestLeadsPanel leads={leads} lang={locale} dict={dict} />
 

@@ -20,6 +20,16 @@ function preferredLocale(req: NextRequest): string {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // 0. Two things deliberately live outside the localized site:
+  //    * /api/*  — a redirect to /ro/api/... would drop the POST body, so every
+  //                kiosk scan would fail.
+  //    * /kiosk  — the front-door tablet has its own root layout (no header, no
+  //                pixel) and picks its language from ?lang.
+  //    Neither needs an auth-session refresh either, so return immediately.
+  if (pathname.startsWith("/api/") || pathname === "/kiosk" || pathname.startsWith("/kiosk/")) {
+    return NextResponse.next({ request: req });
+  }
+
   // 1. Locale routing — ensure every path is prefixed with a supported locale.
   if (!hasLocalePrefix(pathname)) {
     const url = req.nextUrl.clone();

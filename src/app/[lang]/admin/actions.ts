@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireAdmin, requireStaff } from "@/lib/auth";
+import { requireAdmin, requireStaff, requireSuperAdmin } from "@/lib/auth";
+import { getAdminScope } from "@/lib/locations-server";
 import { bucharestWallToUtc } from "@/lib/week";
 import { weekdayInTz, wallTimeInTz } from "@/lib/format";
 
@@ -35,6 +36,18 @@ async function logAudit(
   } catch {
     /* ignore */
   }
+}
+
+// Which gym a write belongs to. A location-scoped admin can only ever write to
+// their own gym, so their profile wins over whatever the browser sent; an
+// unrestricted (super) admin follows the location switcher. Returns null when
+// neither yields a gym — callers surface that as NO_LOCATION rather than
+// guessing, since filing a class under the wrong studio is silent corruption.
+function writeLocationId(
+  actor: { location_id: string | null },
+  requested: string | null,
+): string | null {
+  return actor.location_id ?? requested ?? null;
 }
 
 // Move a guest booking lead through its pipeline (new → contacted → confirmed,
@@ -99,7 +112,7 @@ export async function convertGuestToAccountAction(
 
   const { data: gb } = await service
     .from("guest_bookings")
-    .select("id, full_name, phone, claimed_by")
+    .select("id, full_name, phone, claimed_by, session_id")
     .eq("id", guestBookingId)
     .maybeSingle();
   if (!gb) return { error: "NOT_FOUND" };
@@ -146,6 +159,28 @@ export async function convertGuestToAccountAction(
     .update({ claimed_by: userId })
     .eq("id", guestBookingId);
   if (linkErr) return { error: "LINK_FAILED" };
+
+  // Give the new account a home studio, or the per-gym rules (booking, kiosk
+  // check-in, which price list they see) have nothing to match against. Best
+  // source is the class they actually booked; otherwise the desk that made them.
+  let home: string | null = null;
+  if (gb.session_id) {
+    const { data: sess } = await service
+      .from("sessions")
+      .select("location_id")
+      .eq("id", gb.session_id)
+      .maybeSingle();
+    home = (sess?.location_id as string | undefined) ?? null;
+  }
+  if (!home) home = (await getAdminScope(actor)).activeId;
+  if (home) {
+    // Only ever fills a blank — never moves an existing member between gyms.
+    await service
+      .from("profiles")
+      .update({ location_id: home })
+      .eq("id", userId)
+      .is("location_id", null);
+  }
 
   await logAudit(actor, "guest_booking.convert", "guest_booking", guestBookingId, { email: cleanEmail });
   revalidatePath("/[lang]/admin/today", "page");
@@ -277,19 +312,23 @@ export async function walkInCheckInAction(
 // Export all client members as CSV (name, phone, email, joined, and their best
 // active membership). Returned as a string; the browser turns it into a file.
 export async function exportMembersCsvAction(): Promise<{ csv: string | null }> {
-  await requireAdmin();
+  const actor = await requireAdmin();
   let admin;
   try {
     admin = createAdminClient();
   } catch {
     return { csv: null };
   }
+  // A gym's manager exports their own roster, not the whole business.
+  const { activeId } = await getAdminScope(actor);
+  let memberQuery = admin
+    .from("profiles")
+    .select("id, full_name, email, phone, created_at")
+    .eq("role", "client");
+  if (activeId) memberQuery = memberQuery.eq("location_id", activeId);
+
   const [{ data: members }, { data: mems }] = await Promise.all([
-    admin
-      .from("profiles")
-      .select("id, full_name, email, phone, created_at")
-      .eq("role", "client")
-      .order("created_at", { ascending: false }),
+    memberQuery.order("created_at", { ascending: false }),
     admin
       .from("user_memberships")
       .select("user_id, sessions_remaining, expires_at, frozen"),
@@ -616,12 +655,19 @@ export type PlanInput = {
 export async function upsertPlanAction(
   id: string | null,
   data: PlanInput,
+  locationId: string | null = null,
 ): Promise<ActionResult> {
-  await requireAdmin();
+  const actor = await requireAdmin();
   const supabase = await createClient();
+  // Price lists are per gym. Editing an existing plan leaves its gym alone;
+  // only a new plan needs one assigned.
+  const loc = writeLocationId(actor, locationId);
+  if (!id && !loc) return { error: "NO_LOCATION" };
   const { error } = id
     ? await supabase.from("membership_plans").update(data).eq("id", id)
-    : await supabase.from("membership_plans").insert(data);
+    : await supabase
+        .from("membership_plans")
+        .insert({ ...data, location_id: loc as string });
   revalidatePath("/[lang]/admin/plans", "page");
   revalidatePath("/[lang]/memberships", "page");
   return { error: error?.message ?? null };
@@ -654,11 +700,15 @@ export async function createTemplateAction(input: {
   durationMin: number;
   capacity: number;
   instructor: string | null;
+  locationId?: string | null;
 }): Promise<ActionResult> {
-  await requireAdmin();
+  const actor = await requireAdmin();
   const supabase = await createClient();
+  const loc = writeLocationId(actor, input.locationId ?? null);
+  if (!loc) return { error: "NO_LOCATION" };
   const { error } = await supabase.from("weekly_templates").insert({
     class_type_id: input.classTypeId,
+    location_id: loc,
     weekday: input.weekday,
     start_time: input.startTime,
     duration_min: input.durationMin,
@@ -698,12 +748,16 @@ export async function createSessionAction(input: {
   durationMin: number;
   capacity: number;
   instructor: string | null;
+  locationId?: string | null;
 }): Promise<ActionResult> {
-  await requireAdmin();
+  const actor = await requireAdmin();
   const supabase = await createClient();
+  const loc = writeLocationId(actor, input.locationId ?? null);
+  if (!loc) return { error: "NO_LOCATION" };
   const startsAt = bucharestWallToUtc(input.date, input.time).toISOString();
   const { error } = await supabase.from("sessions").insert({
     class_type_id: input.classTypeId,
+    location_id: loc,
     starts_at: startsAt,
     duration_min: input.durationMin,
     capacity: input.capacity,
@@ -731,25 +785,32 @@ export async function deleteSessionAction(id: string): Promise<ActionResult> {
 export async function saveWeekAsTemplateAction(
   startISO: string,
   endISO: string,
+  locationId: string | null = null,
 ): Promise<ActionResult> {
-  await requireAdmin();
+  const actor = await requireAdmin();
   const start = new Date(startISO);
   const end = new Date(endISO);
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
     return { error: "INVALID" };
   }
+  // This replaces a recurring template wholesale, so it MUST be scoped to one
+  // gym — an unscoped delete here would wipe the other studio's schedule.
+  const loc = writeLocationId(actor, locationId);
+  if (!loc) return { error: "NO_LOCATION" };
   const supabase = await createClient();
 
   const { data: sessions, error: sErr } = await supabase
     .from("sessions")
     .select("starts_at, duration_min, capacity, instructor, class_type_id")
     .eq("status", "scheduled")
+    .eq("location_id", loc)
     .gte("starts_at", startISO)
     .lt("starts_at", endISO);
   if (sErr) return { error: sErr.message };
 
   const rows = (sessions ?? []).map((s: Record<string, unknown>) => ({
     class_type_id: s.class_type_id as string,
+    location_id: loc,
     weekday: weekdayInTz(s.starts_at as string),
     start_time: wallTimeInTz(s.starts_at as string),
     duration_min: s.duration_min as number,
@@ -758,11 +819,11 @@ export async function saveWeekAsTemplateAction(
     active: true,
   }));
 
-  // Replace the whole recurring template with this week's layout.
+  // Replace this gym's recurring template with this week's layout.
   const { error: delErr } = await supabase
     .from("weekly_templates")
     .delete()
-    .neq("id", "00000000-0000-0000-0000-000000000000");
+    .eq("location_id", loc);
   if (delErr) return { error: delErr.message };
 
   if (rows.length > 0) {
@@ -824,7 +885,7 @@ function pickOne<T>(v: T | T[] | null | undefined): T | null {
 }
 
 export async function searchMembersAction(query: string): Promise<AdminMemberRow[]> {
-  await requireStaff();
+  const actor = await requireStaff();
   let admin;
   try {
     admin = createAdminClient();
@@ -835,6 +896,9 @@ export async function searchMembersAction(query: string): Promise<AdminMemberRow
     .from("profiles")
     .select("id, email, full_name, phone, created_at")
     .eq("role", "client");
+  // A gym's staff searches only its own members — otherwise the walk-in
+  // check-in could pull someone from the other studio onto this roster.
+  if (actor.location_id) req = req.eq("location_id", actor.location_id);
   // Strip PostgREST filter metacharacters so a name with commas/parens/% can't
   // break (or widen) the .or() filter expression.
   const q = query.replace(/[%,()*\\]/g, " ").trim();
@@ -1210,7 +1274,8 @@ const EPOCH = "1970-01-01T00:00:00Z";
 // schedule — so this wipes all of them and every number drops to zero. Admin
 // accounts, class types and the price catalog (membership_plans) are kept.
 export async function resetStatisticsAction(): Promise<ResetResult> {
-  const actor = await requireAdmin();
+  // Business-wide wipe: super-admins only (see requireSuperAdmin).
+  const actor = await requireSuperAdmin();
   let admin;
   try {
     admin = createAdminClient();
@@ -1259,7 +1324,8 @@ export async function resetStatisticsAction(): Promise<ResetResult> {
 // cascade-delete) and every recurring weekly template. Class types (the
 // catalog) stay so the schedule can be rebuilt.
 export async function resetScheduleAction(): Promise<ResetResult> {
-  const actor = await requireAdmin();
+  // Business-wide wipe: super-admins only (see requireSuperAdmin).
+  const actor = await requireSuperAdmin();
   let admin;
   try {
     admin = createAdminClient();
@@ -1290,7 +1356,8 @@ export async function resetScheduleAction(): Promise<ResetResult> {
 // deleting the auth user removes the member's entire footprint. role='admin'
 // accounts are preserved.
 export async function resetMembersAction(): Promise<ResetResult> {
-  const actor = await requireAdmin();
+  // Business-wide wipe: super-admins only (see requireSuperAdmin).
+  const actor = await requireSuperAdmin();
   let admin;
   try {
     admin = createAdminClient();
@@ -1319,7 +1386,8 @@ export async function resetMembersAction(): Promise<ResetResult> {
 // membership_requests.plan_id are ON DELETE RESTRICT, so those dependents are
 // removed first — this also clears members' active memberships.
 export async function resetPlansAction(): Promise<ResetResult> {
-  const actor = await requireAdmin();
+  // Business-wide wipe: super-admins only (see requireSuperAdmin).
+  const actor = await requireSuperAdmin();
   let admin;
   try {
     admin = createAdminClient();

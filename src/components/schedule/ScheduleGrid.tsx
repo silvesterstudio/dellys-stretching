@@ -12,6 +12,7 @@ import { dayKey } from "@/lib/week";
 import { localized } from "@/lib/i18n-data";
 import { refreshScheduleAction } from "@/app/[lang]/actions";
 import { GuestBookingModal } from "@/components/booking/GuestBookingModal";
+import { LOCATION_COOKIE, localizedAddress, type Location } from "@/lib/locations";
 import { DC, tint } from "@/lib/dc";
 
 const btnBase: React.CSSProperties = {
@@ -36,6 +37,8 @@ export function ScheduleGrid({
   weekStartISO,
   weekEndISO,
   loggedIn,
+  locations = [],
+  initialLocationId = null,
 }: {
   lang: Locale;
   dict: Dictionary;
@@ -44,11 +47,34 @@ export function ScheduleGrid({
   weekStartISO: string;
   weekEndISO: string;
   loggedIn: boolean;
+  locations?: Location[];
+  initialLocationId?: string | null;
 }) {
   const [sessions, setSessions] = useState(initialSessions);
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => setNow(Date.now()), []);
   useEffect(() => setSessions(initialSessions), [initialSessions]);
+
+  // Which studio's schedule is on screen. The two gyms run separate timetables,
+  // so this is a hard filter, not a label.
+  const [locationId, setLocationId] = useState<string | null>(initialLocationId);
+  const [switching, setSwitching] = useState(false);
+  const activeLocation = locations.find((l) => l.id === locationId) ?? null;
+
+  async function switchLocation(next: Location) {
+    if (next.id === locationId || switching) return;
+    setLocationId(next.id);
+    setSwitching(true);
+    // Remember the choice so a returning visitor lands on their own gym.
+    try {
+      document.cookie = `${LOCATION_COOKIE}=${encodeURIComponent(next.key)}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
+    } catch {
+      /* ignore — the choice just won't persist */
+    }
+    const fresh = await refreshScheduleAction(weekStartISO, weekEndISO, next.id);
+    if (Array.isArray(fresh)) setSessions(fresh);
+    setSwitching(false);
+  }
 
   // Accordion open/closed per day. Days already behind us start collapsed;
   // today and everything after (including all of next week) start expanded.
@@ -65,7 +91,7 @@ export function ScheduleGrid({
     const refetch = () => {
       clearTimeout(timer);
       timer = setTimeout(async () => {
-        const fresh = await refreshScheduleAction(weekStartISO, weekEndISO);
+        const fresh = await refreshScheduleAction(weekStartISO, weekEndISO, locationId);
         if (Array.isArray(fresh)) setSessions(fresh);
       }, 300);
     };
@@ -77,7 +103,7 @@ export function ScheduleGrid({
       clearTimeout(timer);
       supabase.removeChannel(channel);
     };
-  }, [weekStartISO, weekEndISO]);
+  }, [weekStartISO, weekEndISO, locationId]);
 
   // Audience toggle: Adults / Kids only (no "all") — defaults to adults.
   const [audience, setAudience] = useState<"adult" | "child">("adult");
@@ -151,6 +177,67 @@ export function ScheduleGrid({
 `,
         }}
       />
+      {/* Studio switcher — only shown once there is more than one gym, so a
+          single-location setup looks exactly as it did before. */}
+      {locations.length > 1 && (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 10,
+            marginBottom: 26,
+          }}
+        >
+          <div
+            role="group"
+            aria-label={dict.schedule.locationLabel}
+            style={{
+              display: "inline-flex",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              background: "#fff",
+              border: `1px solid ${DC.border}`,
+              borderRadius: 999,
+              padding: 5,
+              gap: 2,
+            }}
+          >
+            {locations.map((l) => {
+              const active = l.id === locationId;
+              return (
+                <button
+                  key={l.id}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => void switchLocation(l)}
+                  style={{
+                    border: "none",
+                    cursor: "pointer",
+                    padding: "9px 18px",
+                    borderRadius: 999,
+                    fontWeight: 700,
+                    fontSize: 14,
+                    fontFamily: DC.sans,
+                    background: active ? DC.ink : "transparent",
+                    color: active ? "#fff" : DC.muted,
+                    opacity: switching && !active ? 0.5 : 1,
+                    transition: "all .2s",
+                  }}
+                >
+                  {l.name}
+                </button>
+              );
+            })}
+          </div>
+          {activeLocation && (
+            <p style={{ margin: 0, fontSize: 13.5, color: DC.faint }}>
+              {localizedAddress(activeLocation, lang)}
+            </p>
+          )}
+        </div>
+      )}
+
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 40 }}>
         <div
           role="group"

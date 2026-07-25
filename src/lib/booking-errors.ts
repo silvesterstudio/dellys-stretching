@@ -12,6 +12,7 @@ export function bookingErrorMessage(raw: string, dict: Dictionary): string {
   if (code.includes("TOO_MANY_OPEN")) return b.tooManyOpen;
   if (code.includes("CHILD_REQUIRED")) return b.selectChild;
   if (code.includes("INVALID_CHILD")) return b.selectChild;
+  if (code.includes("WRONG_LOCATION")) return b.wrongLocation;
   return dict.common.error;
 }
 

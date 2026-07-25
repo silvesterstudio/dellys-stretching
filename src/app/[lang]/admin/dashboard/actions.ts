@@ -1,6 +1,7 @@
 "use server";
 
 import { requireAdmin } from "@/lib/auth";
+import { getAdminScope } from "@/lib/locations-server";
 import {
   resolveRange,
   computeWindowMetrics,
@@ -13,8 +14,11 @@ import {
 export async function getMetricsAction(
   spec: RangeSpec,
 ): Promise<{ metrics: WindowMetrics; startDate: string; endDate: string }> {
-  await requireAdmin();
+  const me = await requireAdmin();
+  // Re-derive the studio server-side rather than trusting anything from the
+  // browser, so a pinned manager can't widen their view by editing the request.
+  const { activeId } = await getAdminScope(me);
   const { startISO, endISO, startDate, endDate } = resolveRange(spec);
-  const metrics = await computeWindowMetrics(startISO, endISO);
+  const metrics = await computeWindowMetrics(startISO, endISO, activeId);
   return { metrics, startDate, endDate };
 }

@@ -119,39 +119,58 @@ function one<T>(v: T | T[] | null | undefined): T | null {
 export async function computeWindowMetrics(
   startISO: string,
   endISO: string,
+  locationId?: string | null,
 ): Promise<WindowMetrics> {
   try {
     const admin = createAdminClient();
+
+    // Revenue follows the plan's studio; attendance and bookings follow the
+    // session's. !inner is required for a filter on an embedded relation to
+    // actually restrict rows rather than just null out the join.
+    let soldQuery = admin
+      .from("user_memberships")
+      .select("amount_paid, plan:membership_plans!inner ( price, currency, system_key, location_id )")
+      .gte("created_at", startISO)
+      .lt("created_at", endISO);
+    let sessionsQuery = admin
+      .from("sessions")
+      .select("id", { count: "exact", head: true })
+      .neq("status", "cancelled")
+      .gte("starts_at", startISO)
+      .lt("starts_at", endISO);
+    let attendanceQuery = admin
+      .from("bookings")
+      .select("id, sessions!inner ( starts_at, location_id )", { count: "exact", head: true })
+      .eq("status", "attended")
+      .gte("sessions.starts_at", startISO)
+      .lt("sessions.starts_at", endISO);
+    let newMembersQuery = admin
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("role", "client")
+      .gte("created_at", startISO)
+      .lt("created_at", endISO);
+    let bookingsQuery = admin
+      .from("bookings")
+      .select("id, sessions!inner ( location_id )", { count: "exact", head: true })
+      .neq("status", "cancelled")
+      .gte("created_at", startISO)
+      .lt("created_at", endISO);
+
+    if (locationId) {
+      soldQuery = soldQuery.eq("plan.location_id", locationId);
+      sessionsQuery = sessionsQuery.eq("location_id", locationId);
+      attendanceQuery = attendanceQuery.eq("sessions.location_id", locationId);
+      newMembersQuery = newMembersQuery.eq("location_id", locationId);
+      bookingsQuery = bookingsQuery.eq("sessions.location_id", locationId);
+    }
+
     const [sold, sessionsHeld, attendance, newMembers, bookings] = await Promise.all([
-      admin
-        .from("user_memberships")
-        .select("amount_paid, plan:membership_plans ( price, currency, system_key )")
-        .gte("created_at", startISO)
-        .lt("created_at", endISO),
-      admin
-        .from("sessions")
-        .select("id", { count: "exact", head: true })
-        .neq("status", "cancelled")
-        .gte("starts_at", startISO)
-        .lt("starts_at", endISO),
-      admin
-        .from("bookings")
-        .select("id, sessions!inner ( starts_at )", { count: "exact", head: true })
-        .eq("status", "attended")
-        .gte("sessions.starts_at", startISO)
-        .lt("sessions.starts_at", endISO),
-      admin
-        .from("profiles")
-        .select("id", { count: "exact", head: true })
-        .eq("role", "client")
-        .gte("created_at", startISO)
-        .lt("created_at", endISO),
-      admin
-        .from("bookings")
-        .select("id", { count: "exact", head: true })
-        .neq("status", "cancelled")
-        .gte("created_at", startISO)
-        .lt("created_at", endISO),
+      soldQuery,
+      sessionsQuery,
+      attendanceQuery,
+      newMembersQuery,
+      bookingsQuery,
     ]);
 
     const soldRows = (sold.data ?? []) as Record<string, unknown>[];
@@ -206,21 +225,24 @@ export async function computeRenewals(
   now: Date = new Date(),
   days = 7,
   lowThreshold = 2,
+  locationId?: string | null,
 ): Promise<RenewalRow[]> {
   try {
     const admin = createAdminClient();
     const nowISO = now.toISOString();
     const horizonISO = new Date(now.getTime() + days * 86400000).toISOString();
-    const { data } = await admin
+    let query = admin
       .from("user_memberships")
       .select(
-        "user_id, sessions_remaining, expires_at, profile:profiles!user_id!inner ( full_name, email, phone, role )",
+        "user_id, sessions_remaining, expires_at, profile:profiles!user_id!inner ( full_name, email, phone, role ), plan:membership_plans!inner ( location_id )",
       )
       .eq("frozen", false)
       .eq("profile.role", "client")
       .gt("sessions_remaining", 0)
       .gt("expires_at", nowISO)
-      .or(`expires_at.lt.${horizonISO},sessions_remaining.lte.${lowThreshold}`)
+      .or(`expires_at.lt.${horizonISO},sessions_remaining.lte.${lowThreshold}`);
+    if (locationId) query = query.eq("plan.location_id", locationId);
+    const { data } = await query
       .order("expires_at", { ascending: true })
       .limit(100);
 
@@ -265,16 +287,19 @@ export interface TransactionRow {
 export async function computeRecentTransactions(
   lang: "ro" | "ru" = "ro",
   limit = 20,
+  locationId?: string | null,
 ): Promise<TransactionRow[]> {
   try {
     const admin = createAdminClient();
-    const { data } = await admin
+    let query = admin
       .from("user_memberships")
       .select(
-        "id, created_at, amount_paid, payment_method, profile:profiles!user_id ( full_name, email ), plan:membership_plans ( name_ro, name_ru, currency )",
+        "id, created_at, amount_paid, payment_method, profile:profiles!user_id ( full_name, email ), plan:membership_plans!inner ( name_ro, name_ru, currency, location_id )",
       )
       .not("amount_paid", "is", null)
-      .gt("amount_paid", 0)
+      .gt("amount_paid", 0);
+    if (locationId) query = query.eq("plan.location_id", locationId);
+    const { data } = await query
       .order("created_at", { ascending: false })
       .limit(limit);
     return ((data ?? []) as Record<string, unknown>[]).map((r) => {
@@ -366,7 +391,10 @@ const EMPTY_KPI: KpiMetrics = {
 };
 
 // Always-current snapshot KPIs (independent of the selected window).
-export async function computeKpis(now: Date = new Date()): Promise<KpiMetrics> {
+export async function computeKpis(
+  now: Date = new Date(),
+  locationId?: string | null,
+): Promise<KpiMetrics> {
   try {
     const admin = createAdminClient();
     const nowISO = now.toISOString();
@@ -374,20 +402,33 @@ export async function computeKpis(now: Date = new Date()): Promise<KpiMetrics> {
     const todayStart = bucharestWallToUtc(today, "00:00").toISOString();
     const tomorrowStart = bucharestWallToUtc(addDaysStr(today, 1), "00:00").toISOString();
 
+    let activeQuery = admin
+      .from("user_memberships")
+      .select("sessions_remaining, plan:membership_plans!inner ( location_id )")
+      .eq("frozen", false)
+      .gt("sessions_remaining", 0)
+      .gt("expires_at", nowISO);
+    let membersQuery = admin
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("role", "client");
+    let todayQuery = admin
+      .from("sessions")
+      .select("id", { count: "exact", head: true })
+      .neq("status", "cancelled")
+      .gte("starts_at", todayStart)
+      .lt("starts_at", tomorrowStart);
+
+    if (locationId) {
+      activeQuery = activeQuery.eq("plan.location_id", locationId);
+      membersQuery = membersQuery.eq("location_id", locationId);
+      todayQuery = todayQuery.eq("location_id", locationId);
+    }
+
     const [active, totalMembers, todaySessions] = await Promise.all([
-      admin
-        .from("user_memberships")
-        .select("sessions_remaining")
-        .eq("frozen", false)
-        .gt("sessions_remaining", 0)
-        .gt("expires_at", nowISO),
-      admin.from("profiles").select("id", { count: "exact", head: true }).eq("role", "client"),
-      admin
-        .from("sessions")
-        .select("id", { count: "exact", head: true })
-        .neq("status", "cancelled")
-        .gte("starts_at", todayStart)
-        .lt("starts_at", tomorrowStart),
+      activeQuery,
+      membersQuery,
+      todayQuery,
     ]);
 
     const activeRows = (active.data ?? []) as { sessions_remaining: number }[];

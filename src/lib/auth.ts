@@ -73,6 +73,17 @@ export async function requireAdmin(): Promise<Profile> {
   return data;
 }
 
+// An admin who is NOT pinned to a single gym (profiles.location_id is null).
+// Business-wide destructive operations gate on this so a location-scoped
+// manager can never wipe the other studio's schedule, members or price list.
+export async function requireSuperAdmin(): Promise<Profile> {
+  const profile = await requireAdmin();
+  if (profile.location_id !== null) {
+    throw new Error("Forbidden: super admin only");
+  }
+  return profile;
+}
+
 // Like requireAdmin, but also allows the limited "reception" role (front-desk
 // staff who can run check-in but not pricing/resets/deletes). Admins pass too.
 export async function requireStaff(): Promise<Profile> {

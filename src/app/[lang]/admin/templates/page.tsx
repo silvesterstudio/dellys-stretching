@@ -8,6 +8,8 @@ import { getWeekRange } from "@/lib/week";
 import { formatDateShort } from "@/lib/format";
 import { WeeklyScheduleManager } from "@/components/admin/WeeklyScheduleManager";
 import { ResetPanel } from "@/components/admin/ResetPanel";
+import { LocationBar } from "@/components/admin/LocationBar";
+import { getAdminScope } from "@/lib/locations-server";
 
 export const dynamic = "force-dynamic";
 
@@ -23,12 +25,16 @@ export default async function TemplatesPage({
   const locale = (isLocale(lang) ? lang : "ro") as Locale;
   const dict = getDictionary(locale);
   // Admin-only page (the layout now admits reception staff too).
+  let profile;
   try {
-    await requireAdmin();
+    profile = await requireAdmin();
   } catch {
     redirect(`/${locale}/admin/today`);
   }
   const supabase = await createClient();
+  // The weekly editor writes the recurring template, so it must be unambiguous
+  // about which studio's schedule is being edited.
+  const scope = await getAdminScope(profile);
 
   // Week to edit (offset from the current week; negative = past, positive = future).
   const raw = Number.parseInt(w ?? "0", 10);
@@ -37,22 +43,25 @@ export default async function TemplatesPage({
   const startISO = range.start.toISOString();
   const endISO = range.end.toISOString();
 
+  let sessionQuery = supabase
+    .from("sessions")
+    .select(
+      `id, starts_at, duration_min, capacity, booked_count, instructor,
+       class_type:class_types ( name_ro, name_ru, color )`,
+    )
+    .eq("status", "scheduled")
+    .gte("starts_at", startISO)
+    .lt("starts_at", endISO);
+  if (scope.activeId) sessionQuery = sessionQuery.eq("location_id", scope.activeId);
+
   const [{ data: classTypes }, { data: sessionsRaw }] = await Promise.all([
+    // Class types are shared: both studios teach from the same catalogue.
     supabase
       .from("class_types")
       .select("id, name_ro, name_ru, audience, default_capacity")
       .eq("active", true)
       .order("name_ro"),
-    supabase
-      .from("sessions")
-      .select(
-        `id, starts_at, duration_min, capacity, booked_count, instructor,
-         class_type:class_types ( name_ro, name_ru, color )`,
-      )
-      .eq("status", "scheduled")
-      .gte("starts_at", startISO)
-      .lt("starts_at", endISO)
-      .order("starts_at", { ascending: true }),
+    sessionQuery.order("starts_at", { ascending: true }),
   ]);
 
   const one = (v: unknown) => (Array.isArray(v) ? v[0] : v);
@@ -92,6 +101,13 @@ export default async function TemplatesPage({
 
   return (
     <div className="space-y-8">
+      <LocationBar
+        locations={scope.locations}
+        activeId={scope.activeId}
+        canSwitch={scope.canSwitch}
+        lang={locale}
+        dict={dict}
+      />
       <WeeklyScheduleManager
         lang={locale}
         dict={dict}
@@ -103,8 +119,10 @@ export default async function TemplatesPage({
         weekEndISO={endISO}
         weekLabel={weekLabel}
         isCurrentWeek={offset === 0}
+        locationId={scope.activeId}
       />
-      <ResetPanel kind="schedule" dict={dict} />
+      {/* Resets wipe every studio at once, so only an unrestricted admin gets them. */}
+      {profile.location_id === null && <ResetPanel kind="schedule" dict={dict} />}
     </div>
   );
 }

@@ -20,6 +20,7 @@ import { localized } from "@/lib/i18n-data";
 import { CancelButton } from "@/components/dashboard/CancelButton";
 import { CancelRequestButton } from "@/components/dashboard/CancelRequestButton";
 import { ProfileForm } from "@/components/dashboard/ProfileForm";
+import { MemberQr } from "@/components/dashboard/MemberQr";
 import { PixelSignupTracker } from "@/components/PixelSignupTracker";
 
 export const dynamic = "force-dynamic";
@@ -79,7 +80,11 @@ export default async function DashboardPage({
     fetchMyMemberships(),
     fetchMyChildren(),
     fetchMyRequests(),
-    supabase.from("profiles").select("full_name, phone").eq("id", userId).maybeSingle(),
+    supabase
+      .from("profiles")
+      .select("full_name, phone, qr_uuid")
+      .eq("id", userId)
+      .maybeSingle(),
     fetchAvailableTrials(supabase, userId),
   ]);
   // No-login reservations linked to this account show alongside real bookings.
@@ -116,6 +121,10 @@ export default async function DashboardPage({
       <h1 className="font-display text-3xl font-bold text-mauve-900">
         {dict.dashboard.title}
       </h1>
+
+      {/* The door code, first thing on the page — it's what members open the
+          account for on their way in. */}
+      {profile?.qr_uuid && <MemberQr token={profile.qr_uuid} dict={dict} />}
 
       {/* Free introductory sessions — one per category, until first attended. */}
       {availableTrials.length > 0 && (

@@ -19,6 +19,8 @@ import { RenewalsPanel } from "@/components/admin/RenewalsPanel";
 import { TransactionsPanel } from "@/components/admin/TransactionsPanel";
 import { AuditPanel } from "@/components/admin/AuditPanel";
 import { ResetPanel } from "@/components/admin/ResetPanel";
+import { LocationBar } from "@/components/admin/LocationBar";
+import { getAdminScope } from "@/lib/locations-server";
 
 export const dynamic = "force-dynamic";
 
@@ -46,19 +48,31 @@ export default async function AdminDashboardPage({
     redirect(`/${locale}/admin/today`);
   }
 
+  // Every figure below is scoped to one studio, so a gym's manager sees their
+  // own revenue and attendance rather than the whole business.
+  const scope = await getAdminScope(me);
+  const loc = scope.activeId;
+
   const initialPreset: RangePreset = "7d";
   const { startISO, endISO, startDate, endDate } = resolveRange({ preset: initialPreset });
   const [kpis, metrics, renewals, transactions, audit, funnel] = await Promise.all([
-    computeKpis(),
-    computeWindowMetrics(startISO, endISO),
-    computeRenewals(),
-    computeRecentTransactions(locale),
+    computeKpis(new Date(), loc),
+    computeWindowMetrics(startISO, endISO, loc),
+    computeRenewals(new Date(), 7, 2, loc),
+    computeRecentTransactions(locale, 20, loc),
     computeRecentAudit(),
     computeGuestFunnel(),
   ]);
 
   return (
     <div className="space-y-8">
+      <LocationBar
+        locations={scope.locations}
+        activeId={scope.activeId}
+        canSwitch={scope.canSwitch}
+        lang={locale}
+        dict={dict}
+      />
       <AnalyticsDashboard
         lang={locale}
         dict={dict}
@@ -68,11 +82,17 @@ export default async function AdminDashboardPage({
         initialStart={startDate}
         initialEnd={endDate}
       />
-      <FunnelPanel funnel={funnel} dict={dict} />
       <RenewalsPanel rows={renewals} lang={locale} dict={dict} />
       <TransactionsPanel rows={transactions} lang={locale} dict={dict} />
-      <AuditPanel rows={audit} lang={locale} dict={dict} />
-      <ResetPanel kind="stats" dict={dict} />
+      {/* The guest funnel and the audit log span the whole business and carry
+          no location of their own, so they stay with unrestricted admins. */}
+      {me.location_id === null && (
+        <>
+          <FunnelPanel funnel={funnel} dict={dict} />
+          <AuditPanel rows={audit} lang={locale} dict={dict} />
+          <ResetPanel kind="stats" dict={dict} />
+        </>
+      )}
     </div>
   );
 }

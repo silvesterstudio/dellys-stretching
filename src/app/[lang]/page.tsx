@@ -5,6 +5,7 @@ import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { getWeekRange } from "@/lib/week";
 import { fetchSessions } from "@/lib/queries";
+import { fetchLocations, resolveLocation } from "@/lib/locations-server";
 import { getCurrentUserId } from "@/lib/auth";
 import { ScheduleGrid } from "@/components/schedule/ScheduleGrid";
 import { PricingTeaser } from "@/components/PricingTeaser";
@@ -70,8 +71,15 @@ html{scroll-behavior:smooth;scroll-padding-top:92px}
 
 // The site root is now the Program (booking) page — ads and returning visitors
 // land straight on the weekly schedule. Marketing content lives on /landing.
-export default async function ProgramPage({ params }: { params: Promise<{ lang: string }> }) {
+export default async function ProgramPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ lang: string }>;
+  searchParams: Promise<{ loc?: string }>;
+}) {
   const { lang } = await params;
+  const { loc } = await searchParams;
   const locale = resolveLocale(lang);
   const dict = getDictionary(locale);
   const h = dict.home;
@@ -81,8 +89,15 @@ export default async function ProgramPage({ params }: { params: Promise<{ lang: 
   const range = getWeekRange(0);
   const nextWeek = getWeekRange(1);
   const days = [...range.days, ...nextWeek.days].map((d) => d.toISOString());
+
+  // The two studios run separate timetables, so the schedule is always scoped
+  // to one of them — ?loc=key, else the visitor's remembered choice, else the
+  // first gym.
+  const locations = await fetchLocations();
+  const active = await resolveLocation(locations, loc ?? null);
+
   const [sessions, userId] = await Promise.all([
-    fetchSessions(range.start, nextWeek.end),
+    fetchSessions(range.start, nextWeek.end, active?.id ?? null),
     getCurrentUserId(),
   ]);
   const loggedIn = !!userId;
@@ -108,6 +123,8 @@ export default async function ProgramPage({ params }: { params: Promise<{ lang: 
           weekStartISO={range.start.toISOString()}
           weekEndISO={nextWeek.end.toISOString()}
           loggedIn={loggedIn}
+          locations={locations}
+          initialLocationId={active?.id ?? null}
         />
       </section>
 

@@ -47,7 +47,8 @@
     "filterAdults": "Adulți",
     "filterKids": "Copii",
     "noSessionsWeek": "Nu sunt sesiuni programate pentru acest filtru săptămâna aceasta. Revino curând sau schimbă filtrul.",
-    "ended": "Încheiat"
+    "ended": "Încheiat",
+    "locationLabel": "Locație"
   },
   "weekdays": {
     "0": "Duminică",
@@ -116,7 +117,8 @@
     "alreadyBooked": "Ai deja o rezervare la această sesiune.",
     "sessionFull": "Ne pare rău, sesiunea este completă.",
     "tooManyOpen": "Ai prea multe rezervări active fără abonament. Vino la recepție.",
-    "pastSession": "Această sesiune a început deja."
+    "pastSession": "Această sesiune a început deja.",
+    "wrongLocation": "Contul tău este înregistrat la cealaltă locație. Treci pe la recepție ca să poți rezerva aici."
   },
   "reserve": {
     "title": "Rezervă locul tău",
@@ -165,7 +167,12 @@
     "freeTrials": "Ședințe gratuite de probă",
     "freeTrialsHint": "Prima ședință din fiecare categorie este gratuită — folosește-le ca introducere.",
     "freeTrialOne": "1 ședință gratuită",
-    "freeTrialBadge": "Gratuit"
+    "freeTrialBadge": "Gratuit",
+    "qrTitle": "Codul tău de acces",
+    "qrHint": "Arată-l la tabletă când intri în sală. Se înregistrează automat prezența.",
+    "qrOpen": "Mărește codul",
+    "qrClose": "Închide",
+    "qrFullscreenHint": "Ține ecranul în fața camerei"
   },
   "trial": {
     "categories": {
@@ -675,6 +682,106 @@
       "plans": {
         "button": "Resetează abonamentele",
         "desc": "Șterge toate abonamentele și prețurile, inclusiv abonamentele active ale membrilor."
+      }
+    },
+    "kiosk": {
+      "title": "Tabletă check-in",
+      "hint": "Deschide acest link pe tableta de la intrare. Codul se salvează pe tabletă, apoi funcționează singură.",
+      "token": "Cod dispozitiv",
+      "copy": "Copiază linkul",
+      "copied": "Copiat",
+      "open": "Deschide kiosk",
+      "lastSeen": "Ultima activitate",
+      "never": "niciodată",
+      "none": "Nu există nicio tabletă configurată pentru această locație.",
+      "warning": "Oricine are acest link poate înregistra intrări. Nu îl trimite clienților.",
+      "recent": "Ultimele scanări",
+      "recentNone": "Nicio scanare încă.",
+      "results": {
+        "ok": "Intrare permisă",
+        "not_found": "Cod necunoscut",
+        "wrong_location": "Altă locație",
+        "already_checked_in": "Deja înregistrat",
+        "no_class": "Nicio clasă",
+        "class_full": "Clasă completă",
+        "no_membership": "Fără ședințe"
+      }
+    }
+  },
+  "kiosk": {
+    "setupTitle": "Configurare tabletă",
+    "setupHint": "Lipește codul dispozitivului primit de la administrator. Se salvează pe această tabletă și nu mai trebuie introdus.",
+    "setupLabel": "Cod dispozitiv",
+    "setupSave": "Activează tableta",
+    "present": "Apropie codul QR de cameră",
+    "note": "Scanează la fiecare intrare",
+    "welcome": "Bine ai venit",
+    "sessionsLeft": "ședințe rămase",
+    "sessionLeft": "ședință rămasă",
+    "freeTrial": "Ședință de probă gratuită",
+    "walkIn": "Loc alocat acum",
+    "resetsIn": "Se resetează în",
+    "close": "Închide",
+    "cameraTitle": "Eroare cameră",
+    "cameraReload": "Reîncarcă",
+    "switchCamera": "Cameră",
+    "fullscreen": "Ecran complet",
+    "exitFullscreen": "Ieși",
+    "err": {
+      "not_found": {
+        "t": "Cod necunoscut",
+        "d": "Contul nu a fost găsit",
+        "h": "Deschide codul QR din contul tău Dellys."
+      },
+      "wrong_location": {
+        "t": "Altă locație",
+        "d": "Contul tău este la altă sală",
+        "h": "Treci pe la recepție ca să fii înregistrat aici."
+      },
+      "already_checked_in": {
+        "t": "Deja înregistrat",
+        "d": "Ai fost scanat pentru această oră",
+        "h": "Poți intra în sală."
+      },
+      "no_class": {
+        "t": "Nicio clasă acum",
+        "d": "Nu începe nicio clasă la această oră",
+        "h": "Verifică programul sau întreabă la recepție."
+      },
+      "class_full": {
+        "t": "Clasă completă",
+        "d": "Nu mai sunt locuri libere",
+        "h": "Întreabă la recepție pentru ora următoare."
+      },
+      "no_membership": {
+        "t": "Fără ședințe",
+        "d": "Abonamentul tău nu mai are ședințe",
+        "h": "Treci pe la recepție pentru reînnoire."
+      },
+      "device_unknown": {
+        "t": "Tabletă neautorizată",
+        "d": "Codul acestui dispozitiv nu e valid",
+        "h": "Contactează administratorul."
+      },
+      "rate_limited": {
+        "t": "Prea multe scanări",
+        "d": "Așteaptă câteva secunde",
+        "h": ""
+      },
+      "bad_request": {
+        "t": "Cod invalid",
+        "d": "Codul scanat nu este valid",
+        "h": ""
+      },
+      "connection": {
+        "t": "Fără conexiune",
+        "d": "Tableta nu poate contacta serverul",
+        "h": "Verifică conexiunea la internet."
+      },
+      "server_error": {
+        "t": "Eroare",
+        "d": "Ceva nu a mers bine",
+        "h": "Încearcă din nou peste câteva secunde."
       }
     }
   }
