@@ -93,7 +93,11 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   // Run on everything except static assets and Next internals.
+  //
+  // The extension list must cover every asset type served from /public, not
+  // just images: anything not listed here gets locale-redirected to
+  // /ro/<file> and 404s. That is what happened to the QR scanner worker.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|js|mjs|css|map|json|txt|xml|webmanifest|woff|woff2|ttf|otf|mp4|webm)$).*)",
   ],
 };
