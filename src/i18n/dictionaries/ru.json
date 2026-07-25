@@ -48,7 +48,8 @@
     "filterKids": "Дети",
     "noSessionsWeek": "На этой неделе нет занятий по этому фильтру. Загляните позже или измените фильтр.",
     "ended": "Завершено",
-    "locationLabel": "Зал"
+    "locationLabel": "Зал",
+    "changeLocation": "Сменить зал"
   },
   "weekdays": {
     "0": "Воскресенье",

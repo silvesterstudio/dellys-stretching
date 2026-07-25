@@ -55,26 +55,23 @@ export function ScheduleGrid({
   useEffect(() => setNow(Date.now()), []);
   useEffect(() => setSessions(initialSessions), [initialSessions]);
 
-  // Which studio's schedule is on screen. The two gyms run separate timetables,
-  // so this is a hard filter, not a label.
-  const [locationId, setLocationId] = useState<string | null>(initialLocationId);
-  const [switching, setSwitching] = useState(false);
+  // Which studio's schedule is on screen. The studio is chosen on the site root
+  // before ever reaching this page, so there is no picker here — only a label
+  // saying which gym this is, and a way back to change it. Two pickers for one
+  // decision is exactly the ambiguity the chooser exists to remove.
+  const locationId = initialLocationId;
   const activeLocation = locations.find((l) => l.id === locationId) ?? null;
 
-  async function switchLocation(next: Location) {
-    if (next.id === locationId || switching) return;
-    setLocationId(next.id);
-    setSwitching(true);
-    // Remember the choice so a returning visitor lands on their own gym.
+  // Remember the studio so a return visit (or a link without ?loc=) lands on
+  // the same one. The chooser passes ?loc=, but nothing else does.
+  useEffect(() => {
+    if (!activeLocation) return;
     try {
-      document.cookie = `${LOCATION_COOKIE}=${encodeURIComponent(next.key)}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
+      document.cookie = `${LOCATION_COOKIE}=${encodeURIComponent(activeLocation.key)}; path=/; max-age=${60 * 60 * 24 * 365}; samesite=lax`;
     } catch {
-      /* ignore — the choice just won't persist */
+      /* private mode — the choice just won't persist */
     }
-    const fresh = await refreshScheduleAction(weekStartISO, weekEndISO, next.id);
-    if (Array.isArray(fresh)) setSessions(fresh);
-    setSwitching(false);
-  }
+  }, [activeLocation]);
 
   // Accordion open/closed per day. Days already behind us start collapsed;
   // today and everything after (including all of next week) start expanded.
@@ -177,63 +174,47 @@ export function ScheduleGrid({
 `,
         }}
       />
-      {/* Studio switcher — only shown once there is more than one gym, so a
-          single-location setup looks exactly as it did before. */}
-      {locations.length > 1 && (
+      {/* Which studio this schedule belongs to. A label, not a picker: the
+          choice was made on the site root, and offering it again here would
+          re-open a decision the visitor has already made. The link goes back to
+          the chooser for anyone who picked the wrong one. */}
+      {activeLocation && (
         <div
           style={{
             display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 10,
+            flexWrap: "wrap",
+            alignItems: "baseline",
+            justifyContent: "center",
+            columnGap: 12,
+            rowGap: 4,
             marginBottom: 26,
           }}
         >
-          <div
-            role="group"
-            aria-label={dict.schedule.locationLabel}
+          <span
             style={{
-              display: "inline-flex",
-              flexWrap: "wrap",
-              justifyContent: "center",
-              background: "#fff",
-              border: `1px solid ${DC.border}`,
-              borderRadius: 999,
-              padding: 5,
-              gap: 2,
+              fontFamily: DC.display,
+              fontWeight: 600,
+              fontSize: 17,
+              color: DC.ink,
             }}
           >
-            {locations.map((l) => {
-              const active = l.id === locationId;
-              return (
-                <button
-                  key={l.id}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => void switchLocation(l)}
-                  style={{
-                    border: "none",
-                    cursor: "pointer",
-                    padding: "9px 18px",
-                    borderRadius: 999,
-                    fontWeight: 700,
-                    fontSize: 14,
-                    fontFamily: DC.sans,
-                    background: active ? DC.ink : "transparent",
-                    color: active ? "#fff" : DC.muted,
-                    opacity: switching && !active ? 0.5 : 1,
-                    transition: "all .2s",
-                  }}
-                >
-                  {l.name}
-                </button>
-              );
-            })}
-          </div>
-          {activeLocation && (
-            <p style={{ margin: 0, fontSize: 13.5, color: DC.faint }}>
-              {localizedAddress(activeLocation, lang)}
-            </p>
+            {activeLocation.name}
+          </span>
+          <span style={{ fontSize: 13.5, color: DC.faint }}>
+            {localizedAddress(activeLocation, lang)}
+          </span>
+          {locations.length > 1 && (
+            <Link
+              href={`/${lang}`}
+              style={{
+                fontSize: 13.5,
+                fontWeight: 700,
+                color: DC.accent,
+                textDecoration: "none",
+              }}
+            >
+              {dict.schedule.changeLocation}
+            </Link>
           )}
         </div>
       )}

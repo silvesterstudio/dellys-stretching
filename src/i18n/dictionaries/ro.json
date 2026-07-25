@@ -48,7 +48,8 @@
     "filterKids": "Copii",
     "noSessionsWeek": "Nu sunt sesiuni programate pentru acest filtru săptămâna aceasta. Revino curând sau schimbă filtrul.",
     "ended": "Încheiat",
-    "locationLabel": "Locație"
+    "locationLabel": "Locație",
+    "changeLocation": "Schimbă sala"
   },
   "weekdays": {
     "0": "Duminică",

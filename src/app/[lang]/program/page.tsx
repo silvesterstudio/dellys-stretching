@@ -6,7 +6,7 @@ import { getDictionary } from "@/i18n/get-dictionary";
 import { getWeekRange } from "@/lib/week";
 import { fetchSessions } from "@/lib/queries";
 import { fetchLocations, resolveLocation } from "@/lib/locations-server";
-import { getCurrentUserId } from "@/lib/auth";
+import { getCurrentUserId, getCurrentProfile } from "@/lib/auth";
 import { ScheduleGrid } from "@/components/schedule/ScheduleGrid";
 import { PricingTeaser } from "@/components/PricingTeaser";
 import { Footer } from "@/components/Footer";
@@ -72,9 +72,10 @@ html{scroll-behavior:smooth;scroll-padding-top:92px}
 @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 `;
 
-// One studio's schedule. The site root is a location chooser, so a visitor
-// always arrives here having already picked a gym (?loc=key, or the choice
-// remembered in a cookie); the switcher in the grid lets them change their mind.
+// One studio's schedule. The site root is the chooser, so a visitor always
+// arrives here having already picked a gym (?loc=key, or the choice remembered
+// in a cookie). There is no picker on this page — the grid shows which studio
+// this is and links back to the chooser.
 export default async function ProgramPage({
   params,
   searchParams,
@@ -94,17 +95,23 @@ export default async function ProgramPage({
   const nextWeek = getWeekRange(1);
   const days = [...range.days, ...nextWeek.days].map((d) => d.toISOString());
 
-  // The two studios run separate timetables, so the schedule is always scoped
-  // to one of them — ?loc=key, else the visitor's remembered choice, else the
-  // first gym.
-  const locations = await fetchLocations();
-  const active = await resolveLocation(locations, loc ?? null);
-
-  const [sessions, userId] = await Promise.all([
-    fetchSessions(range.start, nextWeek.end, active?.id ?? null),
-    getCurrentUserId(),
-  ]);
+  const [locations, userId] = await Promise.all([fetchLocations(), getCurrentUserId()]);
   const loggedIn = !!userId;
+
+  // A signed-in member belongs to one studio and can only book there, so their
+  // own gym wins over ?loc= and over the cookie. Otherwise they could sit on
+  // the other studio's schedule and every "Rezervă" would fail — and with no
+  // picker on this page they would have no way to correct it.
+  let home: string | null = null;
+  if (userId) {
+    const profile = await getCurrentProfile();
+    home = profile?.location_id ?? null;
+  }
+  const active = home
+    ? (locations.find((l) => l.id === home) ?? (await resolveLocation(locations, loc ?? null)))
+    : await resolveLocation(locations, loc ?? null);
+
+  const sessions = await fetchSessions(range.start, nextWeek.end, active?.id ?? null);
 
   return (
     <div style={{ fontFamily: DC.sans, color: DC.ink, background: "#fff" }}>
