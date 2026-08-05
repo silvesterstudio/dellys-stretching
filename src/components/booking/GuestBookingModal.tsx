@@ -40,6 +40,7 @@ export function GuestBookingModal({
   className,
   timeLabel,
   isChild = false,
+  studioKey = null,
   onClose,
   onBooked,
 }: {
@@ -49,6 +50,8 @@ export function GuestBookingModal({
   className: string;
   timeLabel: string;
   isChild?: boolean;
+  /** Studio this booking belongs to — reported to Meta so ad results split per gym. */
+  studioKey?: string | null;
   onClose: () => void;
   onBooked: (sessionId: string) => void;
 }) {
@@ -95,8 +98,13 @@ export function GuestBookingModal({
     }
     // Ad-conversion signal — fires exactly once, right after the booking
     // succeeds (before the success state renders). A booking = a scheduled
-    // appointment, so it's the Meta "Schedule" standard event.
-    trackPixel("Schedule", { content_name: className });
+    // appointment, so it's the Meta "Schedule" standard event. content_category
+    // carries the studio: with two gyms running separate campaigns, a booking
+    // that doesn't say where it happened can't be optimised against.
+    trackPixel("Schedule", {
+      content_name: className,
+      content_category: studioKey ?? undefined,
+    });
     onBooked(sessionId);
     setDone(true);
   }

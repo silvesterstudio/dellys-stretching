@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
@@ -12,6 +12,7 @@ import { dayKey } from "@/lib/week";
 import { localized } from "@/lib/i18n-data";
 import { refreshScheduleAction } from "@/app/[lang]/actions";
 import { GuestBookingModal } from "@/components/booking/GuestBookingModal";
+import { trackPixel } from "@/components/MetaPixel";
 import { LOCATION_COOKIE, localizedAddress, type Location } from "@/lib/locations";
 import { DC, tint } from "@/lib/dc";
 
@@ -72,6 +73,21 @@ export function ScheduleGrid({
       /* private mode — the choice just won't persist */
     }
   }, [activeLocation]);
+
+  // Mid-funnel ad signal: someone is looking at a specific studio's timetable.
+  // Between PageView and a booking there was nothing for Meta to optimise on,
+  // and at our volumes that gap matters. Once per studio per mount.
+  const viewedStudio = useRef<string | null>(null);
+  useEffect(() => {
+    const key = activeLocation?.key;
+    if (!key || viewedStudio.current === key) return;
+    viewedStudio.current = key;
+    trackPixel("ViewContent", {
+      content_type: "product_group",
+      content_name: "Program",
+      content_category: key,
+    });
+  }, [activeLocation?.key]);
 
   // Accordion open/closed per day. Days already behind us start collapsed;
   // today and everything after (including all of next week) start expanded.
@@ -458,6 +474,7 @@ export function ScheduleGrid({
           className={localized(guestSession.class_type, "name", lang)}
           timeLabel={formatTime(guestSession.starts_at, lang)}
           isChild={guestSession.class_type.audience === "child"}
+          studioKey={activeLocation?.key ?? null}
           onClose={() => setGuestSession(null)}
           onBooked={bumpBooked}
         />

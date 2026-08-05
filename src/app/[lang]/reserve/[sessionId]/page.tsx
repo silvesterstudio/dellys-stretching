@@ -5,6 +5,7 @@ import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { getCurrentUserId } from "@/lib/auth";
 import { fetchSessionById } from "@/lib/queries";
+import { fetchLocations } from "@/lib/locations-server";
 import { formatDate, formatTime } from "@/lib/format";
 import { localized } from "@/lib/i18n-data";
 import { GuestBookingForm } from "@/components/booking/GuestBookingForm";
@@ -47,6 +48,11 @@ export default async function ReservePage({
 
   const name = localized(session.class_type, "name", locale);
 
+  // Which gym this session belongs to — reported with the Meta conversion so
+  // bookings from this page are attributable to the right studio's campaign.
+  const locations = await fetchLocations();
+  const studioKey = locations.find((l) => l.id === session.location_id)?.key ?? null;
+
   return (
     <div className="mx-auto max-w-md px-4 py-8">
       <div className="card p-6">
@@ -75,6 +81,8 @@ export default async function ReservePage({
           dict={dict}
           sessionId={session.id}
           isChild={session.class_type.audience === "child"}
+          classLabel={name}
+          studioKey={studioKey}
           loginHref={`/${locale}/login?session=${session.id}`}
         />
       </div>

@@ -26,6 +26,7 @@ export default async function MembershipsPage({
   let plans: PlanCard[] = [];
   let pendingPlanIds: string[] = [];
   let userId: string | null = null;
+  let studioKey: string | null = null;
 
   if (isSupabaseConfigured()) {
     try {
@@ -35,6 +36,7 @@ export default async function MembershipsPage({
       // their own gym's — a membership bought at the other one wouldn't work
       // for them — while visitors follow ?loc= / their remembered choice.
       userId = await getCurrentUserId();
+      const locations = await fetchLocations();
       let locationId: string | null = null;
       if (userId) {
         const { data: me } = await supabase
@@ -45,9 +47,10 @@ export default async function MembershipsPage({
         locationId = me?.location_id ?? null;
       }
       if (!locationId) {
-        const locations = await fetchLocations();
         locationId = (await resolveLocation(locations, loc ?? null))?.id ?? null;
       }
+      // Passed to the ad pixel so plan interest is attributable per studio.
+      studioKey = locations.find((l) => l.id === locationId)?.key ?? null;
 
       let planQuery = supabase
         .from("membership_plans")
@@ -89,6 +92,7 @@ export default async function MembershipsPage({
         loggedIn={!!userId}
         loginHref={`/${locale}/login`}
         initialPending={pendingPlanIds}
+        studioKey={studioKey}
       />
     </div>
   );

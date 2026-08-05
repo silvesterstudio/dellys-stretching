@@ -16,12 +16,18 @@ export function GuestBookingForm({
   dict,
   sessionId,
   isChild = false,
+  classLabel,
+  studioKey = null,
   loginHref,
 }: {
   lang: Locale;
   dict: Dictionary;
   sessionId: string;
   isChild?: boolean;
+  /** Class name, reported with the Meta conversion. */
+  classLabel?: string;
+  /** Studio this booking belongs to — reported to Meta so ad results split per gym. */
+  studioKey?: string | null;
   loginHref: string;
 }) {
   const router = useRouter();
@@ -43,8 +49,12 @@ export function GuestBookingForm({
       setError(res.error === "unavailable" ? r.errorUnavailable : r.errorInvalid);
       return;
     }
-    // Same booking-success conversion as the modal (Meta "Schedule" event).
-    trackPixel("Schedule");
+    // Same booking-success conversion as the modal (Meta "Schedule" event),
+    // carrying the same class + studio breakdown.
+    trackPixel("Schedule", {
+      content_name: classLabel,
+      content_category: studioKey ?? undefined,
+    });
     setDone(true);
   }
 

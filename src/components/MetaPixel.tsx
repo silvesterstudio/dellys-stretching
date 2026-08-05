@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
 import { usePathname } from "next/navigation";
 
@@ -16,19 +16,44 @@ export function trackPixel(event: string, params?: Record<string, unknown>) {
   if (fbq) fbq("track", event, params);
 }
 
+// Staff surfaces are not marketing traffic. Loading the pixel there would put
+// our own admins into the site-visitor audiences we retarget (and into the
+// lookalike seeds), so those routes get no pixel at all.
+const PRIVATE_SEGMENTS = ["admin", "staff"];
+
+function isTrackedPath(pathname: string | null): boolean {
+  if (!pathname) return false;
+  // Strip the locale prefix: /ro/admin/members -> /admin/members
+  const rest = pathname.replace(/^\/[a-z]{2}(?=\/|$)/, "");
+  const first = rest.split("/")[1];
+  return !PRIVATE_SEGMENTS.includes(first ?? "");
+}
+
 export function MetaPixel() {
   const pathname = usePathname();
-  const firstLoad = useRef(true);
+  const tracked = isTrackedPath(pathname);
+  // The snippet is mounted lazily on the first *public* page, and never
+  // unmounted after that (fbq stays loaded for the rest of the visit anyway).
+  const [armed, setArmed] = useState(false);
+  const lastTracked = useRef<string | null>(null);
 
-  // The base snippet fires the first PageView. App-Router navigations are
-  // client-side, so fire a PageView on each subsequent route change too.
+  // Fire exactly one PageView per public route. The base snippet fires the one
+  // for the page that arms it; App-Router navigations are client-side, so each
+  // later public route needs its own.
   useEffect(() => {
-    if (firstLoad.current) {
-      firstLoad.current = false;
+    if (!tracked) return;
+    if (!armed) {
+      // The snippet is about to mount and will fire this page's PageView.
+      lastTracked.current = pathname;
+      setArmed(true);
       return;
     }
+    if (lastTracked.current === pathname) return;
+    lastTracked.current = pathname;
     trackPixel("PageView");
-  }, [pathname]);
+  }, [pathname, tracked, armed]);
+
+  if (!armed) return null;
 
   return (
     <>

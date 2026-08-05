@@ -28,6 +28,7 @@ export function MembershipPlans({
   loggedIn,
   loginHref,
   initialPending,
+  studioKey = null,
 }: {
   lang: Locale;
   dict: Dictionary;
@@ -35,6 +36,8 @@ export function MembershipPlans({
   loggedIn: boolean;
   loginHref: string;
   initialPending: string[];
+  /** Studio whose price list is on screen — reported to Meta with the event. */
+  studioKey?: string | null;
 }) {
   const [pending, setPending] = useState<Set<string>>(new Set(initialPending));
   const [justSent, setJustSent] = useState<Set<string>>(new Set());
@@ -50,8 +53,19 @@ export function MembershipPlans({
       setErrorId(plan.id);
       return;
     }
-    // Ad-conversion signal: a membership purchase request (last funnel step).
-    trackPixel("Purchase", { value: plan.price, currency: plan.currency || "MDL" });
+    // Ad-conversion signal: this is a *request* — nobody has paid yet, the
+    // member settles up at the desk and an admin confirms it. Reporting it as
+    // Purchase told Meta we'd collected money we hadn't, so it optimised for
+    // clicks and inflated ROAS. InitiateCheckout is the honest step; a real
+    // Purchase can only be sent when payment is captured.
+    trackPixel("InitiateCheckout", {
+      value: plan.price,
+      currency: plan.currency || "MDL",
+      content_name: localized(plan, "name", lang),
+      content_category: studioKey ?? undefined,
+      content_ids: [plan.id],
+      content_type: "product",
+    });
     setPending((prev) => new Set(prev).add(plan.id));
     setJustSent((prev) => new Set(prev).add(plan.id));
   }
