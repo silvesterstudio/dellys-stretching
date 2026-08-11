@@ -59,11 +59,20 @@ export function Footer({ lang, dict }: { lang: Locale; dict: Dictionary }) {
           <div>
             <div style={label}>{f.social}</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 11, marginTop: 16 }}>
-              <a href="https://facebook.com/Caracas.md" target="_blank" rel="noopener noreferrer" style={link}>
-                Facebook
-              </a>
-              <a href="https://instagram.com/caracas.md" target="_blank" rel="noopener noreferrer" style={link}>
+              <a href="https://www.instagram.com/dellys_stretching" target="_blank" rel="noopener noreferrer" style={link}>
                 Instagram
+              </a>
+              <a href="https://maps.app.goo.gl/vCDu3y3cpQiZKBig7" target="_blank" rel="noopener noreferrer" style={link}>
+                Google Maps
+              </a>
+            </div>
+          </div>
+
+          <div>
+            <div style={label}>{f.contact}</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 11, marginTop: 16 }}>
+              <a href={`tel:${f.phone.replace(/\s+/g, "")}`} style={link}>
+                {f.phone}
               </a>
             </div>
           </div>
