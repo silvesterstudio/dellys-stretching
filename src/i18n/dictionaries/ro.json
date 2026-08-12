@@ -238,7 +238,7 @@
     ],
     "disciplines": {
       "eyebrow": "Ce antrenăm",
-      "title": "Șase discipline, un singur loc",
+      "title": "Opt discipline, un singur loc",
       "sub": "Alege ce ți se potrivește azi — le poți combina oricând.",
       "items": [
         {
@@ -264,6 +264,14 @@
         {
           "t": "Total Body",
           "d": "Antrenament complet pentru tot corpul — forță, rezistență și tonus."
+        },
+        {
+          "t": "High Heels",
+          "d": "Dans feminin în tocuri — ținută elegantă, încredere și mișcări pline de grație."
+        },
+        {
+          "t": "Spate + Brațe",
+          "d": "Antrenament țintit pentru spate și brațe — postură dreaptă, tonus și forță în partea superioară."
         }
       ]
     },
