@@ -104,6 +104,9 @@ const DISC_ICONS = [
   <Icon key="tb"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11" /></Icon>,
   <Icon key="hh"><path d="M5 5v8c0 1.4 1 2.5 2.5 2.5H12c4 0 7 1.6 7 4M5 9c3 0 5.5 1.5 7 4" /><path d="M7.5 15.5L6 20" /></Icon>,
   <Icon key="sb"><circle cx="12" cy="4.5" r="2" /><path d="M12 6.5v7M12 9L6 6.5M12 9l6-2.5M12 13.5l-3 6M12 13.5l3 6" /></Icon>,
+  <Icon key="st"><path d="M3 19h5.5v-4.5H14V10h7" /><path d="M3 21.5h18" /></Icon>,
+  <Icon key="ci"><path d="M20 12a8 8 0 11-2.6-5.9" /><path d="M20.5 3.5V8H16" /><circle cx="12" cy="12" r="1.6" /></Icon>,
+  <Icon key="mfr"><rect x="2.5" y="9" width="19" height="6" rx="3" /><path d="M7.5 9v6M16.5 9v6" /></Icon>,
 ];
 function BIcon({ children }: { children: React.ReactNode }) {
   return (

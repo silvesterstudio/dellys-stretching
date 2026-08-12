@@ -238,7 +238,7 @@
     ],
     "disciplines": {
       "eyebrow": "Ce antrenăm",
-      "title": "Opt discipline, un singur loc",
+      "title": "Unsprezece discipline, un singur loc",
       "sub": "Alege ce ți se potrivește azi — le poți combina oricând.",
       "items": [
         {
@@ -272,6 +272,18 @@
         {
           "t": "Spate + Brațe",
           "d": "Antrenament țintit pentru spate și brațe — postură dreaptă, tonus și forță în partea superioară."
+        },
+        {
+          "t": "Step Aerobica",
+          "d": "Cardio ritmat pe platforma de step. Rezistență, coordonare și multă energie."
+        },
+        {
+          "t": "Circuit",
+          "d": "Antrenament pe stații, într-un ritm susținut. Tot corpul lucrează, fără pauze lungi."
+        },
+        {
+          "t": "Stretching MFR",
+          "d": "Stretching cu eliberare miofascială pe rolă. Relaxare profundă și mobilitate."
         }
       ]
     },
