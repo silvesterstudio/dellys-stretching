@@ -178,8 +178,8 @@
   "trial": {
     "categories": {
       "adult": "Adulți",
-      "kids_3_7": "Copii 3-7 ani",
-      "kids_8_13": "Copii 8-13 ani"
+      "kids_3_7": "Copii 4-8 ani",
+      "kids_8_13": "Copii 9-14 ani"
     }
   },
   "memberships": {
@@ -301,16 +301,16 @@
           "photo": "Foto: clasă adulți"
         },
         {
-          "t": "Copii 3–7 ani",
+          "t": "Copii 4–8 ani",
           "tag": "GIMNASTICĂ PENTRU CEI MICI",
           "d": "Coordonare, joacă și mișcare care le dezvoltă echilibrul și încrederea.",
-          "photo": "Foto: copii 3–7 ani"
+          "photo": "Foto: copii 4–8 ani"
         },
         {
-          "t": "Copii 8–13 ani",
+          "t": "Copii 9–14 ani",
           "tag": "GIMNASTICĂ PENTRU COPII MARI",
           "d": "Antrenamente care construiesc forță, disciplină și mișcare corectă.",
-          "photo": "Foto: copii 8–13 ani"
+          "photo": "Foto: copii 9–14 ani"
         }
       ]
     },
@@ -335,7 +335,7 @@
     "offer": {
       "eyebrow": "Ofertă de bun venit",
       "title": "Începe cu o ședință gratuită",
-      "sub": "Fiecare client nou primește o ședință de probă gratuită pentru fiecare categorie: adulți, copii 3–7 și 8–13 ani. Fără plată, fără obligații.",
+      "sub": "Fiecare client nou primește o ședință de probă gratuită pentru fiecare categorie: adulți, copii 4–8 și 9–14 ani. Fără plată, fără obligații.",
       "cta": "Rezervă ședința gratuită",
       "benefits": [
         {
@@ -370,8 +370,8 @@
       "all": "Vezi toate abonamentele",
       "sessions": "ședințe",
       "unlimited": "Nelimitat",
-      "kids37": "Copii 3–7 ani",
-      "kids813": "Copii 8–13 ani",
+      "kids37": "Copii 4–8 ani",
+      "kids813": "Copii 9–14 ani",
       "perMonth": "pe lună",
       "twoMonths": "2 luni",
       "oneSession": "1 ședință",
@@ -394,7 +394,7 @@
         },
         {
           "q": "Ce clase oferiți?",
-          "a": "Pilates, stretching, gimnastică și Fit Ball, pentru adulți și copii între 3 și 13 ani."
+          "a": "Pilates, stretching, gimnastică și Fit Ball, pentru adulți și copii între 4 și 14 ani."
         },
         {
           "q": "Cum funcționează abonamentele?",

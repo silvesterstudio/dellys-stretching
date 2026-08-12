@@ -123,7 +123,7 @@ const BEN_ICONS = [
 ];
 
 // Stock photos for the age-category cards (Pexels free license), in the same
-// order as h.age.items: adults, kids 3–7, kids 8–13. objectPosition keeps the
+// order as h.age.items: adults, kids 4–8, kids 9–14. objectPosition keeps the
 // subject in frame at the banner crop.
 const AGE_PHOTOS = [
   { src: "/photos/age-adults.jpg", pos: "center 45%" },

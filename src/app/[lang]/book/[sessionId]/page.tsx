@@ -81,8 +81,9 @@ export default async function BookPage({
     0,
   );
 
-  // Free trial: one free introductory session per category (adult / kids 3-7 /
-  // kids 8-13). Available for this class only if the client has no usable
+  // Free trial: one free introductory session per category (adult / kids 4-8 /
+  // kids 9-14 — the category keys still read kids_3_7 / kids_8_13). Available
+  // for this class only if the client has no usable
   // membership for its audience and hasn't yet used this category's trial. The
   // authoritative consumption happens at check-in.
   let freeSessionAvailable = false;
