@@ -699,6 +699,7 @@ function TransferForm({
   const [year, setYear] = useState(() => String(new Date().getFullYear()));
   const [months, setMonths] = useState(1);
   const [used, setUsed] = useState(0);
+  const [err, setErr] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
 
   // Build the start date from the DD / MM / YYYY boxes; expiry = start + months.
@@ -748,7 +749,8 @@ function TransferForm({
   async function submit() {
     if (!canSubmit) return;
     setWorking(true);
-    await transferMembershipAction(userId, {
+    setErr(null);
+    const res = await transferMembershipAction(userId, {
       audience,
       sessionsRemaining: effectiveSessions,
       expiresOn,
@@ -756,6 +758,13 @@ function TransferForm({
       startedOn: startDate ? ymd(startDate) : null,
     });
     setWorking(false);
+    // A refusal used to close the form and reset the inputs exactly like a
+    // success, so the balance was silently never transferred. Keep the form
+    // open with what was typed so it can be retried.
+    if (res?.error) {
+      setErr(res.error);
+      return;
+    }
     // Reset for the next entry.
     setSessions(10);
     setUnlimited(false);
@@ -951,6 +960,11 @@ function TransferForm({
       <button onClick={submit} disabled={!canSubmit} className="btn-primary w-full">
         {working ? "…" : t.submit}
       </button>
+      {err && (
+        <p className="text-xs font-semibold text-red-600" role="alert">
+          {dict.common.error} ({err})
+        </p>
+      )}
     </div>
   );
 }
