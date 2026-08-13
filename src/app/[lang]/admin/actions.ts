@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin, requireStaff, requireSuperAdmin } from "@/lib/auth";
 import { getAdminScope } from "@/lib/locations-server";
+import { SITE_URL } from "@/lib/constants";
 import { bucharestWallToUtc } from "@/lib/week";
 import { weekdayInTz, wallTimeInTz } from "@/lib/format";
 
@@ -116,7 +117,9 @@ export async function convertGuestToAccountAction(
     .eq("id", guestBookingId)
     .maybeSingle();
   if (!gb) return { error: "NOT_FOUND" };
-  if (gb.claimed_by) return { error: null }; // already converted
+  // Reporting an already-claimed lead as success hid typo'd addresses: the desk
+  // saw a green "has an account" for a mailbox nobody owns, with no way back.
+  if (gb.claimed_by) return { error: "ALREADY_CLAIMED" };
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -180,6 +183,25 @@ export async function convertGuestToAccountAction(
       .update({ location_id: home })
       .eq("id", userId)
       .is("location_id", null);
+  }
+
+  // Tell the person their account exists. The admin API creates them with
+  // email_confirm:true, which suppresses Supabase's own confirmation mail — so
+  // without this nothing whatsoever reaches them and "sign up" silently ends at
+  // the front desk. Best-effort: a mail failure must not undo a conversion that
+  // has already been written.
+  try {
+    await fetch(`${url}/auth/v1/otp`, {
+      method: "POST",
+      headers: { apikey: key, Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: cleanEmail,
+        create_user: false,
+        redirect_to: `${SITE_URL}/ro/auth/callback`,
+      }),
+    });
+  } catch {
+    /* ignore — the account still exists and they can request a link themselves */
   }
 
   await logAudit(actor, "guest_booking.convert", "guest_booking", guestBookingId, { email: cleanEmail });
@@ -324,7 +346,7 @@ export async function exportMembersCsvAction(): Promise<{ csv: string | null }> 
   let memberQuery = admin
     .from("profiles")
     .select("id, full_name, email, phone, created_at")
-    .eq("role", "client");
+    .in("role", ["client", "reception"]);
   if (activeId) memberQuery = memberQuery.eq("location_id", activeId);
 
   const [{ data: members }, { data: mems }] = await Promise.all([
@@ -496,7 +518,10 @@ export async function assignMembershipAction(
     .select("role")
     .eq("id", userId)
     .maybeSingle();
-  if (!target || target.role !== "client") return { error: "USER_NOT_FOUND" };
+  // Guards against selling a bundle to an ADMIN account — a receptionist who
+  // also trains here is a legitimate buyer, and rejecting her read as
+  // USER_NOT_FOUND with no visible error.
+  if (!target || target.role === "admin") return { error: "USER_NOT_FOUND" };
 
   const { data: plan, error: planErr } = await supabase
     .from("membership_plans")
@@ -544,7 +569,9 @@ export async function assignMembershipAction(
   }
   revalidatePath("/[lang]/admin/members", "page");
   revalidatePath("/[lang]/admin/dashboard", "page");
-  // Don't leak raw Postgres error text (table/constraint names) to the client.
+  // Don't leak raw Postgres error text (table/constraint names) to the client —
+  // but do keep it in the server log, or a failed sale is undiagnosable.
+  if (error) console.error("assignMembership failed:", error.message, { userId, planId });
   return { error: error ? "ASSIGN_FAILED" : null };
 }
 
@@ -578,7 +605,7 @@ export async function transferMembershipAction(
     .select("role")
     .eq("id", userId)
     .maybeSingle();
-  if (!target || target.role !== "client") return { error: "USER_NOT_FOUND" };
+  if (!target || target.role === "admin") return { error: "USER_NOT_FOUND" };
 
   // Hang the balance off the hidden per-audience "transferred" system plan.
   const { data: plan } = await supabase
@@ -895,7 +922,7 @@ export async function searchMembersAction(query: string): Promise<AdminMemberRow
   let req = admin
     .from("profiles")
     .select("id, email, full_name, phone, created_at")
-    .eq("role", "client");
+    .in("role", ["client", "reception"]);
   // A gym's staff searches only its own members — otherwise the walk-in
   // check-in could pull someone from the other studio onto this roster.
   if (actor.location_id) req = req.eq("location_id", actor.location_id);

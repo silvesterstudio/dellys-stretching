@@ -88,6 +88,10 @@ export function MembersExplorer({
   const [searching, startSearch] = useTransition();
   const [loadingDetail, startDetail] = useTransition();
   const [busy, startAction] = useTransition();
+  // Every membership write used to discard its ActionResult, so a refusal
+  // (USER_NOT_FOUND, PLAN_INACTIVE, ASSIGN_FAILED…) looked exactly like a
+  // success: spinner stops, nothing changes. Surface the code instead.
+  const [err, setErr] = useState<string | null>(null);
 
   function runSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -115,7 +119,12 @@ export function MembersExplorer({
       method,
     };
     startAction(async () => {
-      await assignMembershipAction(uid, planId, null, payment);
+      setErr(null);
+      const res = await assignMembershipAction(uid, planId, null, payment);
+      if (res?.error) {
+        setErr(res.error);
+        return;
+      }
       setDetail(await getMemberDetailAction(uid));
     });
   }
@@ -124,7 +133,12 @@ export function MembersExplorer({
     if (!detail) return;
     const uid = detail.profile.id;
     startAction(async () => {
-      await decideMembershipRequestAction(requestId, approve);
+      setErr(null);
+      const res = await decideMembershipRequestAction(requestId, approve);
+      if (res?.error) {
+        setErr(res.error);
+        return;
+      }
       setDetail(await getMemberDetailAction(uid));
     });
   }
@@ -140,7 +154,12 @@ export function MembersExplorer({
     if (!detail) return;
     const uid = detail.profile.id;
     startAction(async () => {
-      await setStaffRoleAction(uid, makeReception);
+      setErr(null);
+      const res = await setStaffRoleAction(uid, makeReception);
+      if (res?.error) {
+        setErr(res.error);
+        return;
+      }
       setDetail(await getMemberDetailAction(uid));
     });
   }
@@ -240,7 +259,11 @@ export function MembersExplorer({
                     </button>
                   ) : (
                     <button
-                      onClick={() => toggleReception(true)}
+                      onClick={() => {
+                        // Grants desk access AND changes how this person is
+                        // listed — worth one confirmation before clicking.
+                        if (window.confirm(m.receptionHint)) toggleReception(true);
+                      }}
                       disabled={busy}
                       className="btn-secondary px-3 py-1.5 text-xs"
                     >
@@ -307,6 +330,11 @@ export function MembersExplorer({
               <button onClick={activate} disabled={busy} className="btn-primary w-full">
                 {dict.admin.assign}
               </button>
+              {err && (
+                <p className="mt-2 text-xs font-semibold text-red-600" role="alert">
+                  {dict.common.error} ({err})
+                </p>
+              )}
             </div>
 
             {/* Transfer an existing (offline) membership */}

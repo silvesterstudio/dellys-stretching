@@ -44,10 +44,14 @@ export default async function MembersPage({
       .from("membership_plans")
       .select("id, name_ro, name_ru, audience, session_count, validity_days, price, currency")
       .eq("active", true);
+    // Front-desk staff train here too, so "reception" is an ADDED capability,
+    // not a different kind of person. Filtering to role='client' used to erase
+    // them from the roster the moment they were given the desk role — taking
+    // their paid membership out of reach with them.
     let memberQuery = admin
       .from("profiles")
       .select("id, email, full_name, phone, created_at")
-      .eq("role", "client");
+      .in("role", ["client", "reception"]);
     if (scope.activeId) {
       planQuery = planQuery.eq("location_id", scope.activeId);
       memberQuery = memberQuery.eq("location_id", scope.activeId);
