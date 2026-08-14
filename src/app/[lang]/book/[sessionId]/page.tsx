@@ -81,22 +81,6 @@ export default async function BookPage({
     0,
   );
 
-  // Free trial: one free introductory session per category (adult / kids 4-8 /
-  // kids 9-14 — the category keys still read kids_3_7 / kids_8_13). Available
-  // for this class only if the client has no usable
-  // membership for its audience and hasn't yet used this category's trial. The
-  // authoritative consumption happens at check-in.
-  let freeSessionAvailable = false;
-  if (balance === 0) {
-    const { data: used } = await supabase
-      .from("free_trial_usage")
-      .select("category")
-      .eq("user_id", userId)
-      .eq("category", session.class_type.category)
-      .maybeSingle();
-    freeSessionAvailable = !used;
-  }
-
   const name = localized(session.class_type, "name", locale);
 
   return (
@@ -131,7 +115,6 @@ export default async function BookPage({
           isChild={isChild}
           initialChildren={children}
           balance={balance}
-          freeSessionAvailable={freeSessionAvailable}
           sessionStartISO={session.starts_at}
           sessionDurationMin={session.duration_min}
           sessionName={name}

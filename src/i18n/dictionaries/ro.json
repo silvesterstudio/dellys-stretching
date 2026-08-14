@@ -71,7 +71,7 @@
   },
   "auth": {
     "title": "Autentificare / Înregistrare",
-    "subtitle": "Introdu adresa de email. Îți trimitem un link de conectare.",
+    "subtitle": "Introdu emailul și parola ca să intri în contul tău.",
     "emailLabel": "Adresă de email",
     "emailPlaceholder": "nume@exemplu.ro",
     "sendCode": "Trimite codul",
@@ -99,9 +99,18 @@
     "createAccount": "Cont nou? Completează datele de mai jos.",
     "noAccount": "Nu ai cont? Înregistrează-te",
     "haveAccount": "Ai deja cont? Autentifică-te",
-    "noSignup": "Contul se creează la studio: rezervă o ședință și lasă-ți emailul la recepție.",
-    "noAccountFound": "Nu există cont cu acest email. Rezervă mai întâi o ședință.",
-    "rateLimited": "Prea multe cereri de email acum. Așteaptă câteva minute și încearcă din nou."
+    "noAccountFound": "Nu există niciun cont cu acest email. Creează-ți unul în câteva secunde.",
+    "rateLimited": "Prea multe cereri de email acum. Așteaptă câteva minute și încearcă din nou.",
+    "signUpTitle": "Creează-ți contul",
+    "signUpSubtitle": "Îți iei cont în câteva secunde și rezervi singur ședințele.",
+    "signUpCta": "Creează contul",
+    "passwordHint": "Minim 8 caractere.",
+    "studioLabel": "Sala la care vii",
+    "errName": "Introdu numele complet.",
+    "errPhone": "Verifică numărul de telefon.",
+    "errEmail": "Adresa de email nu pare corectă.",
+    "errPassword": "Parola trebuie să aibă minim 8 caractere.",
+    "errEmailTaken": "Există deja un cont cu acest email. Autentifică-te."
   },
   "booking": {
     "addToCalendar": "Adaugă în calendar",
@@ -111,7 +120,6 @@
     "addChild": "Adaugă un copil",
     "childName": "Numele copilului",
     "noMembershipNote": "Poți rezerva acum și plăti abonamentul la recepție. Locul este reținut.",
-    "firstFree": "Prima ședință de probă este gratuită. Locul este reținut.",
     "sessionsAvailable": "ședințe disponibile în abonament",
     "deductHint": "se scade 1 la prezență",
     "success": "Rezervare confirmată!",
@@ -165,22 +173,11 @@
     "requestNotPending": "Cererea a fost deja procesată.",
     "sessionUnavailable": "Această sesiune nu mai este disponibilă.",
     "viewAccount": "Vezi contul",
-    "freeTrials": "Ședințe gratuite de probă",
-    "freeTrialsHint": "Prima ședință din fiecare categorie este gratuită — folosește-le ca introducere.",
-    "freeTrialOne": "1 ședință gratuită",
-    "freeTrialBadge": "Gratuit",
     "qrTitle": "Codul tău de acces",
     "qrHint": "Arată-l la tabletă când intri în sală. Se înregistrează automat prezența.",
     "qrOpen": "Mărește codul",
     "qrClose": "Închide",
     "qrFullscreenHint": "Ține ecranul în fața camerei"
-  },
-  "trial": {
-    "categories": {
-      "adult": "Adulți",
-      "kids_3_7": "Copii 4-8 ani",
-      "kids_8_13": "Copii 9-14 ani"
-    }
   },
   "memberships": {
     "title": "Abonamente",
@@ -200,7 +197,7 @@
   "home": {
     "meta": {
       "title": "Studio de fitness în Chișinău — Pilates, stretching, gimnastică",
-      "description": "Dellys — studio de fitness în Chișinău. Pilates, stretching, gimnastică și Fit Ball pentru adulți și copii. Grupe mici, rezervare online și prima ședință de probă gratuită."
+      "description": "Dellys — studio de fitness în Chișinău. Pilates, stretching, gimnastică și Fit Ball pentru adulți și copii. Grupe mici, rezervare online."
     },
     "nav": {
       "login": "Logare",
@@ -213,9 +210,9 @@
       "sub": "Pilates, stretching, gimnastică și Fit Ball pentru adulți și copii. Grupe mici, instructori atenți și rezervare online în câteva secunde.",
       "cta1": "Rezervă o ședință",
       "cta2": "Vezi abonamentele",
-      "note": "Prima ședință de probă este gratuită.",
-      "cardTitle": "Prima ședință gratuită",
-      "cardSub": "Pentru fiecare categorie de vârstă",
+      "note": "Grupe mici, instructori atenți și rezervare online.",
+      "cardTitle": "Rezervare online",
+      "cardSub": "Alege ziua și ora în câteva secunde",
       "photo": "Adaugă o fotografie din studio (format portret)"
     },
     "stats": [
@@ -228,8 +225,8 @@
         "l": "Grupe de vârstă"
       },
       {
-        "n": "Gratuit",
-        "l": "Prima ședință de probă"
+        "n": "2",
+        "l": "Săli în Chișinău"
       },
       {
         "n": "Online",
@@ -291,7 +288,6 @@
       "eyebrow": "Clase pentru fiecare vârstă",
       "title": "De la cei mici la adulți",
       "sub": "Grupe separate pe vârste, ca fiecare să progreseze în ritmul lui.",
-      "badge": "Prima ședință gratuită",
       "link": "Vezi programul",
       "items": [
         {
@@ -324,7 +320,7 @@
         },
         {
           "t": "Rezervă online",
-          "d": "Ocupi locul în câteva secunde. Prima ședință de probă este gratuită."
+          "d": "Ocupi locul în câteva secunde, direct din cont."
         },
         {
           "t": "Vino la antrenament",
@@ -334,9 +330,9 @@
     },
     "offer": {
       "eyebrow": "Ofertă de bun venit",
-      "title": "Începe cu o ședință gratuită",
-      "sub": "Fiecare client nou primește o ședință de probă gratuită pentru fiecare categorie: adulți, copii 4–8 și 9–14 ani. Fără plată, fără obligații.",
-      "cta": "Rezervă ședința gratuită",
+      "title": "Începe antrenamentele la Dellys",
+      "sub": "Grupe mici, instructori atenți și un program flexibil, pentru adulți și copii. Alege ședința care ți se potrivește și rezervă online.",
+      "cta": "Rezervă o ședință",
       "benefits": [
         {
           "t": "Grupe mici",
@@ -351,8 +347,8 @@
           "d": "Pachete care ți se potrivesc."
         },
         {
-          "t": "Prima ședință gratuită",
-          "d": "Încerci înainte să te decizi."
+          "t": "Două săli în Chișinău",
+          "d": "Alege sala mai apropiată de tine."
         }
       ]
     },
@@ -389,10 +385,6 @@
           "a": "Alegi ziua și ora din program, apeși Rezervă și confirmi. Primești confirmarea imediat."
         },
         {
-          "q": "Chiar este prima ședință gratuită?",
-          "a": "Da. Fiecare client nou are o ședință de probă gratuită pentru fiecare categorie, fără obligații."
-        },
-        {
           "q": "Ce clase oferiți?",
           "a": "Pilates, stretching, gimnastică și Fit Ball, pentru adulți și copii între 4 și 14 ani."
         },
@@ -408,7 +400,7 @@
     },
     "cta": {
       "title": "Gata să începi?",
-      "sub": "Rezervă-ți prima ședință gratuită astăzi.",
+      "sub": "Rezervă-ți ședința astăzi.",
       "btn": "Rezervă acum"
     },
     "footer": {
@@ -623,7 +615,6 @@
     "noShowDone": "Marcat absent",
     "alreadyDone": "Finalizat",
     "noMembershipDeduct": "Fără abonament (nu se scade)",
-    "freeTrial": "Ședință gratuită (probă)",
     "payReception": "Plată la recepție",
     "upcomingSessions": "Sesiuni viitoare",
     "participants": "participanți",
@@ -746,7 +737,6 @@
     "welcome": "Bine ai venit",
     "sessionsLeft": "ședințe rămase",
     "sessionLeft": "ședință rămasă",
-    "freeTrial": "Ședință de probă gratuită",
     "walkIn": "Loc alocat acum",
     "resetsIn": "Se resetează în",
     "close": "Închide",

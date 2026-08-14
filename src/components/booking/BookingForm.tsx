@@ -37,7 +37,6 @@ export function BookingForm({
   isChild,
   initialChildren,
   balance,
-  freeSessionAvailable = false,
   sessionStartISO,
   sessionDurationMin,
   sessionName,
@@ -48,7 +47,6 @@ export function BookingForm({
   isChild: boolean;
   initialChildren: Child[];
   balance: number;
-  freeSessionAvailable?: boolean;
   sessionStartISO: string;
   sessionDurationMin: number;
   sessionName: string;
@@ -230,8 +228,6 @@ export function BookingForm({
         <p className="alert-brand mb-3">
           {balance} {dict.booking.sessionsAvailable} · {dict.booking.deductHint}
         </p>
-      ) : freeSessionAvailable ? (
-        <p className="alert-success mb-3">{dict.booking.firstFree}</p>
       ) : (
         <p className="alert-muted mb-3">{dict.booking.noMembershipNote}</p>
       )}

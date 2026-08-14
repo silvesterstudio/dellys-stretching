@@ -12,6 +12,11 @@ export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://dellys.md"
 ).replace(/\/$/, "");
 
+// Shortest password a member may choose at sign-up. Supabase enforces its own
+// minimum as well — keep this at or above it, or the form accepts a password
+// the auth API then rejects.
+export const MIN_PASSWORD = 8;
+
 export const LOCALES = ["ro", "ru"] as const;
 export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = "ro";

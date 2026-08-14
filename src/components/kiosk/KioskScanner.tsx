@@ -626,9 +626,7 @@ function SuccessBody({
       )}
 
       <div className="flex flex-wrap items-center justify-center gap-3">
-        {result.freeTrial ? (
-          <Pill color={style.text}>{dict.freeTrial}</Pill>
-        ) : typeof left === "number" ? (
+        {typeof left === "number" ? (
           <Pill color={style.text}>
             {left} {left === 1 ? dict.sessionLeft : dict.sessionsLeft}
           </Pill>

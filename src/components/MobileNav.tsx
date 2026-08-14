@@ -20,6 +20,8 @@ export function MobileNav({
   loginLabel,
   signupHref,
   signupLabel,
+  registerHref,
+  registerLabel,
   logoutLabel,
   menuLabel,
 }: {
@@ -30,6 +32,8 @@ export function MobileNav({
   loginLabel: string;
   signupHref: string;
   signupLabel: string;
+  registerHref: string;
+  registerLabel: string;
   logoutLabel: string;
   menuLabel: string;
 }) {
@@ -137,9 +141,16 @@ export function MobileNav({
                     {signupLabel}
                   </Link>
                   <Link
-                    href={loginHref}
+                    href={registerHref}
                     onClick={() => setOpen(false)}
                     className="btn-secondary w-full"
+                  >
+                    {registerLabel}
+                  </Link>
+                  <Link
+                    href={loginHref}
+                    onClick={() => setOpen(false)}
+                    className="block w-full py-2 text-center text-[15px] font-semibold text-mauve-500 hover:text-mauve-800"
                   >
                     {loginLabel}
                   </Link>

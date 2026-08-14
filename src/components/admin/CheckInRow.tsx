@@ -21,12 +21,10 @@ export function CheckInRow({
   dict,
   booking,
   memberships,
-  freeTrialAvailable = false,
 }: {
   dict: Dictionary;
   booking: Booking;
   memberships: MembershipOpt[];
-  freeTrialAvailable?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -116,14 +114,11 @@ export function CheckInRow({
             <button onClick={noShow} disabled={busy} className="btn-secondary py-1.5 text-sm">
               {dict.admin.markNoShow}
             </button>
-            {/* When no membership is being deducted, tell the admin whether this
-                is the client's one free trial or a pay-at-reception session. */}
-            {membershipId === "" &&
-              (freeTrialAvailable ? (
-                <span className="badge-success">{dict.admin.freeTrial}</span>
-              ) : (
-                <span className="badge-warning">{dict.admin.payReception}</span>
-              ))}
+            {/* No membership selected ⇒ nothing is deducted, so this is a
+                pay-at-reception session. */}
+            {membershipId === "" && (
+              <span className="badge-warning">{dict.admin.payReception}</span>
+            )}
           </div>
         )}
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
@@ -57,6 +58,26 @@ export function LoginForm({
       return;
     }
 
+    // Members sign in with the password they chose at sign-up. Accounts created
+    // before self-service sign-up existed have no password — those fall back to
+    // the emailed link below.
+    const { error: pwErr } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    });
+    setBusy(false);
+    if (pwErr) {
+      setError(dict.auth.invalidLogin);
+      return;
+    }
+    window.location.assign(nextPath());
+  }
+
+  // Fallback for members with no password yet: email them a sign-in link.
+  async function sendLink() {
+    setError(null);
+    setBusy(true);
+
     const redirectTo = `${window.location.origin}/${lang}/auth/callback?next=${encodeURIComponent(
       nextPath(),
     )}`;
@@ -81,8 +102,8 @@ export function LoginForm({
     const { error } = await emailAuth.auth.signInWithOtp({
       email: email.trim(),
       options: {
-        // No public sign-up: accounts are created at the studio (book a session,
-        // give reception your email). Login only works for existing accounts.
+        // This is the "I have no password yet" path, not sign-up — new members
+        // register with a password instead, so never create a user here.
         shouldCreateUser: false,
         emailRedirectTo: redirectTo,
       },
@@ -153,30 +174,50 @@ export function LoginForm({
         />
       </div>
 
-      {adminMode && (
-        <div>
-          <label className="label" htmlFor="password">
-            {dict.auth.adminPasswordLabel}
-          </label>
-          <input
-            id="password"
-            type="password"
-            required
-            autoComplete="current-password"
-            className="input"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </div>
-      )}
+      <div>
+        <label className="label" htmlFor="password">
+          {adminMode ? dict.auth.adminPasswordLabel : dict.auth.password}
+        </label>
+        <input
+          id="password"
+          type="password"
+          required
+          autoComplete="current-password"
+          className="input"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+      </div>
 
       <button
         type="submit"
-        disabled={busy || !email || (adminMode && !password)}
+        disabled={busy || !email || !password}
         className="btn-primary w-full"
       >
-        {busy ? dict.common.loading : adminMode ? dict.auth.staffLogin : dict.auth.sendLink}
+        {busy ? dict.common.loading : adminMode ? dict.auth.staffLogin : dict.nav.login}
       </button>
+
+      {!adminMode && (
+        <>
+          {/* Members created before self-service sign-up have no password. */}
+          <button
+            type="button"
+            onClick={sendLink}
+            disabled={busy || !email}
+            className="w-full text-center text-xs text-mauve-500 hover:text-mauve-800 disabled:opacity-50"
+          >
+            {dict.auth.sendLink}
+          </button>
+          <p className="pt-1 text-center text-sm text-mauve-500">
+            <Link
+              href={`/${lang}/register`}
+              className="font-semibold text-brand-600 hover:underline"
+            >
+              {dict.auth.noAccount}
+            </Link>
+          </p>
+        </>
+      )}
     </form>
   );
 }

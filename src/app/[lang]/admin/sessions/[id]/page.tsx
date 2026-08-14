@@ -125,17 +125,6 @@ export default async function RosterPage({
     });
   }
 
-  // Which of these clients have already used THIS session's category trial.
-  const usedTrial = new Set<string>();
-  if (userIds.length > 0) {
-    const { data: usage } = await supabase
-      .from("free_trial_usage")
-      .select("user_id")
-      .eq("category", session.class_type.category)
-      .in("user_id", userIds);
-    for (const r of usage ?? []) usedTrial.add((r as { user_id: string }).user_id);
-  }
-
   return (
     <div className="space-y-5">
       <Link
@@ -185,7 +174,6 @@ export default async function RosterPage({
                 dict={dict}
                 booking={b}
                 memberships={memOpts.filter((m) => m.user_id === b.user_id)}
-                freeTrialAvailable={!usedTrial.has(b.user_id)}
               />
             ))}
           </div>

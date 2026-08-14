@@ -174,9 +174,14 @@ export function Header({
             {profile ? (
               <LogoutButton label={dict.nav.logout} />
             ) : (
-              <Link href={`${base}/login`} style={navLink}>
-                {dict.home.nav.login}
-              </Link>
+              <>
+                <Link href={`${base}/login`} style={navLink}>
+                  {dict.home.nav.login}
+                </Link>
+                <Link href={`${base}/register`} style={{ ...navLink, fontWeight: 700, color: DC.accent }}>
+                  {dict.nav.signup}
+                </Link>
+              </>
             )}
             {!isStaff && (
               <Link
@@ -235,6 +240,8 @@ export function Header({
             loginLabel={dict.home.nav.login}
             signupHref={ctaHref}
             signupLabel={ctaLabel}
+            registerHref={`${base}/register`}
+            registerLabel={dict.nav.signup}
             logoutLabel={dict.nav.logout}
             menuLabel={dict.common.menu}
           />

@@ -14,7 +14,6 @@ import {
   fetchMyRequests,
   type MyBooking,
 } from "@/lib/dashboard-queries";
-import { fetchAvailableTrials } from "@/lib/trial";
 import { formatDate, formatTime } from "@/lib/format";
 import { localized } from "@/lib/i18n-data";
 import { CancelButton } from "@/components/dashboard/CancelButton";
@@ -73,7 +72,6 @@ export default async function DashboardPage({
     children,
     requests,
     { data: profile },
-    availableTrials,
   ] = await Promise.all([
     fetchMyBookings(),
     fetchMyGuestBookings(),
@@ -85,7 +83,6 @@ export default async function DashboardPage({
       .select("full_name, phone, qr_uuid")
       .eq("id", userId)
       .maybeSingle(),
-    fetchAvailableTrials(supabase, userId),
   ]);
   // No-login reservations linked to this account show alongside real bookings.
   const bookings = [...accountBookings, ...guestBookings];
@@ -126,36 +123,6 @@ export default async function DashboardPage({
           account for on their way in. */}
       {profile?.qr_uuid && <MemberQr token={profile.qr_uuid} dict={dict} />}
 
-      {/* Free introductory sessions — one per category, until first attended. */}
-      {availableTrials.length > 0 && (
-        <section>
-          <h2 className="mb-1 font-display text-lg font-semibold text-mauve-900">{dict.dashboard.freeTrials}</h2>
-          <p className="mb-3 text-sm text-mauve-500">{dict.dashboard.freeTrialsHint}</p>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {availableTrials.map((c) => (
-              <div
-                key={c}
-                className="card flex items-center gap-3 border-green-200 p-4"
-              >
-                <span className="badge-success shrink-0">
-                  {dict.dashboard.freeTrialBadge}
-                </span>
-                <div className="min-w-0">
-                  <div className="font-medium text-mauve-900">
-                    {dict.trial.categories[c]}
-                  </div>
-                  <div className="text-xs text-mauve-400">
-                    {dict.dashboard.freeTrialOne}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <Link href={`/${locale}/program`} className="btn-primary mt-3">
-            {dict.schedule.bookCta}
-          </Link>
-        </section>
-      )}
 
       {/* Memberships */}
       <section>

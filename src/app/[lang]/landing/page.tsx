@@ -333,22 +333,7 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
                   <PhotoBox style={{ width: "100%", height: 190 }} />
                 )}
                 <div style={{ padding: 26 }}>
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      fontSize: 12,
-                      fontWeight: 700,
-                      color: DC.accent,
-                      background: tint(10),
-                      borderRadius: 999,
-                      padding: "6px 12px",
-                    }}
-                  >
-                    {h.age.badge}
-                  </span>
-                  <h3 style={{ margin: "16px 0 0", fontFamily: DC.display, fontWeight: 600, fontSize: 23, color: DC.ink }}>{a.t}</h3>
+                  <h3 style={{ margin: 0, fontFamily: DC.display, fontWeight: 600, fontSize: 23, color: DC.ink }}>{a.t}</h3>
                   <div style={{ margin: "6px 0 0", fontSize: 12.5, fontWeight: 600, letterSpacing: ".02em", color: DC.faint }}>{a.tag}</div>
                   <p style={{ margin: "12px 0 0", fontSize: 14.5, lineHeight: 1.58, color: DC.muted }}>{a.d}</p>
                   <a
