@@ -24,9 +24,11 @@ export function PricingTeaser({ dict }: { dict: Dictionary }) {
     { name: `12 ${p.sessions}`, meta: p.perMonth, price: 850 },
     { name: p.unlimited, meta: p.perMonth, price: 1300 },
   ];
+  // Kids are priced by how many days a week they train, not by age group —
+  // both age groups train on the same fixed days.
   const kids: Plan[] = [
-    { name: p.kids37, meta: `12 ${p.sessions} · ${p.perMonth}`, price: 550 },
-    { name: p.kids813, meta: `12 ${p.sessions} · ${p.perMonth}`, price: 600 },
+    { name: p.kids2days, meta: p.kids2daysWhen, price: 550 },
+    { name: p.kids3days, meta: p.kids3daysWhen, price: 700 },
   ];
 
   const groups: { key: "adult" | "child"; label: string }[] = [
