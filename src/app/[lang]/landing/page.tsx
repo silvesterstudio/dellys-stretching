@@ -10,6 +10,7 @@ import { getCurrentUserId } from "@/lib/auth";
 import { ScheduleGrid } from "@/components/schedule/ScheduleGrid";
 import { PricingTeaser } from "@/components/PricingTeaser";
 import { Footer } from "@/components/Footer";
+import { HashScroll } from "@/components/HashScroll";
 import { DC, tint } from "@/lib/dc";
 
 export const dynamic = "force-dynamic";
@@ -197,6 +198,7 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
   return (
     <div style={{ fontFamily: DC.sans, color: DC.ink, background: "#fff" }}>
       <style dangerouslySetInnerHTML={{ __html: DC_CSS }} />
+      <HashScroll />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       {/* HERO — dark full-bleed studio photo with the header floating over it */}

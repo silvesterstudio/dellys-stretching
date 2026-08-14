@@ -2,11 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
-import { signUpAction } from "@/app/[lang]/register/actions";
-import { MIN_PASSWORD, type Locale } from "@/lib/constants";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import type { Locale } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
 
+// Sign-up is a magic link, same shape as the login form: we collect the details
+// the studio needs, hand them to GoTrue as user_metadata, and let the emailed
+// link create the account. The metadata is copied onto the profile row on first
+// sign-in (see ensureProfileDetails), so nothing typed here is lost.
 export function RegisterForm({
   lang,
   dict,
@@ -22,48 +25,76 @@ export function RegisterForm({
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [locationKey, setLocationKey] = useState(locations[0]?.key ?? "");
   const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const message = (code: string) =>
-    ({
-      INVALID_NAME: a.errName,
-      INVALID_PHONE: a.errPhone,
-      INVALID_EMAIL: a.errEmail,
-      WEAK_PASSWORD: a.errPassword,
-      EMAIL_TAKEN: a.errEmailTaken,
-    })[code] ?? dict.common.error;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setBusy(true);
 
-    const res = await signUpAction({ fullName, phone, email, password, locationKey });
-    if (res.error) {
-      setError(message(res.error));
-      setBusy(false);
-      return;
-    }
+    const next = nextSession ? `/${lang}/book/${nextSession}` : `/${lang}/dashboard`;
+    const redirectTo = `${window.location.origin}/${lang}/auth/callback?next=${encodeURIComponent(next)}`;
 
-    // The account is created already-confirmed, so sign straight in with the
-    // password just chosen — no mail round trip.
-    const supabase = createClient();
-    const { error: signInErr } = await supabase.auth.signInWithPassword({
+    // Implicit flow, like the login form: the shared client is locked to PKCE,
+    // whose links only open in the browser that asked for them. Implicit links
+    // carry the tokens in the fragment so they work from any mail app.
+    const emailAuth = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        auth: {
+          flowType: "implicit",
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+        },
+      },
+    );
+
+    const { error: err } = await emailAuth.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
-      password,
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: redirectTo,
+        data: {
+          full_name: fullName.trim().replace(/\s+/g, " "),
+          phone: phone.trim(),
+          location_key: locationKey,
+          preferred_lang: lang,
+        },
+      },
     });
-    if (signInErr) {
-      // Account exists but the session didn't take — send them to log in
-      // rather than leaving them stuck on a spinner.
-      window.location.assign(`/${lang}/login`);
+
+    setBusy(false);
+    if (err) {
+      const m = `${err.message ?? ""} ${(err as { code?: string }).code ?? ""}`.toLowerCase();
+      if (err.status === 429 || m.includes("rate limit") || m.includes("over_email_send")) {
+        setError(a.rateLimited);
+      } else if (m.includes("already") || m.includes("registered")) {
+        setError(a.errEmailTaken);
+      } else {
+        setError(dict.common.error);
+      }
       return;
     }
-    // Hard navigation so the root layout re-renders with the new session.
-    window.location.assign(
-      nextSession ? `/${lang}/book/${nextSession}` : `/${lang}/dashboard?welcome=1`,
+    setSent(true);
+  }
+
+  if (sent) {
+    return (
+      <div className="mt-6">
+        <div className="rounded-2xl bg-brand-50 px-4 py-3 text-sm text-brand-700">
+          {a.linkSent}
+        </div>
+        <p className="mt-3 text-center text-sm text-mauve-500">
+          <Link href={`/${lang}/login`} className="font-semibold text-brand-600 hover:underline">
+            {a.haveAccount}
+          </Link>
+        </p>
+      </div>
     );
   }
 
@@ -122,23 +153,6 @@ export function RegisterForm({
         />
       </div>
 
-      <div>
-        <label className="label" htmlFor="password">
-          {a.password}
-        </label>
-        <input
-          id="password"
-          type="password"
-          required
-          minLength={MIN_PASSWORD}
-          autoComplete="new-password"
-          className="input"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <p className="mt-1 text-xs text-mauve-400">{a.passwordHint}</p>
-      </div>
-
       {locations.length > 1 && (
         <div>
           <label className="label" htmlFor="studio">
@@ -161,7 +175,7 @@ export function RegisterForm({
 
       <button
         type="submit"
-        disabled={busy || !fullName || !phone || !email || password.length < MIN_PASSWORD}
+        disabled={busy || !fullName || !phone || !email}
         className="btn-primary w-full"
       >
         {busy ? dict.common.loading : a.signUpCta}

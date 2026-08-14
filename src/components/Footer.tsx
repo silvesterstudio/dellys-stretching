@@ -19,10 +19,12 @@ export function Footer({ lang, dict }: { lang: Locale; dict: Dictionary }) {
     color: "#4A4954",
     textDecoration: "none",
   };
+  // The anchors live on /landing — the locale root is the studio chooser and
+  // has no sections at all, so `${base}#discipline` used to be a dead link.
   const nav = [
-    { href: `${base}#discipline`, label: dict.nav.disciplines },
+    { href: `${base}/landing#discipline`, label: dict.nav.disciplines },
     { href: `${base}/program`, label: dict.nav.schedule },
-    { href: `${base}#preturi`, label: dict.nav.prices },
+    { href: `${base}/landing#preturi`, label: dict.nav.prices },
   ];
 
   return (

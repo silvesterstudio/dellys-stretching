@@ -71,7 +71,7 @@
   },
   "auth": {
     "title": "Autentificare / Înregistrare",
-    "subtitle": "Introdu emailul și parola ca să intri în contul tău.",
+    "subtitle": "Introdu adresa de email. Îți trimitem un link de conectare.",
     "emailLabel": "Adresă de email",
     "emailPlaceholder": "nume@exemplu.ro",
     "sendCode": "Trimite codul",
@@ -102,14 +102,12 @@
     "noAccountFound": "Nu există niciun cont cu acest email. Creează-ți unul în câteva secunde.",
     "rateLimited": "Prea multe cereri de email acum. Așteaptă câteva minute și încearcă din nou.",
     "signUpTitle": "Creează-ți contul",
-    "signUpSubtitle": "Îți iei cont în câteva secunde și rezervi singur ședințele.",
+    "signUpSubtitle": "Completează datele și îți trimitem un link de conectare pe email.",
     "signUpCta": "Creează contul",
-    "passwordHint": "Minim 8 caractere.",
     "studioLabel": "Sala la care vii",
     "errName": "Introdu numele complet.",
     "errPhone": "Verifică numărul de telefon.",
     "errEmail": "Adresa de email nu pare corectă.",
-    "errPassword": "Parola trebuie să aibă minim 8 caractere.",
     "errEmailTaken": "Există deja un cont cu acest email. Autentifică-te."
   },
   "booking": {
@@ -210,7 +208,6 @@
       "sub": "Pilates, stretching, gimnastică și Fit Ball pentru adulți și copii. Grupe mici, instructori atenți și rezervare online în câteva secunde.",
       "cta1": "Rezervă o ședință",
       "cta2": "Vezi abonamentele",
-      "note": "Grupe mici, instructori atenți și rezervare online.",
       "cardTitle": "Rezervare online",
       "cardSub": "Alege ziua și ora în câteva secunde",
       "photo": "Adaugă o fotografie din studio (format portret)"

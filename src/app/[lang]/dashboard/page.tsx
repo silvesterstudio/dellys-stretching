@@ -6,6 +6,7 @@ import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { ensureProfileDetails } from "@/lib/profile-sync";
 import {
   fetchMyBookings,
   fetchMyGuestBookings,
@@ -43,6 +44,7 @@ export default async function DashboardPage({
 
   let supabase: Awaited<ReturnType<typeof createClient>> | null = null;
   let userId: string | null = null;
+  let userMeta: Record<string, unknown> | null = null;
   if (isSupabaseConfigured()) {
     try {
       supabase = await createClient();
@@ -50,6 +52,7 @@ export default async function DashboardPage({
         data: { user },
       } = await supabase.auth.getUser();
       userId = user?.id ?? null;
+      userMeta = (user?.user_metadata as Record<string, unknown>) ?? null;
     } catch {
       userId = null;
     }
@@ -80,10 +83,18 @@ export default async function DashboardPage({
     fetchMyRequests(),
     supabase
       .from("profiles")
-      .select("full_name, phone, qr_uuid")
+      .select("full_name, phone, qr_uuid, location_id")
       .eq("id", userId)
       .maybeSingle(),
   ]);
+
+  // A magic-link sign-up carries the member's name, phone and studio as GoTrue
+  // metadata only; copy them onto the profile the first time they arrive.
+  await ensureProfileDetails(userId, userMeta, {
+    full_name: profile?.full_name ?? null,
+    phone: profile?.phone ?? null,
+    location_id: (profile as { location_id?: string | null } | null)?.location_id ?? null,
+  });
   // No-login reservations linked to this account show alongside real bookings.
   const bookings = [...accountBookings, ...guestBookings];
 

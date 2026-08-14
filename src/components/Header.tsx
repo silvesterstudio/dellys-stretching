@@ -57,7 +57,7 @@ export function Header({
   // Root = Program (booking); the marketing sections live on /landing.
   const publicLinks = [
     { href: base, label: dict.nav.schedule },
-    { href: `${base}#preturi`, label: dict.nav.prices },
+    { href: `${base}/landing#preturi`, label: dict.nav.prices },
     { href: `${base}/landing#discipline`, label: dict.nav.disciplines },
   ];
   const links = showAdminNav

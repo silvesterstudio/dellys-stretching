@@ -58,22 +58,10 @@ export function LoginForm({
       return;
     }
 
-    // Members sign in with the password they chose at sign-up. Accounts created
-    // before self-service sign-up existed have no password — those fall back to
-    // the emailed link below.
-    const { error: pwErr } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
-    });
-    setBusy(false);
-    if (pwErr) {
-      setError(dict.auth.invalidLogin);
-      return;
-    }
-    window.location.assign(nextPath());
+    // Members sign in by email link — no password to remember or reset.
+    await sendLink();
   }
 
-  // Fallback for members with no password yet: email them a sign-in link.
   async function sendLink() {
     setError(null);
     setBusy(true);
@@ -174,49 +162,41 @@ export function LoginForm({
         />
       </div>
 
-      <div>
-        <label className="label" htmlFor="password">
-          {adminMode ? dict.auth.adminPasswordLabel : dict.auth.password}
-        </label>
-        <input
-          id="password"
-          type="password"
-          required
-          autoComplete="current-password"
-          className="input"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      </div>
+      {/* Only a staff username reveals a password box; members use the link. */}
+      {adminMode && (
+        <div>
+          <label className="label" htmlFor="password">
+            {dict.auth.adminPasswordLabel}
+          </label>
+          <input
+            id="password"
+            type="password"
+            required
+            autoComplete="current-password"
+            className="input"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+      )}
 
       <button
         type="submit"
-        disabled={busy || !email || !password}
+        disabled={busy || !email || (adminMode && !password)}
         className="btn-primary w-full"
       >
-        {busy ? dict.common.loading : adminMode ? dict.auth.staffLogin : dict.nav.login}
+        {busy ? dict.common.loading : adminMode ? dict.auth.staffLogin : dict.auth.sendLink}
       </button>
 
       {!adminMode && (
-        <>
-          {/* Members created before self-service sign-up have no password. */}
-          <button
-            type="button"
-            onClick={sendLink}
-            disabled={busy || !email}
-            className="w-full text-center text-xs text-mauve-500 hover:text-mauve-800 disabled:opacity-50"
+        <p className="pt-1 text-center text-sm text-mauve-500">
+          <Link
+            href={`/${lang}/register`}
+            className="font-semibold text-brand-600 hover:underline"
           >
-            {dict.auth.sendLink}
-          </button>
-          <p className="pt-1 text-center text-sm text-mauve-500">
-            <Link
-              href={`/${lang}/register`}
-              className="font-semibold text-brand-600 hover:underline"
-            >
-              {dict.auth.noAccount}
-            </Link>
-          </p>
-        </>
+            {dict.auth.noAccount}
+          </Link>
+        </p>
       )}
     </form>
   );

@@ -121,7 +121,6 @@ export default async function ProgramPage({
       <section style={{ maxWidth: 1200, margin: "0 auto", padding: "40px 24px 8px", textAlign: "center" }}>
         <h1 style={{ ...h2, fontSize: "clamp(34px,5vw,52px)" }}>{h.prog.title}</h1>
         <p style={{ ...subText, maxWidth: 620, margin: "12px auto 0" }}>{h.prog.sub}</p>
-        <p style={{ margin: "14px 0 0", fontSize: 14.5, fontWeight: 600, color: DC.accent }}>{h.hero.note}</p>
       </section>
 
       {/* SCHEDULE — the primary content */}
