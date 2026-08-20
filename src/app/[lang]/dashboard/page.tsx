@@ -83,7 +83,7 @@ export default async function DashboardPage({
     fetchMyRequests(),
     supabase
       .from("profiles")
-      .select("full_name, phone, qr_uuid, location_id")
+      .select("full_name, phone, qr_uuid, location_id, role")
       .eq("id", userId)
       .maybeSingle(),
   ]);
@@ -94,6 +94,8 @@ export default async function DashboardPage({
     full_name: profile?.full_name ?? null,
     phone: profile?.phone ?? null,
     location_id: (profile as { location_id?: string | null } | null)?.location_id ?? null,
+    // Staff must keep a NULL location_id — it is what grants them both studios.
+    role: (profile as { role?: string | null } | null)?.role ?? null,
   });
   // No-login reservations linked to this account show alongside real bookings.
   const bookings = [...accountBookings, ...guestBookings];
