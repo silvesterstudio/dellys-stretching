@@ -27,12 +27,24 @@ const log = (ok, name, detail = "") => {
 };
 const iso = (min) => new Date(Date.now() + min * 60000).toISOString();
 
-const post = (body) =>
-  fetch(`${BASE}/api/scan`, {
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// The door throttles a single IP to 15 requests per 10s — plenty for a real
+// queue, far less than a test loop. Back off and retry rather than reporting a
+// protection working as designed as a failure.
+const post = async (body, attempt = 0) => {
+  const r = await fetch(`${BASE}/api/scan`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
-  }).then(async (r) => ({ status: r.status, body: await r.json() }));
+  });
+  const out = { status: r.status, body: await r.json() };
+  if (out.body?.code === "rate_limited" && attempt < 3) {
+    await sleep(10_500);
+    return post(body, attempt + 1);
+  }
+  return out;
+};
 
 async function main() {
   const { data: locs } = await db.from("locations").select("id,key");
@@ -145,6 +157,64 @@ async function main() {
     const broke = await mkUser("broke");
     const rb = await ask(broke.qr);
     log(rb.body.code === "no_membership" && !rb.body.options, "no bundle -> reason, not a blank screen", `code=${rb.body.code}`);
+
+    console.log("");
+    console.log("-- two seats in ONE confirm --");
+    // A parent with two children walks through the door once, not twice.
+    const mp = await mkUser("multi", "Elena Rusu");
+    const mm = await mkMem(mp.id, kidPlan, 10);
+    const { data: mkids } = await db.from("children").insert([
+      { parent_id: mp.id, name: "Dan", birth_year: 2016 },
+      { parent_id: mp.id, name: "Sofia", birth_year: 2014 },
+    ]).select("id,name");
+    const mks = await mkSession(18, kidCt);
+    const mo = await ask(mp.qr);
+    const both = (mo.body.options ?? []).filter((o) => o.sessionId === mks.id);
+    log(both.length === 2, "both children offered", both.map((o) => o.personName).join(", "));
+    const multi = await post({
+      qr_uuid: mp.qr, device_token: device.token,
+      picks: both.map((o) => ({ session_id: o.sessionId, child_id: o.childId })),
+    });
+    log(multi.body.ok && multi.body.admitted?.length === 2, "both admitted in one call",
+      `admitted=${multi.body.admitted?.length} refused=${multi.body.refused?.length ?? 0}`);
+    log((multi.body.admitted ?? []).map((r) => r.clientName).sort().join(",") === "Dan,Sofia",
+      "both named", (multi.body.admitted ?? []).map((r) => r.clientName).join(", "));
+    log((await left(mm)) === 8, "two seats, two sessions", `10 -> ${await left(mm)}`);
+    const { data: mbk } = await db.from("bookings").select("child_id,status").eq("session_id", mks.id);
+    log(mbk.length === 2 && mbk.every((b) => b.status === "attended"), "both bookings marked attended");
+    const { data: msess } = await db.from("sessions").select("booked_count").eq("id", mks.id).single();
+    log(msess.booked_count === 2, "seat count matches", `booked=${msess.booked_count}`);
+    log(mkids.length === 2, "fixture sane");
+
+    console.log("");
+    console.log("-- a duplicate tap is one person, not two --");
+    const dp = await mkUser("dupe");
+    const dm = await mkMem(dp.id, adultPlan, 5);
+    const ds = await mkSession(22, adultCt);
+    const dupRes = await post({
+      qr_uuid: dp.qr, device_token: device.token,
+      picks: [{ session_id: ds.id, child_id: null }, { session_id: ds.id, child_id: null }],
+    });
+    log(dupRes.body.ok, "went through", `code=${dupRes.body.code}`);
+    log((await left(dm)) === 4, "charged ONCE, not twice", `5 -> ${await left(dm)}`);
+
+    console.log("");
+    console.log("-- a partly-impossible selection reports both halves --");
+    const pp = await mkUser("part");
+    const pmem = await mkMem(pp.id, adultPlan, 5);
+    const good = await mkSession(28, adultCt);
+    const gone = await mkSession(32, adultCt, 1);
+    const filler = await mkUser("filler");
+    await mkMem(filler.id, adultPlan, 5);
+    await post({ qr_uuid: filler.qr, device_token: device.token, session_id: gone.id, child_id: null });
+    const partial = await post({
+      qr_uuid: pp.qr, device_token: device.token,
+      picks: [{ session_id: good.id, child_id: null }, { session_id: gone.id, child_id: null }],
+    });
+    log(partial.body.admitted?.length === 1 && partial.body.refused?.length === 1,
+      "one in, one refused", `admitted=${partial.body.admitted?.length} refused=${partial.body.refused?.length}`);
+    log(partial.body.refused?.[0]?.code === "class_full", "and says why", `code=${partial.body.refused?.[0]?.code}`);
+    log((await left(pmem)) === 4, "only the one that worked was charged", `5 -> ${await left(pmem)}`);
 
     console.log("\n-- the last seat, two people, one instant --");
     const tight = await mkSession(0, adultCt, 1);

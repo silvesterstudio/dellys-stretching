@@ -816,6 +816,10 @@
     "scanNextMany": "Осталось ещё {n} детей",
     "chooseTitle": "Выберите занятие",
     "chooseReserved": "Ваша запись",
-    "chooseCancel": "Отмена"
+    "chooseCancel": "Отмена",
+    "chooseHint": "Можно выбрать несколько",
+    "chooseConfirmOne": "Войти · 1 занятие",
+    "chooseConfirmMany": "Войти · {n} занятий",
+    "alsoRefused": "Не удалось пропустить"
   }
 }

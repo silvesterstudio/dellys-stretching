@@ -81,6 +81,11 @@ export interface KioskScanResult {
   sessionsRemaining?: number | null;
   // Present only on code === "options": what this QR could check into now.
   options?: KioskOption[];
+  // Present when more than one seat was taken in a single confirm: every entry
+  // that went through, and every one that did not. A parent checking in two
+  // children is one trip through the door, so the screen names them together.
+  admitted?: KioskScanResult[];
+  refused?: KioskScanResult[];
 }
 
 export interface Database {

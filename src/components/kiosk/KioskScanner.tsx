@@ -8,6 +8,9 @@ import type { KioskOption, KioskScanResult } from "@/lib/types";
 
 type KioskDict = Dictionary["kiosk"];
 
+// One row of the picker: a class, and for a kids class the particular child.
+const optKey = (o: KioskOption) => `${o.sessionId}:${o.childId ?? "self"}`;
+
 // Wall-clock time at the studio, not on whatever timezone the tablet thinks it
 // is in — a tablet reset to UTC would otherwise offer classes an hour out.
 function hhmm(iso: string, lang: Locale): string {
@@ -146,6 +149,11 @@ export function KioskScanner({
   const [countdown, setCountdown] = useState(0);
   const [hintIdx, setHintIdx] = useState(0);
   const hintRef = useRef(0);
+  // Read by the version poller, which must not re-subscribe on every view change.
+  const viewRef = useRef<View["kind"]>("waiting");
+  // Which rows are ticked while choosing. Keyed session+child so a parent can
+  // put two children into the same class.
+  const [picked, setPicked] = useState<string[]>([]);
   const [adminOpen, setAdminOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -222,6 +230,46 @@ export function KioskScanner({
   }, [hintIdx]);
 
   useEffect(() => {
+    viewRef.current = view.kind;
+  }, [view]);
+
+  // Keep the tablet current. It is opened once and left on a wall for weeks, so
+  // without this it never picks up a fix — and a bundle old enough to disagree
+  // with the API about what a reply means is worse than no update at all.
+  //
+  // Only ever reloads while the screen is idle: never mid-scan, never over a
+  // result somebody is reading, never while a member is choosing a class.
+  useEffect(() => {
+    let known: string | null = null;
+    let stop = false;
+
+    const check = async () => {
+      try {
+        const res = await fetch("/api/kiosk/version", { cache: "no-store" });
+        if (!res.ok) return;
+        const { build } = (await res.json()) as { build?: string };
+        if (!build || stop) return;
+        if (known === null) {
+          known = build;
+          return;
+        }
+        if (build !== known && viewRef.current === "waiting" && !busyRef.current) {
+          window.location.reload();
+        }
+      } catch {
+        /* offline — the door still works, it just stays on this build */
+      }
+    };
+
+    void check();
+    const id = setInterval(() => void check(), 5 * 60 * 1000);
+    return () => {
+      stop = true;
+      clearInterval(id);
+    };
+  }, []);
+
+  useEffect(() => {
     const onChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", onChange);
     return () => document.removeEventListener("fullscreenchange", onChange);
@@ -230,6 +278,7 @@ export function KioskScanner({
   const reset = useCallback(() => {
     if (holdRef.current) clearTimeout(holdRef.current);
     if (tickRef.current) clearInterval(tickRef.current);
+    setPicked([]);
     setView({ kind: "waiting" });
     setCountdown(0);
     busyRef.current = false;
@@ -264,6 +313,7 @@ export function KioskScanner({
   // finish(): no chime cadence, and the timeout returns to the camera rather
   // than to a result nobody chose.
   const startChoosing = useCallback((next: View) => {
+    setPicked([]);
     setView(next);
     if (holdRef.current) clearTimeout(holdRef.current);
     if (tickRef.current) clearInterval(tickRef.current);
@@ -294,7 +344,10 @@ export function KioskScanner({
         });
         const data = (await res.json()) as KioskScanResult & { code?: string };
         // Recognised, with something to choose between: hand the decision over.
-        if (res.ok && data.ok && data.code === "options" && data.options?.length) {
+        // Keyed on `code`, deliberately not on `ok` — the options response
+        // reports ok:false precisely so that a kiosk running an older bundle
+        // treats it as an error rather than as a completed check-in.
+        if (data.code === "options" && data.options?.length) {
           chimeRef.current?.success();
           startChoosing({
             kind: "choosing",
@@ -318,10 +371,14 @@ export function KioskScanner({
     [dict, finish, startChoosing],
   );
 
-  // The member tapped a class. Same endpoint, now naming what they picked.
-  const pick = useCallback(
-    async (qr: string, opt: KioskOption) => {
-      if (!token) return;
+  // Confirmed. Same endpoint, now naming every seat they ticked — a parent with
+  // two children walks through the door once, not twice.
+  const confirmPicks = useCallback(
+    async (qr: string, options: KioskOption[], keys: string[]) => {
+      if (!token || keys.length === 0) return;
+      const chosen = keys
+        .map((k) => options.find((o) => optKey(o) === k))
+        .filter((o): o is KioskOption => !!o);
       try {
         const res = await fetch("/api/scan", {
           method: "POST",
@@ -329,8 +386,7 @@ export function KioskScanner({
           body: JSON.stringify({
             qr_uuid: qr,
             device_token: token,
-            session_id: opt.sessionId,
-            child_id: opt.childId,
+            picks: chosen.map((o) => ({ session_id: o.sessionId, child_id: o.childId })),
           }),
         });
         const data = (await res.json()) as KioskScanResult & { code?: string };
@@ -624,6 +680,9 @@ export function KioskScanner({
           <h1 className="mt-2 font-display text-[clamp(1.6rem,4.5vh,3rem)] font-bold leading-none tracking-tight text-white">
             {view.name}
           </h1>
+          <p className="mt-1 text-[clamp(0.75rem,1.6vh,1rem)] text-white/45">
+            {(view.uiLang === "ru" ? ru : ro).chooseHint}
+          </p>
 
           {/* Scrolls on its own so a long timetable never pushes the cancel
               button off a screen the body has clipped. */}
@@ -631,10 +690,35 @@ export function KioskScanner({
             <div className="flex flex-col gap-[clamp(0.4rem,1.2vh,0.75rem)]">
               {view.options.map((o) => (
                 <button
-                  key={`${o.sessionId}-${o.childId ?? "self"}`}
-                  onClick={() => void pick(view.qr, o)}
-                  className="flex w-full items-center gap-4 rounded-2xl border border-white/15 bg-white/[0.07] px-5 py-[clamp(0.6rem,1.8vh,1.1rem)] text-left transition-colors active:bg-white/20"
+                  key={optKey(o)}
+                  onClick={() =>
+                    setPicked((p) =>
+                      p.includes(optKey(o)) ? p.filter((k) => k !== optKey(o)) : [...p, optKey(o)],
+                    )
+                  }
+                  aria-pressed={picked.includes(optKey(o))}
+                  className={`flex w-full items-center gap-4 rounded-2xl border px-5 py-[clamp(0.6rem,1.8vh,1.1rem)] text-left transition-colors ${
+                    picked.includes(optKey(o))
+                      ? "border-brand-400 bg-brand-500/25"
+                      : "border-white/15 bg-white/[0.07] active:bg-white/20"
+                  }`}
                 >
+                  {/* A tick, not a highlight alone: at a glance across a room,
+                      colour is not enough to say "this one is coming with me". */}
+                  <span
+                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border-2 ${
+                      picked.includes(optKey(o))
+                        ? "border-brand-300 bg-brand-400 text-white"
+                        : "border-white/30"
+                    }`}
+                    aria-hidden
+                  >
+                    {picked.includes(optKey(o)) && (
+                      <svg viewBox="0 0 24 24" className="h-4 w-4">
+                        <path d="M5 13l4 4L19 7" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </span>
                   <span
                     className="h-[clamp(2rem,5vh,3rem)] w-1.5 shrink-0 rounded-full"
                     style={{ background: o.color ?? "#8b8593" }}
@@ -661,17 +745,31 @@ export function KioskScanner({
             </div>
           </div>
 
-          <div className="mt-[clamp(0.75rem,2vh,1.5rem)] flex flex-col items-center gap-2">
-            <p className="text-[clamp(0.75rem,1.6vh,1rem)] font-bold text-white/40">
-              {(view.uiLang === "ru" ? ru : ro).resetsIn}{" "}
-              <span className="font-display text-white">{Math.max(countdown, 0)}</span>s
-            </p>
+          <div className="mt-[clamp(0.75rem,2vh,1.5rem)] flex w-full max-w-3xl flex-col items-center gap-[clamp(0.4rem,1.2vh,0.75rem)]">
+            {/* The count is on the button on purpose: every seat spends a
+                session, so the number leaving the bundle is the last thing read
+                before it happens. */}
             <button
-              onClick={reset}
-              className="rounded-2xl border border-white/25 bg-white/10 px-8 py-2.5 text-[clamp(0.8rem,1.8vh,1rem)] font-bold text-white transition-all active:scale-95"
+              onClick={() => void confirmPicks(view.qr, view.options, picked)}
+              disabled={picked.length === 0}
+              className="w-full rounded-2xl bg-brand-600 px-8 py-[clamp(0.6rem,1.8vh,1rem)] text-[clamp(0.95rem,2.2vh,1.35rem)] font-bold text-white transition-all active:scale-[0.99] disabled:opacity-30"
             >
-              {(view.uiLang === "ru" ? ru : ro).chooseCancel}
+              {picked.length <= 1
+                ? (view.uiLang === "ru" ? ru : ro).chooseConfirmOne
+                : (view.uiLang === "ru" ? ru : ro).chooseConfirmMany.replace("{n}", String(picked.length))}
             </button>
+            <div className="flex items-center gap-4">
+              <p className="text-[clamp(0.7rem,1.5vh,0.9rem)] font-bold text-white/40">
+                {(view.uiLang === "ru" ? ru : ro).resetsIn}{" "}
+                <span className="font-display text-white">{Math.max(countdown, 0)}</span>s
+              </p>
+              <button
+                onClick={reset}
+                className="rounded-xl border border-white/25 bg-white/10 px-6 py-2 text-[clamp(0.75rem,1.6vh,0.95rem)] font-bold text-white transition-all active:scale-95"
+              >
+                {(view.uiLang === "ru" ? ru : ro).chooseCancel}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -829,6 +927,14 @@ function SuccessBody({
     : null;
   const left = result.sessionsRemaining;
 
+  // More than one seat taken in a single confirm — two children, or two classes
+  // back to back. Everyone who got in is named; one name in letters that size
+  // would otherwise be a lie about who is standing there.
+  const many = result.admitted ?? null;
+  if (many && many.length > 1) {
+    return <MultiBody admitted={many} refused={result.refused ?? []} dict={dict} lang={lang} style={style} />;
+  }
+
   // A child's seat names the CHILD; the parent is the account, shown small
   // beneath so the front desk can still tell whose kid this is.
   const parent = result.parentName ?? null;
@@ -887,6 +993,72 @@ function SuccessBody({
         ) : null}
         {result.walkIn && <Pill color="#c9c5cf">{dict.walkIn}</Pill>}
       </div>
+    </div>
+  );
+}
+
+function MultiBody({
+  admitted,
+  refused,
+  dict,
+  lang,
+  style,
+}: {
+  admitted: KioskScanResult[];
+  refused: KioskScanResult[];
+  dict: KioskDict;
+  lang: Locale;
+  style: (typeof TONE_STYLE)[keyof typeof TONE_STYLE];
+}) {
+  return (
+    <div className="relative flex w-full max-w-2xl flex-col items-center">
+      <p className="mb-4 text-xl font-bold uppercase tracking-[0.15em]" style={{ color: style.text }}>
+        {dict.welcome}
+      </p>
+
+      <div className="flex w-full flex-col gap-2">
+        {admitted.map((r, i) => (
+          <div
+            key={`${r.clientName}-${i}`}
+            className="flex items-center gap-4 rounded-2xl border border-white/15 bg-white/5 px-6 py-4"
+          >
+            <span
+              className="h-8 w-1.5 shrink-0 rounded-full"
+              style={{ background: r.color ?? style.ring }}
+              aria-hidden
+            />
+            <span className="min-w-0 flex-1 text-left">
+              <span className="block truncate font-display text-3xl font-bold leading-tight text-white">
+                {r.clientName || "—"}
+              </span>
+              <span className="block truncate text-base text-white/50">
+                {(lang === "ru" ? r.className_ru : r.className_ro) ?? ""}
+                {r.startsAt ? ` · ${hhmm(r.startsAt, lang)}` : ""}
+              </span>
+            </span>
+            {typeof r.sessionsRemaining === "number" && (
+              <span className="shrink-0 text-xl font-extrabold tabular-nums" style={{ color: style.text }}>
+                {r.sessionsRemaining}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Anything that did not go through is stated, not swallowed. A seat can
+          be lost between reading the list and confirming it. */}
+      {refused.length > 0 && (
+        <div className="mt-5 w-full rounded-2xl border border-amber-400/30 bg-amber-400/10 px-6 py-4">
+          <p className="mb-1 text-sm font-bold uppercase tracking-[0.15em] text-amber-300">
+            {dict.alsoRefused}
+          </p>
+          {refused.map((r, i) => (
+            <p key={`${r.clientName}-${i}`} className="text-base font-semibold text-amber-100/90">
+              {r.clientName || "—"} — {(dict.err[errKey(r.code, dict)] ?? dict.err.server_error).t}
+            </p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -816,6 +816,10 @@
     "scanNextMany": "Mai sunt {n} copii de scanat",
     "chooseTitle": "Alege clasa",
     "chooseReserved": "Rezervarea ta",
-    "chooseCancel": "Anulează"
+    "chooseCancel": "Anulează",
+    "chooseHint": "Poți alege mai multe",
+    "chooseConfirmOne": "Intră · 1 ședință",
+    "chooseConfirmMany": "Intră · {n} ședințe",
+    "alsoRefused": "Nu au putut intra"
   }
 }
