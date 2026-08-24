@@ -26,7 +26,7 @@ export default async function ReservePage({
   const userId = await getCurrentUserId();
   // redirect() throws internally — keep it outside any try/catch.
   if (userId) {
-    redirect(`/${locale}/book/${sessionId}`);
+    redirect(`/book/${sessionId}`);
   }
 
   const session = await fetchSessionById(sessionId);
@@ -39,7 +39,7 @@ export default async function ReservePage({
     return (
       <div className="mx-auto max-w-md px-4 py-10 text-center">
         <p className="text-mauve-600">{dict.booking.pastSession}</p>
-        <Link href={`/${locale}/program`} className="btn-primary mt-4">
+        <Link href={"/program"} className="btn-primary mt-4">
           {dict.common.back}
         </Link>
       </div>
@@ -83,7 +83,7 @@ export default async function ReservePage({
           isChild={session.class_type.audience === "child"}
           classLabel={name}
           studioKey={studioKey}
-          loginHref={`/${locale}/login?session=${session.id}`}
+          loginHref={`/login?session=${session.id}`}
         />
       </div>
     </div>

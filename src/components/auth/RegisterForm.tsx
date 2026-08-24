@@ -35,8 +35,8 @@ export function RegisterForm({
     setError(null);
     setBusy(true);
 
-    const next = nextSession ? `/${lang}/book/${nextSession}` : `/${lang}/dashboard`;
-    const redirectTo = `${window.location.origin}/${lang}/auth/callback?next=${encodeURIComponent(next)}`;
+    const next = nextSession ? `/book/${nextSession}` : "/dashboard";
+    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
 
     // Implicit flow, like the login form: the shared client is locked to PKCE,
     // whose links only open in the browser that asked for them. Implicit links
@@ -90,7 +90,7 @@ export function RegisterForm({
           {a.linkSent}
         </div>
         <p className="mt-3 text-center text-sm text-mauve-500">
-          <Link href={`/${lang}/login`} className="font-semibold text-brand-600 hover:underline">
+          <Link href={"/login"} className="font-semibold text-brand-600 hover:underline">
             {a.haveAccount}
           </Link>
         </p>
@@ -182,7 +182,7 @@ export function RegisterForm({
       </button>
 
       <p className="pt-1 text-center text-sm text-mauve-500">
-        <Link href={`/${lang}/login`} className="font-semibold text-brand-600 hover:underline">
+        <Link href={"/login"} className="font-semibold text-brand-600 hover:underline">
           {a.haveAccount}
         </Link>
       </p>

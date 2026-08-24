@@ -64,7 +64,7 @@ export function GuestBookingForm({
         <div className="alert-success">{r.success}</div>
         <p className="mt-3 text-sm text-mauve-500">{r.successNote}</p>
         <button
-          onClick={() => router.replace(`/${lang}/program`)}
+          onClick={() => router.replace("/program")}
           className="btn-primary mt-4 w-full"
         >
           ← {dict.nav.schedule}

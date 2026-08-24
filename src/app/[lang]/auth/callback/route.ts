@@ -2,7 +2,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType, User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { isLocale } from "@/i18n/config";
 
 // Completes a magic-link sign-in, then redirects to ?next (the booking the
 // user came for, or their dashboard). Three arrival shapes:
@@ -17,10 +16,10 @@ import { isLocale } from "@/i18n/config";
 //    "link invalid or expired".
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ lang: string }> },
+  // The [lang] segment is still in the file path, but every URL this route
+  // builds is locale-free — the middleware resolves the language from the
+  // cookie, so there is nothing here to parameterise.
 ) {
-  const { lang } = await params;
-  const locale = isLocale(lang) ? lang : "ro";
   const { searchParams, origin } = new URL(req.url);
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
@@ -31,7 +30,7 @@ export async function GET(
   const next =
     rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")
       ? rawNext
-      : `/${locale}/dashboard`;
+      : "/dashboard";
 
   // First-ever sign-in ⇒ a freshly created account. Flag it so the client
   // can fire the Meta "CompleteRegistration" conversion once on arrival.
@@ -63,10 +62,10 @@ export async function GET(
     // the session tokens in the URL #fragment, which never reaches the server.
     // Browsers carry the fragment across this redirect, and the confirm page's
     // Supabase client picks it up (or shows the login error if there's none).
-    const url = new URL(`${origin}/${locale}/auth/confirm`);
+    const url = new URL(`${origin}/auth/confirm`);
     url.searchParams.set("next", next);
     return NextResponse.redirect(url);
   }
 
-  return NextResponse.redirect(`${origin}/${locale}/login?error=link`);
+  return NextResponse.redirect(`${origin}/login?error=link`);
 }

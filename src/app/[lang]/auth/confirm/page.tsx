@@ -24,7 +24,7 @@ export default async function AuthConfirmPage({
   const next =
     rawNext && rawNext.startsWith("/") && !rawNext.startsWith("//")
       ? rawNext
-      : `/${locale}/dashboard`;
+      : "/dashboard";
 
   return <AuthConfirm locale={locale} next={next} loadingLabel={dict.common.loading} />;
 }

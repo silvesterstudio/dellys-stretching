@@ -31,7 +31,7 @@ export function LoginForm({
   const adminMode = isStaffUsername(email);
 
   function nextPath() {
-    return nextSession ? `/${lang}/book/${nextSession}` : `/${lang}/dashboard`;
+    return nextSession ? `/book/${nextSession}` : "/dashboard";
   }
 
   async function submit(e: React.FormEvent) {
@@ -54,7 +54,7 @@ export function LoginForm({
       // shared root layout, which a client-side navigation would NOT re-render —
       // it'd keep showing the logged-out public nav. A full load re-runs the
       // layout with the freshly-set admin session cookie.
-      window.location.assign(`/${lang}/admin`);
+      window.location.assign("/admin");
       return;
     }
 
@@ -66,7 +66,7 @@ export function LoginForm({
     setError(null);
     setBusy(true);
 
-    const redirectTo = `${window.location.origin}/${lang}/auth/callback?next=${encodeURIComponent(
+    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(
       nextPath(),
     )}`;
     // Send the link from an implicit-flow client — the shared @supabase/ssr
@@ -191,7 +191,7 @@ export function LoginForm({
       {!adminMode && (
         <p className="pt-1 text-center text-sm text-mauve-500">
           <Link
-            href={`/${lang}/register`}
+            href={"/register"}
             className="font-semibold text-brand-600 hover:underline"
           >
             {dict.auth.noAccount}

@@ -65,7 +65,7 @@ export function WeeklyScheduleManager({
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const base = `/${lang}/admin/templates`;
+  const base = "/admin/templates";
 
   const byDay = new Map<string, Session[]>();
   for (const s of sessions) {
@@ -240,7 +240,7 @@ function DayEditor({
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <Link
-                href={`/${lang}/admin/sessions/${s.id}`}
+                href={`/admin/sessions/${s.id}`}
                 className="btn-secondary py-1.5 text-sm"
               >
                 {dict.admin.checkIn}

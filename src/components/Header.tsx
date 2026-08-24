@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { stripLocale } from "@/i18n/config";
 import { usePathname } from "next/navigation";
 import type { Locale } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
@@ -20,17 +21,18 @@ export function Header({
   dict: Dictionary;
   profile: Profile | null;
 }) {
-  const base = `/${lang}`;
-  const pathname = usePathname();
+  // Links carry no locale: the middleware maps a bare path onto [lang].
+  const base = "";
+  const pathname = stripLocale(usePathname());
 
   const isAdmin = profile?.role === "admin";
   const isStaff = isAdmin || profile?.role === "reception";
-  const onAdminPage = pathname.includes(`${base}/admin`) || pathname.includes("/admin");
+  const onAdminPage = pathname.startsWith("/admin");
   // The root IS the Program page, so the "jump to program" shortcut is pointless
   // there — show the RO/RU toggle in its place instead.
-  const onProgramPage = pathname === base || pathname === `${base}/`;
+  const onProgramPage = pathname === "/";
   // The site root is the Program (booking) page — the book CTA lands there.
-  const ctaHref = base;
+  const ctaHref = "/";
   const ctaLabel = dict.home.nav.book;
 
   // On an admin page the island bar itself becomes the admin nav (no separate
@@ -56,7 +58,7 @@ export function Header({
   // "Administrare" link back into the panel; regular members get "Dashboard".
   // Root = Program (booking); the marketing sections live on /landing.
   const publicLinks = [
-    { href: base, label: dict.nav.schedule },
+    { href: "/", label: dict.nav.schedule },
     { href: `${base}/landing#preturi`, label: dict.nav.prices },
     { href: `${base}/landing#discipline`, label: dict.nav.disciplines },
   ];
@@ -211,7 +213,7 @@ export function Header({
               </div>
             ) : (
               <a
-                href={base}
+                href="/"
                 aria-label={dict.nav.schedule}
                 className="flex h-10 w-10 items-center justify-center rounded-full border border-mauve-200 bg-white/80 text-mauve-700 md:hidden"
               >

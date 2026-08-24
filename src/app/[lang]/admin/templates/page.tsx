@@ -29,7 +29,7 @@ export default async function TemplatesPage({
   try {
     profile = await requireAdmin();
   } catch {
-    redirect(`/${locale}/admin/today`);
+    redirect("/admin/today");
   }
   const supabase = await createClient();
   // The weekly editor writes the recurring template, so it must be unambiguous

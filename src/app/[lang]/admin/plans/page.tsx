@@ -24,7 +24,7 @@ export default async function AdminPlansPage({
   try {
     profile = await requireAdmin();
   } catch {
-    redirect(`/${locale}/admin/today`);
+    redirect("/admin/today");
   }
   const supabase = await createClient();
   // Each studio sells its own price list.

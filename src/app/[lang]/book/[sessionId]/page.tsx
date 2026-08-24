@@ -36,7 +36,7 @@ export default async function BookPage({
   }
   // redirect() throws internally, so it must stay outside the try/catch above.
   if (!userId || !supabase) {
-    redirect(`/${locale}/login?session=${sessionId}`);
+    redirect(`/login?session=${sessionId}`);
   }
 
   const session = await fetchSessionById(sessionId);
@@ -50,7 +50,7 @@ export default async function BookPage({
     return (
       <div className="mx-auto max-w-md px-4 py-10 text-center">
         <p className="text-mauve-600">{dict.booking.pastSession}</p>
-        <Link href={`/${locale}/program`} className="btn-primary mt-4">
+        <Link href={"/program"} className="btn-primary mt-4">
           {dict.common.back}
         </Link>
       </div>

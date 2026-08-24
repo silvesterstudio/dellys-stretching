@@ -90,7 +90,7 @@ export default async function MembershipsPage({
         dict={dict}
         plans={plans}
         loggedIn={!!userId}
-        loginHref={`/${locale}/login`}
+        loginHref={"/login"}
         initialPending={pendingPlanIds}
         studioKey={studioKey}
       />

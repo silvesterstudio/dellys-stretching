@@ -36,7 +36,7 @@ export default async function RegisterPage({
     }
   }
   if (signedIn) {
-    redirect(session ? `/${locale}/book/${session}` : `/${locale}/dashboard`);
+    redirect(session ? `/book/${session}` : "/dashboard");
   }
 
   const locations = (await fetchLocations()).map((l) => ({ key: l.key, name: l.name }));

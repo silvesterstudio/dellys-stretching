@@ -37,7 +37,7 @@ export default async function LoginPage({
   }
   // redirect() throws internally — keep it outside the try/catch above.
   if (signedIn) {
-    redirect(session ? `/${locale}/book/${session}` : `/${locale}/dashboard`);
+    redirect(session ? `/book/${session}` : "/dashboard");
   }
 
   return (

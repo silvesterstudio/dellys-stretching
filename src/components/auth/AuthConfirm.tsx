@@ -24,7 +24,7 @@ export function AuthConfirm({
   useEffect(() => {
     let cancelled = false;
     const fail = () => {
-      if (!cancelled) window.location.replace(`/${locale}/login?error=link`);
+      if (!cancelled) window.location.replace("/login?error=link");
     };
     const go = (user: User | null | undefined) => {
       if (cancelled) return;

@@ -33,7 +33,7 @@ export default async function RosterPage({
   try {
     actor = await requireStaff();
   } catch {
-    redirect(`/${locale}/staff`);
+    redirect("/staff");
   }
   const supabase = createAdminClient();
 
@@ -128,7 +128,7 @@ export default async function RosterPage({
   return (
     <div className="space-y-5">
       <Link
-        href={`/${locale}/admin/templates`}
+        href={"/admin/templates"}
         className="text-sm text-mauve-500 hover:text-mauve-800"
       >
         ← {dict.admin.templates}

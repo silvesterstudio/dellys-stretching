@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { Locale } from "@/lib/constants";
 import { SITE_URL } from "@/lib/constants";
-import { isLocale } from "@/i18n/config";
+import { isLocale, localePath, languageAlternates } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { fetchLocations } from "@/lib/locations-server";
 import { localizedAddress } from "@/lib/locations";
@@ -23,7 +23,7 @@ export async function generateMetadata({
   const { lang } = await params;
   const locale = resolveLocale(lang);
   const dict = getDictionary(locale);
-  const path = `/${locale}`;
+  const path = "/";
   return {
     title: dict.home.meta.title,
     description: dict.home.meta.description,
@@ -31,7 +31,7 @@ export async function generateMetadata({
       locale === "ru"
         ? ["расписание", "запись", "фитнес Кишинёв", "пилатес", "стретчинг", "Fit Ball", "Dellys"]
         : ["program", "rezervare", "fitness Chișinău", "pilates", "stretching", "Fit Ball", "Dellys"],
-    alternates: { canonical: path, languages: { ro: "/ro", ru: "/ru", "x-default": "/ro" } },
+    alternates: { canonical: localePath(locale, path), languages: languageAlternates(path) },
     openGraph: {
       type: "website",
       url: `${SITE_URL}${path}`,
@@ -116,7 +116,7 @@ export default async function ChooseLocationPage({
           {locations.map((l) => (
             <Link
               key={l.id}
-              href={`/${locale}/program?loc=${encodeURIComponent(l.key)}`}
+              href={`/program?loc=${encodeURIComponent(l.key)}`}
               className="dc-lift loc-card"
               style={{
                 display: "flex",

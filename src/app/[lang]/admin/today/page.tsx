@@ -54,7 +54,7 @@ export default async function TodayPage({
   try {
     profile = await requireStaff();
   } catch {
-    redirect(`/${locale}/staff`);
+    redirect("/staff");
   }
   const t = dict.admin.today;
   // Front desk sees only its own studio's classes.
@@ -203,7 +203,7 @@ export default async function TodayPage({
             return (
               <Link
                 key={r.id}
-                href={`/${locale}/admin/sessions/${r.id}`}
+                href={`/admin/sessions/${r.id}`}
                 className={`card card-hover flex items-center justify-between gap-4 p-4 ${
                   r.status === "cancelled" ? "opacity-50" : ""
                 }`}

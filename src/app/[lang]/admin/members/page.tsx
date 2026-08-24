@@ -29,7 +29,7 @@ export default async function MembersPage({
   try {
     profile = await requireAdmin();
   } catch {
-    redirect(`/${locale}/staff`);
+    redirect("/staff");
   }
   // Members belong to one studio, so a gym's manager sees only their own roster.
   const scope = await getAdminScope(profile);

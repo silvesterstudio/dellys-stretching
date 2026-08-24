@@ -1,10 +1,8 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LOCALES, type Locale } from "@/lib/constants";
-
-// Built from LOCALES so adding a locale doesn't require touching this regex.
-const LOCALE_PREFIX = new RegExp(`^/(${LOCALES.join("|")})(?=/|$)`);
+import { stripLocale } from "@/i18n/config";
 
 export function LanguageSwitcher({
   current,
@@ -15,17 +13,21 @@ export function LanguageSwitcher({
   variant?: "light" | "dark";
 }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const router = useRouter();
 
+  // The language is a preference, not a destination. Switching it sets a cookie
+  // and re-renders the page you are already on — the URL does not change, so
+  // nothing is lost: not your place on the page, not a query string, not a
+  // half-filled form's route.
+  //
+  // The one exception is /ru/... — a real path kept crawlable for search. From
+  // there we do navigate, to the same page without the prefix, so the cookie
+  // becomes the single source of truth from then on.
   function switchTo(next: Locale) {
     if (next === current) return;
     document.cookie = `NEXT_LOCALE=${next}; path=/; max-age=31536000`;
-    // Replace the leading /<locale> segment, preserving the rest AND the query
-    // string (e.g. /ro/login?session=… must keep ?session when switching).
-    const rest = pathname.replace(LOCALE_PREFIX, "");
-    const qs = searchParams.toString();
-    router.push(`/${next}${rest || ""}${qs ? `?${qs}` : ""}`);
+    const bare = stripLocale(pathname);
+    if (bare !== pathname) router.push(bare);
     router.refresh();
   }
 

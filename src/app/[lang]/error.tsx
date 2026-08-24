@@ -40,7 +40,7 @@ export default function Error({ reset }: { error: Error & { digest?: string }; r
           <button onClick={reset} className="btn-primary">
             {t.retry}
           </button>
-          <a href={`/${lang}`} className="btn-secondary">
+          <a href={"/"} className="btn-secondary">
             {t.home}
           </a>
         </div>

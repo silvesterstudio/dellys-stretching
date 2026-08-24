@@ -6,7 +6,8 @@ import { LogoMark } from "./LogoMark";
 
 export function Footer({ lang, dict }: { lang: Locale; dict: Dictionary }) {
   const f = dict.home.footer;
-  const base = `/${lang}`;
+  // Links carry no locale — see stripLocale().
+  const base = "";
   const label: React.CSSProperties = {
     fontSize: 12,
     fontWeight: 700,

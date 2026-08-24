@@ -131,7 +131,7 @@ export function BookingForm({
         <div className="alert-success">{dict.booking.success}</div>
         <div className="mt-4 flex flex-col gap-2">
           <button
-            onClick={() => router.replace(`/${lang}/dashboard`)}
+            onClick={() => router.replace("/dashboard")}
             className="btn-primary w-full"
           >
             {dict.nav.dashboard}
@@ -156,14 +156,14 @@ export function BookingForm({
         <div className="mt-4 flex flex-col gap-2">
           {blocked.alreadyBooked && (
             <button
-              onClick={() => router.replace(`/${lang}/dashboard`)}
+              onClick={() => router.replace("/dashboard")}
               className="btn-primary w-full"
             >
               {dict.dashboard.viewAccount}
             </button>
           )}
           <button
-            onClick={() => router.replace(`/${lang}/program`)}
+            onClick={() => router.replace("/program")}
             className={blocked.alreadyBooked ? "btn-secondary w-full" : "btn-primary w-full"}
           >
             ← {dict.nav.schedule}

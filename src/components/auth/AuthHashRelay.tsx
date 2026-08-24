@@ -33,7 +33,7 @@ export function AuthHashRelay({ locale }: { locale: Locale }) {
       (p.has("error") && p.has("error_description"));
     if (!isAuth) return;
 
-    window.location.replace(`/${locale}/auth/confirm${hash}`);
+    window.location.replace(`/auth/confirm${hash}`);
   }, [locale]);
 
   return null;

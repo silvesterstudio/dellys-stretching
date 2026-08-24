@@ -13,5 +13,5 @@ export default async function StaffPage({
 }) {
   const { lang } = await params;
   const locale = (isLocale(lang) ? lang : "ro") as Locale;
-  redirect(`/${locale}/login`);
+  redirect("/login");
 }

@@ -17,5 +17,5 @@ export default async function AdminIndexPage({
   const locale = (isLocale(lang) ? lang : "ro") as Locale;
   const profile = await getCurrentProfile();
   const canDashboard = profile?.role === "admin" && profile.dashboard_access !== false;
-  redirect(`/${locale}/admin/${canDashboard ? "dashboard" : "today"}`);
+  redirect(`/admin/${canDashboard ? "dashboard" : "today"}`);
 }

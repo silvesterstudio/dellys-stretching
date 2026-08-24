@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import type { Locale } from "@/lib/constants";
 import { SITE_URL } from "@/lib/constants";
-import { isLocale } from "@/i18n/config";
+import { isLocale, localePath, languageAlternates } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { getWeekRange } from "@/lib/week";
 import { fetchSessions } from "@/lib/queries";
@@ -27,7 +27,7 @@ export async function generateMetadata({
   const { lang } = await params;
   const locale = resolveLocale(lang);
   const dict = getDictionary(locale);
-  const path = `/${locale}/landing`;
+  const path = "/landing";
   return {
     title: dict.home.meta.title,
     description: dict.home.meta.description,
@@ -36,8 +36,9 @@ export async function generateMetadata({
         ? ["фитнес Кишинёв", "пилатес", "стретчинг", "гимнастика", "Fit Ball", "детская гимнастика", "Dellys"]
         : ["fitness Chișinău", "pilates", "stretching", "gimnastică", "Fit Ball", "gimnastică copii", "Dellys"],
     alternates: {
-      canonical: path,
-      languages: { ro: "/ro/landing", ru: "/ru/landing", "x-default": "/ro/landing" },
+      // Russian is its own indexable page; Romanian lives at the bare path.
+      canonical: localePath(locale, path),
+      languages: languageAlternates(path),
     },
     openGraph: {
       type: "website",
@@ -160,7 +161,7 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
   const locale = resolveLocale(lang);
   const dict = getDictionary(locale);
   const h = dict.home;
-  const base = `/${locale}`;
+  const base = "/";
 
   // Same two-week Mon–Sun window as the root program page.
   const range = getWeekRange(0);

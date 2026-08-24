@@ -221,7 +221,7 @@ export function ScheduleGrid({
           </span>
           {locations.length > 1 && (
             <Link
-              href={`/${lang}`}
+              href={"/"}
               style={{
                 fontSize: 13.5,
                 fontWeight: 700,
@@ -550,7 +550,7 @@ function Slot({
         </div>
       ) : loggedIn ? (
         <Link
-          href={`/${lang}/book/${s.id}`}
+          href={`/book/${s.id}`}
           style={{ ...btnBase, background: DC.accent, color: "#fff" }}
         >
           {dict.schedule.bookCta}

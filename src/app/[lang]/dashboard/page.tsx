@@ -58,7 +58,7 @@ export default async function DashboardPage({
     }
   }
   // redirect() throws internally — keep it outside the try/catch above.
-  if (!userId || !supabase) redirect(`/${locale}/login`);
+  if (!userId || !supabase) redirect("/login");
 
   // Claim any offline/imported memberships that match this account (by phone or
   // email). Idempotent and best-effort — a failure must never block the page.
@@ -145,7 +145,7 @@ export default async function DashboardPage({
         {memberships.length === 0 ? (
           <div className="card p-5 text-sm text-mauve-500">
             {dict.dashboard.noMemberships}{" "}
-            <Link href={`/${locale}/memberships`} className="text-brand-600 underline">
+            <Link href={"/memberships"} className="text-brand-600 underline">
               {dict.nav.memberships}
             </Link>
           </div>
@@ -227,7 +227,7 @@ export default async function DashboardPage({
         {upcoming.length === 0 ? (
           <div className="card p-5 text-sm text-mauve-500">
             {dict.dashboard.noBookings}{" "}
-            <Link href={`/${locale}/program`} className="text-brand-600 underline">
+            <Link href={"/program"} className="text-brand-600 underline">
               {dict.nav.schedule}
             </Link>
           </div>

@@ -39,7 +39,7 @@ export default async function WelcomePage({
   }
   // redirect() throws internally — keep it outside the try/catch above.
   if (signedIn) {
-    redirect(session ? `/${locale}/book/${session}` : `/${locale}/dashboard`);
+    redirect(session ? `/book/${session}` : "/dashboard");
   }
 
   // Carry a pending booking through the detour, so someone who scanned a class
@@ -70,13 +70,13 @@ export default async function WelcomePage({
 
           <div className="mt-7 flex flex-col gap-3">
             <Link
-              href={`/${locale}/login${q}`}
+              href={`/login${q}`}
               className="btn-primary w-full border border-transparent px-6 py-3.5 text-base"
             >
               {dict.auth.welcomeLogin}
             </Link>
             <Link
-              href={`/${locale}/register${q}`}
+              href={`/register${q}`}
               className="btn-secondary w-full px-6 py-3.5 text-base"
             >
               {dict.auth.welcomeSignUp}

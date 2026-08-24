@@ -40,12 +40,12 @@ export default async function AdminDashboardPage({
   try {
     me = await requireAdmin();
   } catch {
-    redirect(`/${locale}/staff`);
+    redirect("/staff");
   }
   // Restricted admins (dashboard_access=false, e.g. the dellys_admin operator
   // account) can manage everything except the financial dashboard.
   if (!me.dashboard_access) {
-    redirect(`/${locale}/admin/today`);
+    redirect("/admin/today");
   }
 
   // Every figure below is scoped to one studio, so a gym's manager sees their

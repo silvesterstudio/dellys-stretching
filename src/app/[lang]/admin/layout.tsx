@@ -23,7 +23,7 @@ export default async function AdminLayout({
   try {
     await requireStaff();
   } catch {
-    redirect(`/${locale}/staff`);
+    redirect("/staff");
   }
 
   return (

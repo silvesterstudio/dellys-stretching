@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { Locale } from "@/lib/constants";
 import { SITE_URL } from "@/lib/constants";
-import { isLocale } from "@/i18n/config";
+import { isLocale, localePath, languageAlternates } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { getWeekRange } from "@/lib/week";
 import { fetchSessions } from "@/lib/queries";
@@ -26,7 +26,7 @@ export async function generateMetadata({
   const { lang } = await params;
   const locale = resolveLocale(lang);
   const dict = getDictionary(locale);
-  const path = `/${locale}/program`;
+  const path = "/program";
   return {
     title: dict.home.meta.title,
     description: dict.home.meta.description,
@@ -35,8 +35,8 @@ export async function generateMetadata({
         ? ["расписание", "запись", "фитнес Кишинёв", "пилатес", "стретчинг", "Fit Ball", "Dellys"]
         : ["program", "rezervare", "fitness Chișinău", "pilates", "stretching", "Fit Ball", "Dellys"],
     alternates: {
-      canonical: path,
-      languages: { ro: "/ro/program", ru: "/ru/program", "x-default": "/ro/program" },
+      canonical: localePath(locale, path),
+      languages: languageAlternates(path),
     },
     openGraph: {
       type: "website",
