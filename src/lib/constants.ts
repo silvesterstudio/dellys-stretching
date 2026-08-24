@@ -8,9 +8,20 @@ export const TIMEZONE = "Europe/Chisinau";
 // Public origin of the site, used for SEO absolutes (canonical URLs, Open Graph,
 // sitemap, JSON-LD). Set NEXT_PUBLIC_SITE_URL in production; the fallback keeps
 // local/dev builds working. No trailing slash.
-export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://dellys.md"
-).replace(/\/$/, "");
+//
+// A *.vercel.app value is ignored on purpose. Every deployment gets one, and if
+// it leaks in here the whole site tells Google its canonical home is the
+// deploy URL rather than dellys.md — which is how a site disappears from its
+// own search results. The custom domain is the only correct answer in
+// production, so hard-code it as the fallback for that case too.
+const CANONICAL_ORIGIN = "https://dellys.md";
+const configuredOrigin = (process.env.NEXT_PUBLIC_SITE_URL ?? "").replace(/\/$/, "");
+// Matched on the string, not via new URL(): this runs at module load, and a
+// malformed env var must not crash every page on the site.
+export const SITE_URL =
+  configuredOrigin && !/^https?:\/\/[^/]*\.vercel\.app$/i.test(configuredOrigin)
+    ? configuredOrigin
+    : CANONICAL_ORIGIN;
 
 export const LOCALES = ["ro", "ru"] as const;
 export type Locale = (typeof LOCALES)[number];
