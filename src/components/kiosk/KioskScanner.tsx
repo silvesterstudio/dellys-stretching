@@ -435,7 +435,7 @@ export function KioskScanner({
         {/* ── Sign up ─────────────────────────────────────────────────── */}
         <aside
           onClick={handleTap}
-          className="relative flex flex-col items-center justify-center gap-[clamp(0.5rem,1.6vh,1.25rem)] border-b border-white/10 px-8 py-[clamp(1rem,3vh,2.5rem)] text-center lg:border-b-0 lg:border-r lg:px-10"
+          className="relative flex flex-col items-center justify-center gap-[clamp(0.4rem,1.3vh,1rem)] border-b border-white/10 px-6 py-[clamp(0.75rem,2vh,1.75rem)] text-center lg:border-b-0 lg:border-r lg:px-10"
         >
           <p className="text-[clamp(0.6rem,1.4vh,0.8rem)] font-bold uppercase tracking-[0.22em] text-brand-300">
             {t.signupEyebrow}
@@ -454,7 +454,7 @@ export function KioskScanner({
             <img
               src={signupQr}
               alt={t.signupTitle}
-              className="h-[clamp(110px,22vmin,240px)] w-[clamp(110px,22vmin,240px)]"
+              className="h-[clamp(120px,26vmin,240px)] w-[clamp(120px,26vmin,240px)] lg:h-[clamp(190px,38vh,360px)] lg:w-[clamp(190px,38vh,360px)]"
             />
           </div>
 
@@ -464,7 +464,7 @@ export function KioskScanner({
         </aside>
 
         {/* ── Check in ────────────────────────────────────────────────── */}
-        <section className="relative flex min-h-0 flex-col items-center justify-center gap-[clamp(0.6rem,2vh,1.5rem)] px-6 py-[clamp(1rem,3vh,2rem)]">
+        <section className="relative flex min-h-0 flex-col items-center justify-center gap-[clamp(0.45rem,1.5vh,1.1rem)] px-5 py-[clamp(0.75rem,2vh,1.5rem)]">
           {/* The viewfinder is square because the scan region is: qr-scanner
               decodes the middle 55% of the frame, and object-cover keeps that
               centre centred, so the brackets frame what is actually read.
@@ -476,7 +476,7 @@ export function KioskScanner({
               off rather than scrolling. Clamping max-height instead kept the
               width and gave a rectangle — brackets that no longer matched the
               scan region. */}
-          <div className="relative aspect-square w-[min(80%,32vh)] overflow-hidden rounded-[2rem] bg-black/60 ring-1 ring-white/10 lg:w-[min(88%,52vh)]">
+          <div className="relative aspect-square w-[min(84%,34vh)] overflow-hidden rounded-[2rem] bg-black/60 ring-1 ring-white/10 lg:w-[min(94%,64vh)]">
             <video
               ref={videoRef}
               className="h-full w-full scale-105 object-cover"
