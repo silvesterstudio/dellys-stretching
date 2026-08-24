@@ -27,7 +27,8 @@ export type KioskScanCode =
   | "no_class" // nothing running now they could join
   | "class_full"
   | "wrong_audience" // holds a usable bundle, but for the other audience
-  | "no_membership"; // nothing usable at this studio at all
+  | "no_membership" // nothing usable at this studio at all
+  | "options"; // not a refusal: here is what you could check into, pick one
 
 // Failures produced by the API route itself, before or instead of kiosk_scan:
 // a tablet whose token isn't recognised, throttling, or a dead connection.
@@ -39,6 +40,24 @@ export type KioskTransportCode =
   | "connection";
 
 export type KioskResultCode = KioskScanCode | KioskTransportCode;
+
+// One thing the member could check into: a class, and for a kids class the
+// particular child. A parent with two children booked into the same class gets
+// two of these, which is what makes "which one?" answerable on screen instead of
+// by scanning twice.
+export interface KioskOption {
+  sessionId: string;
+  childId: string | null;
+  // Who this seat is for — the child for a kids class, else the member.
+  personName: string;
+  className_ro: string;
+  className_ru: string;
+  color: string | null;
+  startsAt: string;
+  // They already hold this seat, as opposed to walking in on it.
+  reserved: boolean;
+  payable: boolean;
+}
 
 export interface KioskScanResult {
   ok: boolean;
@@ -60,6 +79,8 @@ export interface KioskScanResult {
   walkIn?: boolean;
   freeTrial?: boolean;
   sessionsRemaining?: number | null;
+  // Present only on code === "options": what this QR could check into now.
+  options?: KioskOption[];
 }
 
 export interface Database {
@@ -587,6 +608,18 @@ export interface Database {
       // API route uses; kiosk_scan below is the core it delegates to.
       kiosk_scan_by_token: {
         Args: { p_qr: string; p_device_token: string };
+        Returns: KioskScanResult;
+      };
+      // Step one of the door: who is this, and what could they check into now.
+      // Writes nothing, so a member who walks away mid-list leaves no trace.
+      kiosk_options: {
+        Args: { p_qr: string; p_device_token: string };
+        Returns: KioskScanResult;
+      };
+      // Step two: do the one they tapped. Re-applies every guard — the list was
+      // a suggestion made seconds ago by a tablet nobody trusts.
+      kiosk_check_in_choice: {
+        Args: { p_qr: string; p_device_token: string; p_session: string; p_child: string | null };
         Returns: KioskScanResult;
       };
       // The decision itself, taking an already-resolved location. Kept callable

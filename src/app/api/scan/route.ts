@@ -36,7 +36,13 @@ function rateLimited(key: string): boolean {
   return entry.n > LIMIT;
 }
 
-type Body = { qr_uuid?: unknown; device_token?: unknown };
+type Body = {
+  qr_uuid?: unknown;
+  device_token?: unknown;
+  // Present on the second call: the option the member tapped.
+  session_id?: unknown;
+  child_id?: unknown;
+};
 
 function fail(code: string, status: number) {
   return NextResponse.json({ ok: false, code }, { status });
@@ -66,19 +72,30 @@ export async function POST(request: NextRequest) {
     return fail("server_error", 500);
   }
 
-  // One call does the lot: resolve the tablet, stamp its heartbeat, decide.
-  // It used to be three sequential round trips to the database per scan, with a
-  // person standing at the door for each one.
+  // Two shapes, one endpoint. Without a session_id this asks WHAT the member
+  // could check into and writes nothing; with one it does that specific thing.
+  // Splitting it this way is what lets the tablet show the classes and let the
+  // member choose, rather than the door guessing and being wrong in silence.
   //
-  // An unknown or deactivated tablet is settled inside, before the member is so
-  // much as looked up — that token is the only thing between a leaked kiosk URL
-  // and free check-ins.
-  const { data, error } = await admin.rpc("kiosk_scan_by_token", {
-    p_qr: qr,
-    p_device_token: deviceToken,
-  });
+  // Either way the tablet is resolved inside the RPC — that device token is the
+  // only thing between a leaked kiosk URL and free check-ins, and it is settled
+  // before the member is so much as looked up.
+  const sessionId = typeof body.session_id === "string" ? body.session_id.trim() : "";
+  const childId = typeof body.child_id === "string" ? body.child_id.trim() : "";
+
+  const { data, error } = sessionId
+    ? await admin.rpc("kiosk_check_in_choice", {
+        p_qr: qr,
+        p_device_token: deviceToken,
+        p_session: sessionId,
+        p_child: childId || null,
+      })
+    : await admin.rpc("kiosk_options", {
+        p_qr: qr,
+        p_device_token: deviceToken,
+      });
   if (error) {
-    console.error("kiosk_scan_by_token:", error.message);
+    console.error(sessionId ? "kiosk_check_in_choice:" : "kiosk_options:", error.message);
     return fail("server_error", 500);
   }
 

@@ -813,6 +813,9 @@
     "signupTitle": "Ещё нет аккаунта?",
     "signupSub": "Отсканируйте QR-код и создайте аккаунт за минуту.",
     "scanNextOne": "Остался ещё один ребёнок",
-    "scanNextMany": "Осталось ещё {n} детей"
+    "scanNextMany": "Осталось ещё {n} детей",
+    "chooseTitle": "Выберите занятие",
+    "chooseReserved": "Ваша запись",
+    "chooseCancel": "Отмена"
   }
 }

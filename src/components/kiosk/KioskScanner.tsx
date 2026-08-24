@@ -4,9 +4,19 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Locale } from "@/lib/constants";
 import { TIMEZONE } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
-import type { KioskScanResult } from "@/lib/types";
+import type { KioskOption, KioskScanResult } from "@/lib/types";
 
 type KioskDict = Dictionary["kiosk"];
+
+// Wall-clock time at the studio, not on whatever timezone the tablet thinks it
+// is in — a tablet reset to UTC would otherwise offer classes an hour out.
+function hhmm(iso: string, lang: Locale): string {
+  return new Intl.DateTimeFormat(lang === "ru" ? "ru-RU" : "ro-RO", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: TIMEZONE,
+  }).format(new Date(iso));
+}
 type ErrKey = keyof KioskDict["err"];
 
 // Narrow any code coming off the wire to one we actually have copy for, so an
@@ -93,8 +103,20 @@ class Chime {
 
 type View =
   | { kind: "waiting" }
+  // The member has been recognised and is choosing which class to enter.
+  // Nothing is written until they tap, so walking away costs nothing.
+  // uiLang is frozen at the moment of scanning: standby alternates RO/RU every
+  // couple of seconds, and a list that changes language while someone is reading
+  // it is worse than one that picks a side. They were just looking at one of the
+  // two — carry that one through.
+  | { kind: "choosing"; qr: string; name: string; uiLang: Locale; options: KioskOption[] }
   | { kind: "result"; result: KioskScanResult }
   | { kind: "error"; code: ErrKey };
+
+// How long the list waits for a tap before giving the door back. Long enough to
+// read half a dozen classes, short enough that someone who wanders off does not
+// leave the next person staring at a stranger's name.
+const HOLD_CHOOSE_MS = 30000;
 
 export function KioskScanner({
   lang,
@@ -123,6 +145,7 @@ export function KioskScanner({
   const [activeCamera, setActiveCamera] = useState("");
   const [countdown, setCountdown] = useState(0);
   const [hintIdx, setHintIdx] = useState(0);
+  const hintRef = useRef(0);
   const [adminOpen, setAdminOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -192,6 +215,12 @@ export function KioskScanner({
     return () => clearInterval(id);
   }, []);
 
+  // submit() is memoised and must not be rebuilt on every alternation tick —
+  // rebuilding it would tear down and re-create the scanner twice a second.
+  useEffect(() => {
+    hintRef.current = hintIdx;
+  }, [hintIdx]);
+
   useEffect(() => {
     const onChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", onChange);
@@ -231,6 +260,30 @@ export function KioskScanner({
     }, hold);
   }, []);
 
+  // Show the list and start its own countdown. Deliberately separate from
+  // finish(): no chime cadence, and the timeout returns to the camera rather
+  // than to a result nobody chose.
+  const startChoosing = useCallback((next: View) => {
+    setView(next);
+    if (holdRef.current) clearTimeout(holdRef.current);
+    if (tickRef.current) clearInterval(tickRef.current);
+
+    let left = Math.round(HOLD_CHOOSE_MS / 1000);
+    setCountdown(left);
+    tickRef.current = setInterval(() => {
+      left -= 1;
+      setCountdown(left);
+      if (left <= 0 && tickRef.current) clearInterval(tickRef.current);
+    }, 1000);
+
+    holdRef.current = setTimeout(() => {
+      if (tickRef.current) clearInterval(tickRef.current);
+      setView({ kind: "waiting" });
+      setCountdown(0);
+      busyRef.current = false;
+    }, HOLD_CHOOSE_MS);
+  }, []);
+
   const submit = useCallback(
     async (qr: string, deviceToken: string) => {
       try {
@@ -238,6 +291,47 @@ export function KioskScanner({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ qr_uuid: qr, device_token: deviceToken }),
+        });
+        const data = (await res.json()) as KioskScanResult & { code?: string };
+        // Recognised, with something to choose between: hand the decision over.
+        if (res.ok && data.ok && data.code === "options" && data.options?.length) {
+          chimeRef.current?.success();
+          startChoosing({
+            kind: "choosing",
+            qr,
+            name: data.clientName ?? "",
+            uiLang: hintRef.current === 0 ? "ro" : "ru",
+            options: data.options,
+          });
+          return;
+        }
+        if (res.ok && data.ok) {
+          finish({ kind: "result", result: data }, true);
+        } else {
+          const code = errKey(data.code ?? "server_error", dict);
+          finish({ kind: "result", result: { ...data, ok: false, code } }, false);
+        }
+      } catch {
+        finish({ kind: "error", code: "connection" }, false);
+      }
+    },
+    [dict, finish, startChoosing],
+  );
+
+  // The member tapped a class. Same endpoint, now naming what they picked.
+  const pick = useCallback(
+    async (qr: string, opt: KioskOption) => {
+      if (!token) return;
+      try {
+        const res = await fetch("/api/scan", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            qr_uuid: qr,
+            device_token: token,
+            session_id: opt.sessionId,
+            child_id: opt.childId,
+          }),
         });
         const data = (await res.json()) as KioskScanResult & { code?: string };
         if (res.ok && data.ok) {
@@ -250,7 +344,7 @@ export function KioskScanner({
         finish({ kind: "error", code: "connection" }, false);
       }
     },
-    [dict, finish],
+    [dict, finish, token],
   );
 
   // --- scanner ------------------------------------------------------------
@@ -520,6 +614,67 @@ export function KioskScanner({
           </p>
         </section>
       </div>
+
+      {/* Choose a class ------------------------------------------------- */}
+      {view.kind === "choosing" && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-mauve-900 px-6 py-8">
+          <p className="text-[clamp(0.65rem,1.5vh,0.85rem)] font-bold uppercase tracking-[0.22em] text-brand-300">
+            {(view.uiLang === "ru" ? ru : ro).chooseTitle}
+          </p>
+          <h1 className="mt-2 font-display text-[clamp(1.6rem,4.5vh,3rem)] font-bold leading-none tracking-tight text-white">
+            {view.name}
+          </h1>
+
+          {/* Scrolls on its own so a long timetable never pushes the cancel
+              button off a screen the body has clipped. */}
+          <div className="mt-[clamp(0.75rem,2.5vh,1.75rem)] w-full max-w-3xl flex-1 overflow-y-auto">
+            <div className="flex flex-col gap-[clamp(0.4rem,1.2vh,0.75rem)]">
+              {view.options.map((o) => (
+                <button
+                  key={`${o.sessionId}-${o.childId ?? "self"}`}
+                  onClick={() => void pick(view.qr, o)}
+                  className="flex w-full items-center gap-4 rounded-2xl border border-white/15 bg-white/[0.07] px-5 py-[clamp(0.6rem,1.8vh,1.1rem)] text-left transition-colors active:bg-white/20"
+                >
+                  <span
+                    className="h-[clamp(2rem,5vh,3rem)] w-1.5 shrink-0 rounded-full"
+                    style={{ background: o.color ?? "#8b8593" }}
+                    aria-hidden
+                  />
+                  <span className="w-[5.5ch] shrink-0 font-display text-[clamp(1.1rem,2.8vh,1.9rem)] font-bold tabular-nums text-white">
+                    {hhmm(o.startsAt, view.uiLang)}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-display text-[clamp(1rem,2.5vh,1.7rem)] font-bold text-white">
+                      {view.uiLang === "ru" ? o.className_ru : o.className_ro}
+                    </span>
+                    <span className="block truncate text-[clamp(0.75rem,1.6vh,1rem)] text-white/55">
+                      {o.personName}
+                    </span>
+                  </span>
+                  {o.reserved && (
+                    <span className="shrink-0 rounded-full border border-brand-400/40 bg-brand-400/15 px-3 py-1 text-[clamp(0.65rem,1.4vh,0.85rem)] font-bold text-brand-200">
+                      {(view.uiLang === "ru" ? ru : ro).chooseReserved}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-[clamp(0.75rem,2vh,1.5rem)] flex flex-col items-center gap-2">
+            <p className="text-[clamp(0.75rem,1.6vh,1rem)] font-bold text-white/40">
+              {(view.uiLang === "ru" ? ru : ro).resetsIn}{" "}
+              <span className="font-display text-white">{Math.max(countdown, 0)}</span>s
+            </p>
+            <button
+              onClick={reset}
+              className="rounded-2xl border border-white/25 bg-white/10 px-8 py-2.5 text-[clamp(0.8rem,1.8vh,1rem)] font-bold text-white transition-all active:scale-95"
+            >
+              {(view.uiLang === "ru" ? ru : ro).chooseCancel}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Outcome */}
       {showing && resultCode && (

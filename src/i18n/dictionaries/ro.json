@@ -813,6 +813,9 @@
     "signupTitle": "Nu ai cont încă?",
     "signupSub": "Scanează codul QR și fă-ți cont în 1 minut.",
     "scanNextOne": "Mai e un copil de scanat",
-    "scanNextMany": "Mai sunt {n} copii de scanat"
+    "scanNextMany": "Mai sunt {n} copii de scanat",
+    "chooseTitle": "Alege clasa",
+    "chooseReserved": "Rezervarea ta",
+    "chooseCancel": "Anulează"
   }
 }

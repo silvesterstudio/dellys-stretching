@@ -186,8 +186,18 @@ async function main() {
     const uh = await mkUser("http");
     const mh = await mkMem(uh.id, adultPlan);
     await mkSession(4, adultCt);
+    // Two steps now (0034): asking is free, tapping commits. The picker suite
+    // covers the choosing in depth — this only proves the endpoint still wires
+    // both halves together.
     const h1 = await post({ qr_uuid: uh.qr, device_token: device.token });
-    log(h1.status === 200 && h1.body.ok, "a real member gets through the API", `HTTP ${h1.status} code=${h1.body.code}`);
+    log(h1.status === 200 && h1.body.code === "options" && h1.body.options?.length,
+      "a real member is offered their classes", `HTTP ${h1.status} n=${h1.body.options?.length}`);
+    log((await remaining(mh)) === 5, "asking costs nothing", `still ${await remaining(mh)}`);
+    const h1b = await post({
+      qr_uuid: uh.qr, device_token: device.token,
+      session_id: h1.body.options[0].sessionId, child_id: h1.body.options[0].childId,
+    });
+    log(h1b.status === 200 && h1b.body.ok, "tapping one checks them in", `code=${h1b.body.code}`);
     log((await remaining(mh)) === 4, "charged once via HTTP", `5 -> ${await remaining(mh)}`);
     const h2 = await post({ qr_uuid: uh.qr, device_token: "deadbeefdeadbeefdeadbeefdeadbeef" });
     log(h2.body.code === "device_unknown", "unknown tablet refused inside the RPC", `code=${h2.body.code}`);
