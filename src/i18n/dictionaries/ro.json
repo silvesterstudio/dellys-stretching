@@ -735,7 +735,7 @@
     "setupLabel": "Cod dispozitiv",
     "setupSave": "Activează tableta",
     "present": "Apropie codul QR de cameră",
-    "note": "Scanează la fiecare intrare",
+    "note": "Scanarea QR este necesară doar la intrarea în sală.",
     "welcome": "Bine ai venit",
     "sessionsLeft": "ședințe rămase",
     "sessionLeft": "ședință rămasă",
@@ -803,6 +803,9 @@
         "d": "Ceva nu a mers bine",
         "h": "Încearcă din nou peste câteva secunde."
       }
-    }
+    },
+    "signupEyebrow": "Înregistrare online",
+    "signupTitle": "Nu ai cont încă?",
+    "signupSub": "Scanează codul QR și fă-ți cont în 1 minut."
   }
 }

@@ -99,10 +99,15 @@ export function KioskScanner({
   lang,
   ro,
   ru,
+  signupQr,
+  signupLabel,
 }: {
   lang: Locale;
   ro: KioskDict;
   ru: KioskDict;
+  // Data-URI QR pointing at the public sign-up page, rendered on the server.
+  signupQr: string;
+  signupLabel: string;
 }) {
   const dict = lang === "ru" ? ru : ro;
 
@@ -407,6 +412,10 @@ export function KioskScanner({
     return <div className="min-h-screen bg-mauve-900" />;
   }
 
+  // Standby copy alternates RO/RU on a timer so both languages are addressed;
+  // the whole panel turns over at once rather than mixing the two on screen.
+  const t = hintIdx === 0 ? ro : ru;
+
   const resultCode =
     view.kind === "result" ? view.result.code : view.kind === "error" ? view.code : null;
   const tone = resultCode ? (TONE[resultCode] ?? "info") : "info";
@@ -415,39 +424,101 @@ export function KioskScanner({
 
   return (
     <div className="relative h-screen w-screen select-none overflow-hidden bg-mauve-900">
-      {/* Camera feed */}
-      <video
-        ref={videoRef}
-        className="absolute inset-0 h-full w-full scale-105 object-cover opacity-80"
-        playsInline
-        muted
-      />
-      {/* qr-scanner paints the detected code outline into this layer */}
-      <div ref={overlayRef} className="pointer-events-none absolute inset-0 z-20" />
+      {/* Two jobs, side by side: make an account (left) and check in (right).
+          Before, the camera filled the screen and a member without an account
+          had nothing to act on — the tablet could refuse them but not enrol
+          them. The sign-up code turns that dead end into the next step.
 
-      {/* Standby: reticle + bilingual prompt */}
-      {cameraReady && !showing && (
-        <div
+          Always mounted: the <video> is owned by qr-scanner and must survive a
+          result being shown, so the outcome layer simply covers this. */}
+      <div className="grid h-full w-full grid-rows-[auto_1fr] lg:grid-cols-[0.85fr_1.15fr] lg:grid-rows-1">
+        {/* ── Sign up ─────────────────────────────────────────────────── */}
+        <aside
           onClick={handleTap}
-          className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-10"
+          className="relative flex flex-col items-center justify-center gap-[clamp(0.5rem,1.6vh,1.25rem)] border-b border-white/10 px-8 py-[clamp(1rem,3vh,2.5rem)] text-center lg:border-b-0 lg:border-r lg:px-10"
         >
-          <div className="pointer-events-none relative h-[340px] w-[340px] rounded-[40px] shadow-[0_0_0_9999px_rgba(22,21,27,.66)]">
-            <span className="absolute left-0 top-0 h-16 w-16 rounded-tl-[40px] border-l-[5px] border-t-[5px] border-white/85" />
-            <span className="absolute right-0 top-0 h-16 w-16 rounded-tr-[40px] border-r-[5px] border-t-[5px] border-white/85" />
-            <span className="absolute bottom-0 left-0 h-16 w-16 rounded-bl-[40px] border-b-[5px] border-l-[5px] border-white/85" />
-            <span className="absolute bottom-0 right-0 h-16 w-16 rounded-br-[40px] border-b-[5px] border-r-[5px] border-white/85" />
+          <p className="text-[clamp(0.6rem,1.4vh,0.8rem)] font-bold uppercase tracking-[0.22em] text-brand-300">
+            {t.signupEyebrow}
+          </p>
+          <h2 className="font-display text-[clamp(1.35rem,3.6vh,2.4rem)] font-bold leading-tight tracking-tight text-white">
+            {t.signupTitle}
+          </h2>
+          <p className="max-w-xs text-[clamp(0.8rem,1.7vh,1.05rem)] leading-snug text-white/55">
+            {t.signupSub}
+          </p>
+
+          {/* White plate: a QR needs a quiet zone and maximum contrast to read
+              off a screen from a metre away. */}
+          <div className="rounded-[1.75rem] bg-white p-[clamp(0.6rem,1.4vh,1rem)] shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={signupQr}
+              alt={t.signupTitle}
+              className="h-[clamp(110px,22vmin,240px)] w-[clamp(110px,22vmin,240px)]"
+            />
           </div>
 
-          <div className="pointer-events-none rounded-[2rem] border border-white/20 bg-white/10 px-8 py-4 backdrop-blur-2xl">
-            <p className="font-display text-[22px] font-bold text-white">
-              {(hintIdx === 0 ? ro : ru).present}
+          <span className="rounded-full border border-white/15 bg-white/[0.07] px-5 py-2 text-[clamp(0.7rem,1.5vh,0.9rem)] font-semibold tracking-wide text-white/70">
+            {signupLabel}
+          </span>
+        </aside>
+
+        {/* ── Check in ────────────────────────────────────────────────── */}
+        <section className="relative flex min-h-0 flex-col items-center justify-center gap-[clamp(0.6rem,2vh,1.5rem)] px-6 py-[clamp(1rem,3vh,2rem)]">
+          {/* The viewfinder is square because the scan region is: qr-scanner
+              decodes the middle 55% of the frame, and object-cover keeps that
+              centre centred, so the brackets frame what is actually read.
+
+              Sized off the height, per orientation, so it stays SQUARE. A
+              portrait-mounted tablet stacks the two panels, leaving the scanner
+              about half the screen; a viewport-width size overflowed it, and
+              the body is overflow-hidden, so the amber note was silently cut
+              off rather than scrolling. Clamping max-height instead kept the
+              width and gave a rectangle — brackets that no longer matched the
+              scan region. */}
+          <div className="relative aspect-square w-[min(80%,32vh)] overflow-hidden rounded-[2rem] bg-black/60 ring-1 ring-white/10 lg:w-[min(88%,52vh)]">
+            <video
+              ref={videoRef}
+              className="h-full w-full scale-105 object-cover"
+              playsInline
+              muted
+            />
+            {/* qr-scanner paints the detected code outline into this layer */}
+            <div ref={overlayRef} className="pointer-events-none absolute inset-0 z-20" />
+
+            <div className="pointer-events-none absolute inset-0 z-10">
+              <span className="absolute left-3 top-3 h-14 w-14 rounded-tl-[1.5rem] border-l-[5px] border-t-[5px] border-white/85" />
+              <span className="absolute right-3 top-3 h-14 w-14 rounded-tr-[1.5rem] border-r-[5px] border-t-[5px] border-white/85" />
+              <span className="absolute bottom-3 left-3 h-14 w-14 rounded-bl-[1.5rem] border-b-[5px] border-l-[5px] border-white/85" />
+              <span className="absolute bottom-3 right-3 h-14 w-14 rounded-br-[1.5rem] border-b-[5px] border-r-[5px] border-white/85" />
+            </div>
+
+            {!cameraReady && (
+              <div className="absolute inset-0 z-30 flex items-center justify-center bg-mauve-900/80">
+                <span className="h-10 w-10 animate-spin rounded-full border-[3px] border-white/20 border-t-white/80" />
+              </div>
+            )}
+          </div>
+
+          <div className="pointer-events-none rounded-[1.5rem] border border-white/20 bg-white/10 px-7 py-3 backdrop-blur-2xl">
+            <p className="font-display text-[clamp(0.95rem,2.2vh,1.4rem)] font-bold text-white">
+              {t.present}
             </p>
           </div>
-          <p className="pointer-events-none text-sm font-semibold uppercase tracking-[0.18em] text-white/50">
+
+          {/* Amber, not white: this is the one line that corrects a wrong
+              assumption — people scan on the way out too, and that burns a
+              session off their membership. */}
+          <p className="flex items-center gap-2 rounded-full border border-amber-400/25 bg-amber-400/10 px-5 py-2 text-center text-[clamp(0.7rem,1.5vh,0.9rem)] font-semibold text-amber-200/90">
+            <span aria-hidden>&#9888;</span>
+            {t.note}
+          </p>
+
+          <p className="text-[clamp(0.6rem,1.3vh,0.78rem)] font-semibold uppercase tracking-[0.18em] text-white/35">
             {locationName}
           </p>
-        </div>
-      )}
+        </section>
+      </div>
 
       {/* Outcome */}
       {showing && resultCode && (
