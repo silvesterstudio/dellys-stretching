@@ -22,6 +22,9 @@ export function PricingTeaser({ dict }: { dict: Dictionary }) {
     { name: `4 ${p.sessions}`, meta: p.perMonth, price: 450 },
     { name: `8 ${p.sessions}`, meta: p.perMonth, price: 700 },
     { name: `12 ${p.sessions}`, meta: p.perMonth, price: 850 },
+    // The only bundle that runs longer than a month, so it says so rather than
+    // "pe lună" like the rest.
+    { name: `16 ${p.sessions}`, meta: p.twoMonths, price: 999 },
     { name: p.unlimited, meta: p.perMonth, price: 1300 },
   ];
   // Kids are priced by how many days a week they train, not by age group —
