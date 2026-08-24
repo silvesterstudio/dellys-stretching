@@ -668,6 +668,15 @@ function SuccessBody({
     : null;
   const left = result.sessionsRemaining;
 
+  // A child's seat names the CHILD; the parent is the account, shown small
+  // beneath so the front desk can still tell whose kid this is.
+  const parent = result.parentName ?? null;
+  // More seats on this same QR: a second child the parent has to scan for. This
+  // used to be silent, so the second child simply never got marked present.
+  const waiting = result.alsoBooked ?? 0;
+  const nextLabel =
+    waiting === 1 ? dict.scanNextOne : dict.scanNextMany.replace("{n}", String(waiting));
+
   return (
     <div className="relative flex flex-col items-center">
       <p
@@ -677,11 +686,15 @@ function SuccessBody({
         {dict.welcome}
       </p>
       <h1
-        className="mb-7 font-display font-bold leading-none tracking-tight text-white"
+        className="mb-2 font-display font-bold leading-none tracking-tight text-white"
         style={{ fontSize: "clamp(2.75rem, 9vw, 5.5rem)" }}
       >
         {result.clientName || "—"}
       </h1>
+      {parent && (
+        <p className="mb-5 text-xl font-semibold text-white/45">{parent}</p>
+      )}
+      {!parent && <div className="mb-5" />}
 
       {(className || time) && (
         <div className="mb-6 flex items-center gap-3 rounded-2xl border border-white/15 bg-white/5 px-7 py-4">
@@ -693,6 +706,15 @@ function SuccessBody({
           )}
           <span className="font-display text-2xl font-bold text-white">{className}</span>
           {time && <span className="text-2xl font-semibold text-white/60">{time}</span>}
+        </div>
+      )}
+
+      {waiting > 0 && (
+        <div className="mb-6 flex items-center gap-3 rounded-2xl border-2 border-amber-400/50 bg-amber-400/15 px-8 py-4">
+          <span className="text-2xl" aria-hidden>
+            &#8635;
+          </span>
+          <span className="font-display text-2xl font-bold text-amber-200">{nextLabel}</span>
         </div>
       )}
 

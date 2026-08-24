@@ -774,9 +774,9 @@
         "h": "Întreabă la recepție pentru ora următoare."
       },
       "no_membership": {
-        "t": "Fără ședințe",
-        "d": "Abonamentul tău nu mai are ședințe",
-        "h": "Treci pe la recepție pentru reînnoire."
+        "t": "Fără abonament activ",
+        "d": "Nu ai ședințe disponibile pentru această clasă",
+        "h": "Treci pe la recepție ca să cumperi sau să reînnoiești."
       },
       "device_unknown": {
         "t": "Tabletă neautorizată",
@@ -806,6 +806,8 @@
     },
     "signupEyebrow": "Înregistrare online",
     "signupTitle": "Nu ai cont încă?",
-    "signupSub": "Scanează codul QR și fă-ți cont în 1 minut."
+    "signupSub": "Scanează codul QR și fă-ți cont în 1 minut.",
+    "scanNextOne": "Mai e un copil de scanat",
+    "scanNextMany": "Mai sunt {n} copii de scanat"
   }
 }

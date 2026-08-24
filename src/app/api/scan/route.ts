@@ -66,35 +66,21 @@ export async function POST(request: NextRequest) {
     return fail("server_error", 500);
   }
 
-  // 1. The tablet identifies itself. An unknown or deactivated token gets
-  //    nothing — this is the only thing standing between a stolen kiosk URL and
-  //    free check-ins, so it is checked before anything else touches the member.
-  const { data: device, error: devErr } = await admin
-    .from("kiosk_devices")
-    .select("id, location_id, active")
-    .eq("token", deviceToken)
-    .maybeSingle();
-  if (devErr) return fail("server_error", 500);
-  if (!device || !device.active) return fail("device_unknown", 403);
-
-  // 2. One atomic decision: identify the member, find their class at THIS gym,
-  //    pick the membership (or their free trial), seat a walk-in, mark attended.
-  const { data, error } = await admin.rpc("kiosk_scan", {
+  // One call does the lot: resolve the tablet, stamp its heartbeat, decide.
+  // It used to be three sequential round trips to the database per scan, with a
+  // person standing at the door for each one.
+  //
+  // An unknown or deactivated tablet is settled inside, before the member is so
+  // much as looked up — that token is the only thing between a leaked kiosk URL
+  // and free check-ins.
+  const { data, error } = await admin.rpc("kiosk_scan_by_token", {
     p_qr: qr,
-    p_location: device.location_id,
-    p_device: device.id,
+    p_device_token: deviceToken,
   });
   if (error) {
-    console.error("kiosk_scan:", error.message);
+    console.error("kiosk_scan_by_token:", error.message);
     return fail("server_error", 500);
   }
-
-  // Best-effort heartbeat so the admin can see whether a tablet is alive.
-  void admin
-    .from("kiosk_devices")
-    .update({ last_seen_at: new Date().toISOString() })
-    .eq("id", device.id)
-    .then(undefined, () => {});
 
   const result = data as unknown as KioskScanResult;
   return NextResponse.json(result, { status: result.ok ? 200 : 403 });

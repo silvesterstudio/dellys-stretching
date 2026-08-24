@@ -42,7 +42,15 @@ export type KioskResultCode = KioskScanCode | KioskTransportCode;
 export interface KioskScanResult {
   ok: boolean;
   code: KioskResultCode;
+  // Who is entering. For a child's seat this is the CHILD's name, not the
+  // account holder's — kids have no account of their own, so a parent's QR is
+  // what admits them and the screen must still name the right person.
   clientName?: string | null;
+  // The account holder, set only when clientName above is a child.
+  parentName?: string | null;
+  // How many more seats on this QR are still unscanned for this class, i.e. a
+  // second child the parent has to scan for.
+  alsoBooked?: number | null;
   homeLocation?: string | null;
   className_ro?: string | null;
   className_ru?: string | null;
@@ -573,8 +581,15 @@ export interface Database {
         Args: Record<string, never>;
         Returns: { guests: number; accounts: number; memberships: number };
       };
-      // Front-door QR check-in. Service role only — the API route validates the
-      // tablet's device token and resolves it to p_location first.
+      // Front-door QR check-in, one call: resolves the tablet from its token,
+      // stamps its heartbeat and decides. Service role only. This is what the
+      // API route uses; kiosk_scan below is the core it delegates to.
+      kiosk_scan_by_token: {
+        Args: { p_qr: string; p_device_token: string };
+        Returns: KioskScanResult;
+      };
+      // The decision itself, taking an already-resolved location. Kept callable
+      // on its own so the front desk / tests can drive it directly.
       kiosk_scan: {
         Args: { p_qr: string; p_location: string; p_device?: string | null };
         Returns: KioskScanResult;
