@@ -108,7 +108,12 @@
     "errName": "Introdu numele complet.",
     "errPhone": "Verifică numărul de telefon.",
     "errEmail": "Adresa de email nu pare corectă.",
-    "errEmailTaken": "Există deja un cont cu acest email. Autentifică-te."
+    "errEmailTaken": "Există deja un cont cu acest email. Autentifică-te.",
+    "welcomeTitle": "Bun venit!",
+    "welcomeSubtitle": "Ai deja cont sau ești nou?",
+    "welcomeLogin": "Am deja cont — Autentificare",
+    "welcomeSignUp": "Cont nou — Înregistrare",
+    "welcomeNote": "Nu ai nevoie de parolă — îți trimitem un link de conectare pe email."
   },
   "booking": {
     "addToCalendar": "Adaugă în calendar",
