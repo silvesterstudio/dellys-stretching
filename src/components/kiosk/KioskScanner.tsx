@@ -29,6 +29,7 @@ const TONE: Record<string, "ok" | "warn" | "deny" | "info"> = {
   ok: "ok",
   already_checked_in: "info",
   no_membership: "warn",
+  wrong_audience: "warn",
   class_full: "warn",
   no_class: "warn",
   not_found: "deny",
@@ -546,6 +547,11 @@ export function KioskScanner({
               dict={dict}
               homeLocation={view.kind === "result" ? view.result.homeLocation : null}
               clientName={view.kind === "result" ? view.result.clientName : null}
+              className={
+                view.kind === "result"
+                  ? (lang === "ru" ? view.result.className_ru : view.result.className_ro) ?? null
+                  : null
+              }
               style={style}
             />
           )}
@@ -746,12 +752,16 @@ function FailureBody({
   dict,
   homeLocation,
   clientName,
+  className,
   style,
 }: {
   code: ErrKey;
   dict: KioskDict;
   homeLocation?: string | null;
   clientName?: string | null;
+  // The class actually running — shown for wrong_audience so the member can see
+  // what they are standing in front of instead of doubting their membership.
+  className?: string | null;
   style: (typeof TONE_STYLE)[keyof typeof TONE_STYLE];
 }) {
   const copy = dict.err[code] ?? dict.err.server_error;
@@ -766,6 +776,11 @@ function FailureBody({
       <p className="mb-8 text-2xl font-bold" style={{ color: style.text }}>
         {homeLocation && code === "wrong_location" ? homeLocation : copy.d}
       </p>
+      {code === "wrong_audience" && className && (
+        <div className="mb-6 rounded-2xl border border-white/15 bg-white/5 px-8 py-4">
+          <p className="font-display text-2xl font-bold text-white">{className}</p>
+        </div>
+      )}
       {copy.h && (
         <div className="rounded-3xl border border-white/15 bg-white/5 px-8 py-6">
           <p className="text-lg font-medium text-white/75">{copy.h}</p>

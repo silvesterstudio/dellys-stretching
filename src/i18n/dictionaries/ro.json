@@ -802,6 +802,11 @@
         "t": "Eroare",
         "d": "Ceva nu a mers bine",
         "h": "Încearcă din nou peste câteva secunde."
+      },
+      "wrong_audience": {
+        "t": "Abonament de alt tip",
+        "d": "Abonamentul tău nu acoperă clasa care are loc acum",
+        "h": "Treci pe la recepție pentru abonamentul potrivit."
       }
     },
     "signupEyebrow": "Înregistrare online",

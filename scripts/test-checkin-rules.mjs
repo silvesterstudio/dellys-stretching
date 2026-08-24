@@ -116,6 +116,50 @@ async function main() {
     const { data: bk } = await db.from("bookings").select("child_id").eq("user_id", p3.id).eq("status", "attended");
     log(bk.some((x) => x.child_id === only.id), "attendance recorded against the child, not NULL");
 
+    console.log("\n-- an ADULT bundle in front of a KIDS class --");
+    // Exactly what happened on the tablet: a valid adult membership, and the
+    // only class running was Gimnastica. The door must refuse, but it must not
+    // claim the member has no membership.
+    // Isolate it: retire this run's own sessions so the only thing in the
+    // walk-in window is a kids class. Otherwise the member correctly walks into
+    // an adult class left over from an earlier case and the test lies.
+    for (const id of trash.sessions) await db.from("sessions").update({ status: "cancelled" }).eq("id", id);
+    const ua = await mkUser("wrongaud");
+    await mkMem(ua.id, adultPlan, { sessions: 3 });
+    await mkSession(3, kidCt);
+    // A real adult class on the studio's timetable would do the same, so check.
+    const { data: adultNow } = await db.from("sessions")
+      .select("id, class_type:class_types(audience)")
+      .eq("location_id", HERE.id).eq("status", "scheduled")
+      .gte("starts_at", new Date(Date.now() - 20 * 60000).toISOString())
+      .lte("starts_at", new Date(Date.now() + 45 * 60000).toISOString());
+    const adultInWindow = adultNow.filter((r) => {
+      const c = Array.isArray(r.class_type) ? r.class_type[0] : r.class_type;
+      return c?.audience === "adult";
+    }).length;
+    if (adultInWindow) {
+      console.log(`  (skipped — ${adultInWindow} real adult class(es) running now, cannot isolate)`);
+    } else {
+      const ra = await scan(ua.qr, HERE.id);
+      log(ra.code === "wrong_audience", "refused as wrong_audience, not no_membership", `code=${ra.code}`);
+      log(ra.className_ro && ra.className_ro !== "Pilates", "and names the KIDS class that is running", `class=${ra.className_ro}`);
+    }
+
+    console.log("\n-- with a RESERVATION for a class the bundle cannot pay --");
+    const ub = await mkUser("wrongaud2");
+    await mkMem(ub.id, adultPlan, { sessions: 3 });
+    const kb = await mkSession(7, kidCt);
+    await db.from("bookings").insert({ session_id: kb.id, user_id: ub.id, status: "booked" });
+    await db.from("sessions").update({ booked_count: 1 }).eq("id", kb.id);
+    const rb = await scan(ub.qr, HERE.id);
+    log(rb.code === "wrong_audience", "same verdict on the reservation path", `code=${rb.code}`);
+
+    console.log("\n-- and someone with NOTHING still gets no_membership --");
+    const uc = await mkUser("nothing");
+    await mkSession(9, kidCt);
+    const rc = await scan(uc.qr, HERE.id);
+    log(rc.code === "no_membership", "no bundle at all is still no_membership", `code=${rc.code}`);
+
     console.log("\n── rules that must not have moved ──");
     const r1b = await scan(u1.qr, HERE.id);
     log(r1b.code === "already_checked_in", "double scan still refused", `code=${r1b.code}`);

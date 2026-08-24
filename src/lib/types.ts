@@ -26,7 +26,8 @@ export type KioskScanCode =
   | "already_checked_in"
   | "no_class" // nothing running now they could join
   | "class_full"
-  | "no_membership"; // no sessions left and the free trial is spent
+  | "wrong_audience" // holds a usable bundle, but for the other audience
+  | "no_membership"; // nothing usable at this studio at all
 
 // Failures produced by the API route itself, before or instead of kiosk_scan:
 // a tablet whose token isn't recognised, throttling, or a dead connection.
