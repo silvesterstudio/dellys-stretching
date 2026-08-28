@@ -211,14 +211,14 @@ export function MembersExplorer({
               <div className="text-sm font-semibold text-mauve-800">{m.newMember}</div>
               <p className="text-xs text-mauve-400">{m.newMemberHint}</p>
               <input
-                className="input w-full px-2 py-1.5 text-sm"
+                className="input h-11 w-full px-3 text-base"
                 placeholder={m.fullName}
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 required
               />
               <input
-                className="input w-full px-2 py-1.5 text-sm"
+                className="input h-11 w-full px-3 text-base"
                 type="email"
                 placeholder={m.email}
                 value={newEmail}
@@ -226,13 +226,13 @@ export function MembersExplorer({
                 required
               />
               <input
-                className="input w-full px-2 py-1.5 text-sm"
+                className="input h-11 w-full px-3 text-base"
                 placeholder={m.phone}
                 value={newPhone}
                 onChange={(e) => setNewPhone(e.target.value)}
               />
               <div className="flex gap-2">
-                <button type="submit" disabled={busy} className="btn-primary flex-1 px-3 py-1.5 text-xs">
+                <button type="submit" disabled={busy} className="btn-primary h-11 flex-1 px-3 text-sm">
                   {m.createMember}
                 </button>
                 <button
@@ -241,7 +241,7 @@ export function MembersExplorer({
                     setCreating(false);
                     setErr(null);
                   }}
-                  className="btn-secondary px-3 py-1.5 text-xs"
+                  className="btn-secondary h-11 px-4 text-sm"
                 >
                   {dict.common.cancel}
                 </button>
@@ -253,7 +253,7 @@ export function MembersExplorer({
                 setCreating(true);
                 setJustCreated(false);
               }}
-              className="btn-secondary w-full px-3 py-2 text-xs"
+              className="btn-secondary h-11 w-full px-3 text-sm"
             >
               + {m.newMember}
             </button>
@@ -673,7 +673,7 @@ function MemberQrPanel({
     <div className={`mt-4 rounded-2xl border p-3 ${highlight ? "border-brand-300 bg-brand-50" : "border-mauve-100"}`}>
       <div className="flex items-center justify-between gap-3">
         <span className="text-xs font-semibold text-mauve-600">{label}</span>
-        <button onClick={() => setOpen((v) => !v)} className="btn-ghost px-3 py-1 text-xs">
+        <button onClick={() => setOpen((v) => !v)} className="btn-ghost h-11 shrink-0 px-4 text-xs">
           {open ? hideLabel : showLabel}
         </button>
       </div>
@@ -764,99 +764,110 @@ function MembershipRow({
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-mauve-100 pt-3">
-        <button
-          onClick={() => run(() => setMembershipFrozenAction(mem.id, !mem.frozen))}
-          disabled={disabled}
-          className="btn-secondary px-3 py-1.5 text-xs"
-        >
-          {mem.frozen ? m.unfreeze : m.freeze}
-        </button>
+      {/* The admin runs this from a phone. These used to be ten controls
+          wrapping through one flex row on a 375px screen, several of them under
+          30px tall. Each job now gets its own full-width row with a label, and
+          nothing is smaller than a thumb. */}
+      <div className="mt-3 space-y-2 border-t border-mauve-100 pt-3">
+        {/* Sessions left: minus, the figure, plus — then Save, which only
+            lights up once the number differs from what is stored. */}
+        <div>
+          <div className="mb-1 text-xs font-medium text-mauve-500">{m.setSessions}</div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSessions((n) => Math.max(0, n - 1))}
+              disabled={disabled || sessions <= 0}
+              className="btn-secondary h-11 w-12 shrink-0 px-0 py-0 text-lg leading-none"
+              aria-label="-1"
+            >
+              &minus;
+            </button>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={sessions}
+              onChange={(e) => setSessions(Math.max(0, Math.trunc(Number(e.target.value) || 0)))}
+              className="input h-11 w-full min-w-0 px-2 text-center text-base tabular-nums"
+              aria-label={m.setSessions}
+            />
+            <button
+              onClick={() => setSessions((n) => n + 1)}
+              disabled={disabled}
+              className="btn-secondary h-11 w-12 shrink-0 px-0 py-0 text-lg leading-none"
+              aria-label="+1"
+            >
+              +
+            </button>
+            <button
+              onClick={() => run(() => setMembershipSessionsAction(mem.id, sessions))}
+              disabled={disabled || !sessionsDirty}
+              className="btn-primary h-11 shrink-0 px-4 text-xs"
+            >
+              {m.applySessions}
+            </button>
+          </div>
+        </div>
 
-        {/* Sessions: minus and plus, and the figure itself is typeable. Save
-            only lights up once it differs from what is stored, so a stray tap
-            cannot quietly write the same number back. */}
-        <div className="inline-flex items-center gap-1">
-          <span className="mr-1 text-xs text-mauve-400">{m.setSessions}</span>
+        {/* When it begins — a bundle dated forward cannot be spent until then. */}
+        <div>
+          <div className="mb-1 text-xs font-medium text-mauve-500">{m.startsOn}</div>
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={start}
+              onChange={(e) => setStart(e.target.value)}
+              className="input h-11 w-full min-w-0 px-2 text-base"
+              aria-label={m.editStart}
+            />
+            <button
+              onClick={() => run(() => updateMembershipStartAction(mem.id, start))}
+              disabled={disabled || !start || start === toDateInput(mem.starts_at)}
+              className="btn-primary h-11 shrink-0 px-4 text-xs"
+            >
+              {dict.common.save}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-1 text-xs font-medium text-mauve-500">{m.expires}</div>
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={expiry}
+              onChange={(e) => setExpiry(e.target.value)}
+              className="input h-11 w-full min-w-0 px-2 text-base"
+              aria-label={m.editExpiry}
+            />
+            <button
+              onClick={() => run(() => updateMembershipExpiryAction(mem.id, expiry))}
+              disabled={disabled || !expiry || expiry === toDateInput(mem.expires_at)}
+              className="btn-primary h-11 shrink-0 px-4 text-xs"
+            >
+              {dict.common.save}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 pt-1">
           <button
-            onClick={() => setSessions((n) => Math.max(0, n - 1))}
-            disabled={disabled || sessions <= 0}
-            className="btn-secondary h-8 w-8 px-0 py-0 text-base leading-none"
-            aria-label="-1"
-          >
-            &minus;
-          </button>
-          <input
-            type="number"
-            min={0}
-            value={sessions}
-            onChange={(e) => setSessions(Math.max(0, Math.trunc(Number(e.target.value) || 0)))}
-            className="input w-16 px-2 py-1.5 text-center text-sm tabular-nums"
-            aria-label={m.setSessions}
-          />
-          <button
-            onClick={() => setSessions((n) => n + 1)}
+            onClick={() => run(() => setMembershipFrozenAction(mem.id, !mem.frozen))}
             disabled={disabled}
-            className="btn-secondary h-8 w-8 px-0 py-0 text-base leading-none"
-            aria-label="+1"
+            className="btn-secondary h-11 flex-1 px-3 text-xs"
           >
-            +
+            {mem.frozen ? m.unfreeze : m.freeze}
           </button>
           <button
-            onClick={() => run(() => setMembershipSessionsAction(mem.id, sessions))}
-            disabled={disabled || !sessionsDirty}
-            className="btn-secondary px-3 py-1.5 text-xs"
+            onClick={() => {
+              if (window.confirm(m.deleteConfirm)) run(() => deleteMembershipAction(mem.id));
+            }}
+            disabled={disabled}
+            className="btn-ghost-danger h-11 shrink-0 px-4 text-xs"
           >
-            {m.applySessions}
+            {dict.admin.delete}
           </button>
         </div>
-
-        {/* When it begins. A bundle dated forward cannot be spent until then. */}
-        <div className="inline-flex items-center gap-1">
-          <span className="mr-1 text-xs text-mauve-400">{m.startsOn}</span>
-          <input
-            type="date"
-            value={start}
-            onChange={(e) => setStart(e.target.value)}
-            className="input px-2 py-1.5 text-sm"
-            aria-label={m.editStart}
-          />
-          <button
-            onClick={() => run(() => updateMembershipStartAction(mem.id, start))}
-            disabled={disabled || !start || start === toDateInput(mem.starts_at)}
-            className="btn-secondary px-3 py-1.5 text-xs"
-          >
-            {dict.common.save}
-          </button>
-        </div>
-
-        <div className="inline-flex items-center gap-1">
-          <span className="mr-1 text-xs text-mauve-400">{m.expires}</span>
-          <input
-            type="date"
-            value={expiry}
-            onChange={(e) => setExpiry(e.target.value)}
-            className="input px-2 py-1.5 text-sm"
-            aria-label={m.editExpiry}
-          />
-          <button
-            onClick={() => run(() => updateMembershipExpiryAction(mem.id, expiry))}
-            disabled={disabled || !expiry || expiry === toDateInput(mem.expires_at)}
-            className="btn-secondary px-3 py-1.5 text-xs"
-          >
-            {dict.common.save}
-          </button>
-        </div>
-
-        <button
-          onClick={() => {
-            if (window.confirm(m.deleteConfirm)) run(() => deleteMembershipAction(mem.id));
-          }}
-          disabled={disabled}
-          className="btn-ghost-danger px-3 py-1.5 text-xs"
-        >
-          {dict.admin.delete}
-        </button>
       </div>
     </div>
   );

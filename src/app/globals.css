@@ -71,6 +71,22 @@ body {
     @apply btn text-mauve-600 hover:bg-red-50 hover:text-red-700;
   }
 
+  /* The admin runs this business from a phone, and the schedule editor had
+     seven 28px "add a class" buttons — the main action on the page — plus rows
+     of 32px chips. Give every control in the admin a thumb-sized target.
+
+     Scoped two ways on purpose: to .admin-shell, so the public site's visual
+     rhythm is untouched, and to a coarse pointer, so an admin on a laptop keeps
+     the compact layout that fits more on screen. */
+  @media (pointer: coarse) {
+    .admin-shell button,
+    .admin-shell a[class*="btn"],
+    .admin-shell select,
+    .admin-shell input:not([type="checkbox"]):not([type="radio"]) {
+      min-height: 44px;
+    }
+  }
+
   /* Surfaces — solid white on a white page, so they lean on a hairline border
      and a soft, faintly-pink shadow to lift off the canvas. */
   .card {

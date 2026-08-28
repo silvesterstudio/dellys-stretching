@@ -27,7 +27,7 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="container-page safe-x py-8 sm:py-10">
+    <div className="admin-shell container-page safe-x py-8 sm:py-10">
       <LiveRefresh />
       <h1 className="mb-6 font-display text-3xl font-semibold tracking-tight text-mauve-900">
         {dict.admin.title}

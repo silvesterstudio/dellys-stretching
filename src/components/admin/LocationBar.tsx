@@ -70,7 +70,7 @@ export function LocationBar({
               aria-pressed={on}
               disabled={pending}
               onClick={() => choose(l)}
-              className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
+              className={`min-h-[44px] rounded-full px-4 py-2 text-sm font-bold transition-colors ${
                 on
                   ? "bg-mauve-900 text-white"
                   : "text-mauve-600 hover:bg-mauve-50 disabled:opacity-50"

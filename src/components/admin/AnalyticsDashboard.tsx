@@ -60,31 +60,47 @@ export function AnalyticsDashboard({
     });
   }
 
+  // Two blocks of numbers used to sit one above the other in identical cards:
+  // the first is the state of the business right now, the second is whatever
+  // window is selected. Nothing on screen said which was which, and "Sesiuni
+  // azi" sat four cards away from "Sesiuni", meaning different things. Each
+  // tile now states what it counts, and the two blocks are labelled and spaced
+  // so they cannot be read as one list.
   const kpiCards = [
-    { label: t.activeMemberships, value: kpis.activeMemberships, accent: true },
-    { label: t.outstandingSessions, value: kpis.outstandingSessions },
-    { label: t.totalMembers, value: kpis.totalMembers },
-    { label: t.todaySessions, value: kpis.todaySessions },
+    { label: t.activeMemberships, hint: t.hintActiveMemberships, value: kpis.activeMemberships, accent: true },
+    { label: t.outstandingSessions, hint: t.hintOutstandingSessions, value: kpis.outstandingSessions },
+    { label: t.totalMembers, hint: t.hintTotalMembers, value: kpis.totalMembers },
+    { label: t.todaySessions, hint: t.hintTodaySessions, value: kpis.todaySessions },
   ];
 
   const windowCards = [
     {
       label: t.revenue,
+      hint: t.hintRevenue,
       value: formatPrice(metrics.revenue, metrics.currency, lang),
       highlight: true,
     },
-    { label: t.membershipsSold, value: metrics.membershipsSold },
-    { label: t.sessionsHeld, value: metrics.sessionsHeld },
-    { label: t.attendance, value: metrics.attendance },
-    { label: t.newMembers, value: metrics.newMembers },
-    { label: t.bookings, value: metrics.bookings },
+    { label: t.membershipsSold, hint: t.hintMembershipsSold, value: metrics.membershipsSold },
+    { label: t.sessionsHeld, hint: t.hintSessionsHeld, value: metrics.sessionsHeld },
+    { label: t.attendance, hint: t.hintAttendance, value: metrics.attendance },
+    { label: t.newMembers, hint: t.hintNewMembers, value: metrics.newMembers },
+    { label: t.bookings, hint: t.hintBookings, value: metrics.bookings },
   ];
+
+  // The heading of the second block names the window, so the numbers under it
+  // can never be mistaken for today's.
+  const presetLabel = PRESETS.find((x) => x.key === preset);
+  const periodName =
+    preset === "custom" || !presetLabel ? `${startDate} — ${endDate}` : t[presetLabel.labelKey];
 
   return (
     <div className="space-y-8">
-      {/* Always-current snapshot */}
+      {/* Block one: the state of the business, independent of any date range. */}
       <section>
-        <h2 className="eyebrow mb-3">{t.overview}</h2>
+        <div className="mb-3">
+          <h2 className="font-display text-lg font-bold text-mauve-900">{t.nowTitle}</h2>
+          <p className="text-xs text-mauve-400">{t.nowHint}</p>
+        </div>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {kpiCards.map((c) => (
             <div key={c.label} className="card p-4">
@@ -95,14 +111,23 @@ export function AnalyticsDashboard({
               >
                 {c.value}
               </div>
-              <div className="mt-2 text-xs font-medium text-mauve-500">{c.label}</div>
+              <div className="mt-2 text-sm font-semibold text-mauve-700">{c.label}</div>
+              <div className="mt-0.5 text-xs leading-snug text-mauve-400">{c.hint}</div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Period picker */}
-      <section className="space-y-3">
+      {/* Block two: the picker and the numbers it controls, inside one framed
+          group — floating between the two blocks, it was unclear which set of
+          numbers it changed. */}
+      <section className="rounded-3xl border border-mauve-200/70 bg-mauve-50/40 p-4 sm:p-5">
+        <div className="mb-3">
+          <h2 className="font-display text-lg font-bold text-mauve-900">
+            {t.periodTitle}: <span className="text-brand-600">{periodName}</span>
+          </h2>
+          <p className="text-xs text-mauve-400">{t.pickPeriod}</p>
+        </div>
         <div className="flex flex-wrap gap-2">
           {PRESETS.map((p) => (
             <button
@@ -110,8 +135,8 @@ export function AnalyticsDashboard({
               onClick={() => choose(p.key)}
               className={
                 preset === p.key
-                  ? "btn-primary px-4 py-2 text-sm"
-                  : "btn-secondary px-4 py-2 text-sm"
+                  ? "btn-primary min-h-[44px] px-4 text-sm"
+                  : "btn-secondary min-h-[44px] px-4 text-sm"
               }
             >
               {t[p.labelKey]}
@@ -141,35 +166,35 @@ export function AnalyticsDashboard({
                 className="input"
               />
             </div>
-            <button onClick={applyCustom} disabled={pending} className="btn-primary">
+            <button onClick={applyCustom} disabled={pending} className="btn-primary min-h-[44px]">
               {t.apply}
             </button>
           </div>
         )}
 
-        <p className="text-xs text-mauve-400">
-          {startDate} — {endDate} · {t.inPeriod}
+        <p className="mt-3 text-xs text-mauve-400">
+          {startDate} — {endDate}
         </p>
-      </section>
 
-      {/* Window stats */}
-      <section
-        className={`grid grid-cols-2 gap-3 transition-opacity duration-200 lg:grid-cols-3 ${
-          pending ? "opacity-50" : ""
-        }`}
-      >
-        {windowCards.map((c) => (
-          <div key={c.label} className="card p-5">
-            <div
-              className={`font-display text-3xl font-bold leading-none ${
-                c.highlight ? "text-brand-600" : "text-mauve-900"
-              }`}
-            >
-              {c.value}
+        <div
+          className={`mt-4 grid grid-cols-2 gap-3 transition-opacity duration-200 lg:grid-cols-3 ${
+            pending ? "opacity-50" : ""
+          }`}
+        >
+          {windowCards.map((c) => (
+            <div key={c.label} className="card p-5">
+              <div
+                className={`font-display text-3xl font-bold leading-none ${
+                  c.highlight ? "text-brand-600" : "text-mauve-900"
+                }`}
+              >
+                {c.value}
+              </div>
+              <div className="mt-2 text-sm font-semibold text-mauve-700">{c.label}</div>
+              <div className="mt-0.5 text-xs leading-snug text-mauve-400">{c.hint}</div>
             </div>
-            <div className="mt-2 text-sm text-mauve-500">{c.label}</div>
-          </div>
-        ))}
+          ))}
+        </div>
       </section>
     </div>
   );
