@@ -10,6 +10,7 @@
 //   node scripts/test-profile-sync-scope.mjs
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
+import { sweepTestData } from "./clean-test-data.mjs";
 
 const env = {};
 for (const l of readFileSync(".env.local", "utf8").split(/\r?\n/)) {
@@ -89,6 +90,10 @@ async function main() {
   } finally {
     for (const id of trash) await db.auth.admin.deleteUser(id);
     console.log(`\ncleaned up ${trash.length} throwaway account(s)`);
+    // Belt and braces: a per-id delete can fail silently, and a survivor is
+    // not inert — its membership shows up as revenue on the owner's
+    // dashboard. Sweep by email pattern as well.
+    await sweepTestData({ quiet: true });
   }
 
   console.log(`\n${pass} passed, ${fail} failed`);
