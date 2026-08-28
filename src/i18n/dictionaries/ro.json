@@ -130,7 +130,8 @@
     "sessionFull": "Ne pare rău, sesiunea este completă.",
     "tooManyOpen": "Ai prea multe rezervări active fără abonament. Vino la recepție.",
     "pastSession": "Această sesiune a început deja.",
-    "wrongLocation": "Contul tău este înregistrat la cealaltă locație. Treci pe la recepție ca să poți rezerva aici."
+    "wrongLocation": "Contul tău este înregistrat la cealaltă locație. Treci pe la recepție ca să poți rezerva aici.",
+    "membershipNotStarted": "Abonamentul începe mai târziu."
   },
   "reserve": {
     "title": "Rezervă locul tău",
@@ -598,7 +599,24 @@
         "submit": "Transferă abonamentul",
         "needStart": "Alege data de început și durata pentru a calcula ședințele și expirarea.",
         "zeroBalance": "Balanța calculată este 0 — ajustează ședințele sau «folosite» înainte de transfer."
-      }
+      },
+      "startsOn": "Începe la",
+      "notStarted": "Începe la",
+      "editStart": "Schimbă începutul",
+      "setSessions": "Ședințe rămase",
+      "applySessions": "Salvează",
+      "newMember": "Membru nou",
+      "newMemberHint": "Contul se creează pe loc, fără email.",
+      "createMember": "Creează contul",
+      "createdNoEmail": "Cont creat. Arată-i codul QR de mai jos.",
+      "memberQr": "Cod QR pentru intrare",
+      "showQr": "Arată codul QR",
+      "hideQr": "Ascunde",
+      "fullName": "Nume complet",
+      "email": "Email",
+      "phone": "Telefon",
+      "errEmailTaken": "Există deja un cont cu acest email.",
+      "expires": "Expiră la"
     },
     "currentMemberships": "Abonamente active",
     "noSessionsToday": "Nicio sesiune.",

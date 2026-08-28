@@ -353,7 +353,7 @@ export async function exportMembersCsvAction(): Promise<{ csv: string | null }> 
     memberQuery.order("created_at", { ascending: false }),
     admin
       .from("user_memberships")
-      .select("user_id, sessions_remaining, expires_at, frozen"),
+      .select("user_id, sessions_remaining, expires_at, starts_at, frozen"),
   ]);
 
   // Best active membership per member: unexpired, has sessions, not frozen;
@@ -364,6 +364,7 @@ export async function exportMembersCsvAction(): Promise<{ csv: string | null }> 
     if (m.frozen) continue;
     const exp = m.expires_at as string;
     if (new Date(exp).getTime() <= now) continue;
+    if (new Date(m.starts_at as string).getTime() > now) continue;
     if ((m.sessions_remaining as number) <= 0) continue;
     const uid = m.user_id as string;
     const cur = best.get(uid);
@@ -413,7 +414,10 @@ export async function getUsableMembershipsAction(
     .eq("plan.audience", audience)
     .eq("frozen", false)
     .gt("sessions_remaining", 0)
-    .gt("expires_at", new Date().toISOString());
+    .gt("expires_at", new Date().toISOString())
+    // A bundle sold to start next month must not be spendable today. The id
+    // chosen here goes straight into check_in_booking.
+    .lte("starts_at", new Date().toISOString());
   return (data ?? []).map((m: Record<string, unknown>) => {
     const plan = pickOne(m.plan as never) as { name_ro: string; name_ru: string } | null;
     const name = plan ? (lang === "ru" ? plan.name_ru : plan.name_ro) : "—";
@@ -508,6 +512,9 @@ export async function assignMembershipAction(
   planId: string,
   note: string | null,
   payment?: { amount: number | null; method: string | null },
+  // YYYY-MM-DD. A bundle bought today that runs from the 1st of next month:
+  // the validity window is measured from the start, not from the sale.
+  startsOn?: string | null,
 ): Promise<ActionResult> {
   const admin = await requireAdmin();
   const supabase = await createClient();
@@ -531,8 +538,13 @@ export async function assignMembershipAction(
   if (planErr || !plan) return { error: "PLAN_NOT_FOUND" };
   if (!plan.active) return { error: "PLAN_INACTIVE" };
 
+  // Validity runs from the start date, so buying early does not eat the term.
+  const startsAt =
+    startsOn && /^\d{4}-\d{2}-\d{2}$/.test(startsOn)
+      ? bucharestWallToUtc(startsOn, "00:00")
+      : new Date();
   const expires = new Date(
-    Date.now() + plan.validity_days * 86400000,
+    startsAt.getTime() + plan.validity_days * 86400000,
   ).toISOString();
 
   // Default to the plan's list price paid in cash if the admin didn't override.
@@ -553,6 +565,7 @@ export async function assignMembershipAction(
   const { error } = await supabase.from("user_memberships").insert({
     user_id: userId,
     plan_id: planId,
+    starts_at: startsAt.toISOString(),
     sessions_remaining: plan.session_count,
     expires_at: expires,
     assigned_by: admin.id,
@@ -625,10 +638,18 @@ export async function transferMembershipAction(
     noteParts.push(`din ${input.startedOn}`);
   }
 
+  // The form has always asked for a start date; until 0036 it could only be
+  // written into the note, where nothing enforced it.
+  const startsAt =
+    input.startedOn && /^\d{4}-\d{2}-\d{2}$/.test(input.startedOn)
+      ? bucharestWallToUtc(input.startedOn, "00:00").toISOString()
+      : new Date().toISOString();
+
   const { error } = await supabase.from("user_memberships").insert({
     user_id: userId,
     plan_id: plan.id as string,
     sessions_remaining: sessions,
+    starts_at: startsAt,
     expires_at: expires,
     assigned_by: admin.id,
     note: noteParts.join(" · "),
@@ -958,6 +979,9 @@ export interface AdminMemberDetail {
     role: string;
     notes: string | null;
     created_at: string;
+    // The door credential. Shown in the drawer so the desk can hand it over on
+    // the spot — an account created without email has no other way to reach it.
+    qr_uuid: string | null;
   };
   stats: {
     totalSpent: number;
@@ -970,6 +994,7 @@ export interface AdminMemberDetail {
     id: string;
     sessions_remaining: number;
     expires_at: string;
+    starts_at: string;
     created_at: string;
     note: string | null;
     frozen: boolean;
@@ -1005,13 +1030,13 @@ export async function getMemberDetailAction(
   const [profileR, memsR, reqsR, bookingsR, childrenR] = await Promise.all([
     admin
       .from("profiles")
-      .select("id, email, full_name, phone, preferred_lang, role, notes, created_at")
+      .select("id, email, full_name, phone, preferred_lang, role, notes, created_at, qr_uuid")
       .eq("id", userId)
       .single(),
     admin
       .from("user_memberships")
       .select(
-        "id, sessions_remaining, expires_at, created_at, note, frozen, plan:membership_plans ( name_ro, name_ru, session_count, price, currency )",
+        "id, sessions_remaining, expires_at, starts_at, created_at, note, frozen, plan:membership_plans ( name_ro, name_ru, session_count, price, currency )",
       )
       .eq("user_id", userId)
       .order("created_at", { ascending: false }),
@@ -1042,6 +1067,7 @@ export async function getMemberDetailAction(
     id: m.id as string,
     sessions_remaining: m.sessions_remaining as number,
     expires_at: m.expires_at as string,
+    starts_at: m.starts_at as string,
     created_at: m.created_at as string,
     note: (m.note as string) ?? null,
     frozen: !!m.frozen,
@@ -1096,6 +1122,7 @@ export async function getMemberDetailAction(
       full_name: (p.full_name as string) ?? null,
       phone: (p.phone as string) ?? null,
       preferred_lang: (p.preferred_lang as string) ?? "ro",
+      qr_uuid: (p.qr_uuid as string) ?? null,
       role: (p.role as string) ?? "client",
       notes: (p.notes as string) ?? null,
       created_at: p.created_at as string,
@@ -1105,7 +1132,11 @@ export async function getMemberDetailAction(
       currency,
       sessionsAttended: bookings.filter((b) => b.status === "attended").length,
       activeMemberships: memberships.filter(
-        (m) => new Date(m.expires_at).getTime() > now && m.sessions_remaining > 0 && !m.frozen,
+        (m) =>
+          new Date(m.expires_at).getTime() > now &&
+          new Date(m.starts_at).getTime() <= now &&
+          m.sessions_remaining > 0 &&
+          !m.frozen,
       ).length,
       upcoming: bookings.filter(
         (b) =>
@@ -1245,6 +1276,130 @@ export async function addMembershipSessionsAction(
   }
   revalidatePath("/[lang]/admin/members", "page");
   return { error: error?.message ?? null };
+}
+
+// Set the remaining sessions to an EXACT figure. The delta action above can
+// subtract too, but the front desk thinks "she should have 8 left", not "add
+// minus two" — and a typo in a delta is silent, while a typo in a total is
+// visible on screen before it is saved.
+export async function setMembershipSessionsAction(
+  membershipId: string,
+  total: number,
+): Promise<ActionResult> {
+  const actor = await requireAdmin();
+  if (!Number.isFinite(total) || total < 0) return { error: "INVALID" };
+  const next = Math.trunc(total);
+  const supabase = await createClient();
+  const { data: m } = await supabase
+    .from("user_memberships")
+    .select("sessions_remaining")
+    .eq("id", membershipId)
+    .maybeSingle();
+  if (!m) return { error: "NOT_FOUND" };
+  const { error } = await supabase
+    .from("user_memberships")
+    .update({ sessions_remaining: next })
+    .eq("id", membershipId);
+  if (!error) {
+    await logAudit(actor, "membership.sessions", "membership", membershipId, {
+      from: m.sessions_remaining as number,
+      to: next,
+    });
+  }
+  revalidatePath("/[lang]/admin/members", "page");
+  return { error: error?.message ?? null };
+}
+
+// Move when a bundle begins. Before 0036 this date lived in a free-text note and
+// nothing honoured it; a bundle dated forward can now genuinely not be spent.
+export async function updateMembershipStartAction(
+  membershipId: string,
+  dateStr: string, // YYYY-MM-DD (Chisinau calendar day)
+): Promise<ActionResult> {
+  const actor = await requireAdmin();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return { error: "INVALID_DATE" };
+  const supabase = await createClient();
+  // From the first minute of the chosen day; the expiry editor mirrors this
+  // with 23:59 on its own day.
+  const starts = bucharestWallToUtc(dateStr, "00:00").toISOString();
+  const { error } = await supabase
+    .from("user_memberships")
+    .update({ starts_at: starts })
+    .eq("id", membershipId);
+  if (!error) {
+    await logAudit(actor, "membership.start", "membership", membershipId, { to: dateStr });
+  }
+  revalidatePath("/[lang]/admin/members", "page");
+  return { error: error?.message ?? null };
+}
+
+// Create a member account at the desk, WITHOUT sending anything.
+//
+// The public /register form signs people up with a magic link, and this project
+// runs on Supabase's built-in mailer: rate_limit_email_sent = 2 per hour, for
+// the entire project. Reception registering four people in a row got two
+// accounts and then "email requested too many times". The admin API creates a
+// confirmed user and sends no mail at all, so there is no limit to hit —
+// verified by creating six in a row.
+//
+// The member never needed that email: on_auth_user_created gives them a profile
+// and a qr_uuid immediately, which is all the door wants, and they can request a
+// login link themselves later, one at a time, well inside the cap.
+export async function createMemberAction(input: {
+  fullName: string;
+  email: string;
+  phone: string | null;
+}): Promise<{ error: string | null; userId?: string }> {
+  const actor = await requireAdmin();
+  const fullName = input.fullName.trim();
+  const email = input.email.trim().toLowerCase();
+  const phone = (input.phone ?? "").trim() || null;
+  if (fullName.length < 2) return { error: "INVALID_NAME" };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "INVALID_EMAIL" };
+
+  let service;
+  try {
+    service = createAdminClient();
+  } catch {
+    return { error: "NO_SERVICE_KEY" };
+  }
+
+  // Refuse a duplicate rather than silently handing back somebody else's account.
+  const { data: taken } = await service
+    .from("profiles")
+    .select("id")
+    .eq("email", email)
+    .maybeSingle();
+  if (taken) return { error: "EMAIL_TAKEN" };
+
+  const { data: created, error: createErr } = await service.auth.admin.createUser({
+    email,
+    // Confirmed on creation, which is also what suppresses the confirmation
+    // mail — the whole point of this path.
+    email_confirm: true,
+    user_metadata: { full_name: fullName, phone, preferred_lang: "ro" },
+  });
+  if (createErr || !created?.user) {
+    const msg = createErr?.message ?? "";
+    return { error: /already|registered/i.test(msg) ? "EMAIL_TAKEN" : "CREATE_FAILED" };
+  }
+  const userId = created.user.id;
+
+  // The trigger writes email and preferred_lang only; the name, phone and home
+  // studio are ours to set. Without a studio the member is invisible in BOTH
+  // rosters — the same failure profile-sync.ts exists to prevent.
+  const scope = await getAdminScope(actor);
+  const patch: { full_name: string; phone?: string; location_id?: string } = {
+    full_name: fullName,
+  };
+  if (phone) patch.phone = phone;
+  if (scope.activeId) patch.location_id = scope.activeId;
+  const { error: profErr } = await service.from("profiles").update(patch).eq("id", userId);
+  if (profErr) return { error: "PROFILE_FAILED" };
+
+  await logAudit(actor, "member.create", "member", userId, { email });
+  revalidatePath("/[lang]/admin/members", "page");
+  return { error: null, userId };
 }
 
 export async function updateMembershipExpiryAction(

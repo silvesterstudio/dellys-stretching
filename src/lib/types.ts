@@ -464,6 +464,9 @@ export interface Database {
           plan_id: string;
           sessions_remaining: number;
           expires_at: string;
+          // When the bundle becomes usable (0036). Defaults to the sale moment;
+          // the front desk can set it forward for one that begins later.
+          starts_at: string;
           assigned_by: string | null;
           note: string | null;
           frozen: boolean;
@@ -478,6 +481,7 @@ export interface Database {
           plan_id: string;
           sessions_remaining: number;
           expires_at: string;
+          starts_at?: string;
           assigned_by?: string | null;
           note?: string | null;
           frozen?: boolean;

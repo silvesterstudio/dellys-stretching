@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { TIMEZONE, type Locale } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { localized } from "@/lib/i18n-data";
 import { formatDate, formatTime, formatPrice } from "@/lib/format";
 import {
   searchMembersAction,
+  createMemberAction,
   getMemberDetailAction,
   assignMembershipAction,
   transferMembershipAction,
@@ -14,7 +15,8 @@ import {
   setStaffRoleAction,
   decideMembershipRequestAction,
   setMembershipFrozenAction,
-  addMembershipSessionsAction,
+  setMembershipSessionsAction,
+  updateMembershipStartAction,
   updateMembershipExpiryAction,
   deleteMembershipAction,
   type AdminMemberRow,
@@ -92,6 +94,38 @@ export function MembersExplorer({
   // (USER_NOT_FOUND, PLAN_INACTIVE, ASSIGN_FAILED…) looked exactly like a
   // success: spinner stops, nothing changes. Surface the code instead.
   const [err, setErr] = useState<string | null>(null);
+  // Creating an account at the desk. Deliberately email-free — see
+  // createMemberAction: the built-in mailer allows 2 messages an hour for the
+  // whole project, so registering people through /register stalls after two.
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [justCreated, setJustCreated] = useState(false);
+
+  function createMember(e: React.FormEvent) {
+    e.preventDefault();
+    startAction(async () => {
+      setErr(null);
+      const res = await createMemberAction({
+        fullName: newName,
+        email: newEmail,
+        phone: newPhone || null,
+      });
+      if (res.error || !res.userId) {
+        setErr(res.error === "EMAIL_TAKEN" ? m.errEmailTaken : (res.error ?? "CREATE_FAILED"));
+        return;
+      }
+      setNewName("");
+      setNewEmail("");
+      setNewPhone("");
+      setCreating(false);
+      setJustCreated(true);
+      setResults(await searchMembersAction(""));
+      setSelectedId(res.userId);
+      setDetail(await getMemberDetailAction(res.userId));
+    });
+  }
 
   function runSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -171,6 +205,61 @@ export function MembersExplorer({
     <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_1fr]">
       {/* ---- List ---- */}
       <div className="space-y-3">
+        <div className="mb-3">
+          {creating ? (
+            <form onSubmit={createMember} className="card space-y-2 p-3.5">
+              <div className="text-sm font-semibold text-mauve-800">{m.newMember}</div>
+              <p className="text-xs text-mauve-400">{m.newMemberHint}</p>
+              <input
+                className="input w-full px-2 py-1.5 text-sm"
+                placeholder={m.fullName}
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                required
+              />
+              <input
+                className="input w-full px-2 py-1.5 text-sm"
+                type="email"
+                placeholder={m.email}
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                required
+              />
+              <input
+                className="input w-full px-2 py-1.5 text-sm"
+                placeholder={m.phone}
+                value={newPhone}
+                onChange={(e) => setNewPhone(e.target.value)}
+              />
+              <div className="flex gap-2">
+                <button type="submit" disabled={busy} className="btn-primary flex-1 px-3 py-1.5 text-xs">
+                  {m.createMember}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreating(false);
+                    setErr(null);
+                  }}
+                  className="btn-secondary px-3 py-1.5 text-xs"
+                >
+                  {dict.common.cancel}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <button
+              onClick={() => {
+                setCreating(true);
+                setJustCreated(false);
+              }}
+              className="btn-secondary w-full px-3 py-2 text-xs"
+            >
+              + {m.newMember}
+            </button>
+          )}
+        </div>
+
         <form onSubmit={runSearch} className="flex gap-2">
           <input
             className="input"
@@ -244,6 +333,20 @@ export function MembersExplorer({
                   <span className="badge-brand">{m.receptionRole}</span>
                 ) : null}
               </div>
+
+              {/* The door credential. An account made at the desk never gets an
+                  email, so this is how the member leaves with something that
+                  works at the tablet. */}
+              {detail.profile.qr_uuid && (
+                <MemberQrPanel
+                  token={detail.profile.qr_uuid}
+                  label={m.memberQr}
+                  showLabel={m.showQr}
+                  hideLabel={m.hideQr}
+                  highlight={justCreated}
+                  note={justCreated ? m.createdNoEmail : null}
+                />
+              )}
 
               {/* Reception (front-desk staff) toggle — never shown for admins. */}
               {detail.profile.role !== "admin" && (
@@ -518,6 +621,77 @@ function Empty({ text }: { text: string }) {
   return <p className="text-sm text-mauve-400">{text}</p>;
 }
 
+// The member's door credential, rendered on demand.
+//
+// Collapsed by default: this is a bearer token — whoever shows it gets checked
+// in — so it should not sit open on a screen at a front desk all day. It is
+// drawn in the browser from the raw uuid, so the image is never stored or
+// served, and it opens by itself right after an account is created, which is
+// the one moment somebody is standing there waiting for it.
+function MemberQrPanel({
+  token,
+  label,
+  showLabel,
+  hideLabel,
+  highlight,
+  note,
+}: {
+  token: string;
+  label: string;
+  showLabel: string;
+  hideLabel: string;
+  highlight: boolean;
+  note: string | null;
+}) {
+  const [open, setOpen] = useState(highlight);
+  const [src, setSrc] = useState<string | null>(null);
+
+  useEffect(() => {
+    setOpen(highlight);
+  }, [highlight, token]);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    void (async () => {
+      const QRCode = (await import("qrcode")).default;
+      // High error correction: this gets photographed off a monitor at an angle.
+      const url = await QRCode.toDataURL(token, {
+        errorCorrectionLevel: "H",
+        margin: 1,
+        width: 512,
+        color: { dark: "#16151b", light: "#ffffff" },
+      });
+      if (!cancelled) setSrc(url);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, token]);
+
+  return (
+    <div className={`mt-4 rounded-2xl border p-3 ${highlight ? "border-brand-300 bg-brand-50" : "border-mauve-100"}`}>
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-xs font-semibold text-mauve-600">{label}</span>
+        <button onClick={() => setOpen((v) => !v)} className="btn-ghost px-3 py-1 text-xs">
+          {open ? hideLabel : showLabel}
+        </button>
+      </div>
+      {note && <p className="mt-1 text-xs font-medium text-brand-700">{note}</p>}
+      {open && (
+        <div className="mt-3 flex justify-center">
+          {src ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={src} alt={label} className="h-44 w-44 rounded-xl bg-white p-2" />
+          ) : (
+            <div className="h-44 w-44 animate-pulse rounded-xl bg-mauve-100" />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MembershipRow({
   mem,
   lang,
@@ -532,12 +706,26 @@ function MembershipRow({
   onChanged: () => void;
 }) {
   const m = dict.admin.member;
-  const [delta, setDelta] = useState(1);
+  // The editable figure is the TOTAL left, not a delta: the desk thinks "she
+  // should have 8", and a wrong total is visible before saving where a wrong
+  // delta is not.
+  const [sessions, setSessions] = useState(mem.sessions_remaining);
+  const [start, setStart] = useState(toDateInput(mem.starts_at));
   const [expiry, setExpiry] = useState(toDateInput(mem.expires_at));
   const [working, setWorking] = useState(false);
   const expired = new Date(mem.expires_at).getTime() <= Date.now();
-  const usable = !expired && mem.sessions_remaining > 0 && !mem.frozen;
+  const notStarted = new Date(mem.starts_at).getTime() > Date.now();
+  const usable = !expired && !notStarted && mem.sessions_remaining > 0 && !mem.frozen;
   const disabled = busy || working;
+  const sessionsDirty = sessions !== mem.sessions_remaining;
+
+  // Re-sync when the row is refetched, or the inputs keep a stale figure after
+  // somebody else changes it.
+  useEffect(() => {
+    setSessions(mem.sessions_remaining);
+    setStart(toDateInput(mem.starts_at));
+    setExpiry(toDateInput(mem.expires_at));
+  }, [mem.sessions_remaining, mem.starts_at, mem.expires_at]);
 
   async function run(fn: () => Promise<unknown>) {
     setWorking(true);
@@ -564,9 +752,15 @@ function MembershipRow({
           <div className={usable ? "font-semibold text-brand-600" : "text-mauve-400"}>
             {mem.sessions_remaining} {m.sessionsShort}
           </div>
-          <div className={`text-xs ${expired ? "text-red-500" : "text-mauve-400"}`}>
-            {expired ? m.expired : m.active} · {formatDate(mem.expires_at, lang)}
-          </div>
+          {notStarted ? (
+            <div className="text-xs font-medium text-amber-600">
+              {m.notStarted} {formatDate(mem.starts_at, lang)}
+            </div>
+          ) : (
+            <div className={`text-xs ${expired ? "text-red-500" : "text-mauve-400"}`}>
+              {expired ? m.expired : m.active} · {formatDate(mem.expires_at, lang)}
+            </div>
+          )}
         </div>
       </div>
 
@@ -579,24 +773,65 @@ function MembershipRow({
           {mem.frozen ? m.unfreeze : m.freeze}
         </button>
 
+        {/* Sessions: minus and plus, and the figure itself is typeable. Save
+            only lights up once it differs from what is stored, so a stray tap
+            cannot quietly write the same number back. */}
         <div className="inline-flex items-center gap-1">
+          <span className="mr-1 text-xs text-mauve-400">{m.setSessions}</span>
+          <button
+            onClick={() => setSessions((n) => Math.max(0, n - 1))}
+            disabled={disabled || sessions <= 0}
+            className="btn-secondary h-8 w-8 px-0 py-0 text-base leading-none"
+            aria-label="-1"
+          >
+            &minus;
+          </button>
           <input
             type="number"
-            value={delta}
-            onChange={(e) => setDelta(Number(e.target.value))}
-            className="input w-16 px-2 py-1.5 text-sm"
-            aria-label={m.addSessions}
+            min={0}
+            value={sessions}
+            onChange={(e) => setSessions(Math.max(0, Math.trunc(Number(e.target.value) || 0)))}
+            className="input w-16 px-2 py-1.5 text-center text-sm tabular-nums"
+            aria-label={m.setSessions}
           />
           <button
-            onClick={() => run(() => addMembershipSessionsAction(mem.id, delta))}
-            disabled={disabled || !delta}
+            onClick={() => setSessions((n) => n + 1)}
+            disabled={disabled}
+            className="btn-secondary h-8 w-8 px-0 py-0 text-base leading-none"
+            aria-label="+1"
+          >
+            +
+          </button>
+          <button
+            onClick={() => run(() => setMembershipSessionsAction(mem.id, sessions))}
+            disabled={disabled || !sessionsDirty}
             className="btn-secondary px-3 py-1.5 text-xs"
           >
-            {m.addSessions}
+            {m.applySessions}
+          </button>
+        </div>
+
+        {/* When it begins. A bundle dated forward cannot be spent until then. */}
+        <div className="inline-flex items-center gap-1">
+          <span className="mr-1 text-xs text-mauve-400">{m.startsOn}</span>
+          <input
+            type="date"
+            value={start}
+            onChange={(e) => setStart(e.target.value)}
+            className="input px-2 py-1.5 text-sm"
+            aria-label={m.editStart}
+          />
+          <button
+            onClick={() => run(() => updateMembershipStartAction(mem.id, start))}
+            disabled={disabled || !start || start === toDateInput(mem.starts_at)}
+            className="btn-secondary px-3 py-1.5 text-xs"
+          >
+            {dict.common.save}
           </button>
         </div>
 
         <div className="inline-flex items-center gap-1">
+          <span className="mr-1 text-xs text-mauve-400">{m.expires}</span>
           <input
             type="date"
             value={expiry}
@@ -606,7 +841,7 @@ function MembershipRow({
           />
           <button
             onClick={() => run(() => updateMembershipExpiryAction(mem.id, expiry))}
-            disabled={disabled || !expiry}
+            disabled={disabled || !expiry || expiry === toDateInput(mem.expires_at)}
             className="btn-secondary px-3 py-1.5 text-xs"
           >
             {dict.common.save}

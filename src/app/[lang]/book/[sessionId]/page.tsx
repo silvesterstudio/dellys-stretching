@@ -75,7 +75,8 @@ export default async function BookPage({
     .eq("plan.audience", session.class_type.audience)
     .eq("frozen", false)
     .gt("sessions_remaining", 0)
-    .gt("expires_at", new Date().toISOString());
+    .gt("expires_at", new Date().toISOString())
+    .lte("starts_at", new Date().toISOString());
   const balance = (mems ?? []).reduce(
     (sum, m) => sum + ((m.sessions_remaining as number) ?? 0),
     0,

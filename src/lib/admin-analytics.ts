@@ -240,6 +240,8 @@ export async function computeRenewals(
       .eq("profile.role", "client")
       .gt("sessions_remaining", 0)
       .gt("expires_at", nowISO)
+      // A bundle that has not begun is not up for renewal yet (0036).
+      .lte("starts_at", nowISO)
       .or(`expires_at.lt.${horizonISO},sessions_remaining.lte.${lowThreshold}`);
     if (locationId) query = query.eq("plan.location_id", locationId);
     const { data } = await query
@@ -407,7 +409,9 @@ export async function computeKpis(
       .select("sessions_remaining, plan:membership_plans!inner ( location_id )")
       .eq("frozen", false)
       .gt("sessions_remaining", 0)
-      .gt("expires_at", nowISO);
+      .gt("expires_at", nowISO)
+      // "Active" means active today, not sold and waiting to start.
+      .lte("starts_at", nowISO);
     let membersQuery = admin
       .from("profiles")
       .select("id", { count: "exact", head: true })

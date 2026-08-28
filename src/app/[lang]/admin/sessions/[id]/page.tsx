@@ -114,7 +114,9 @@ export default async function RosterPage({
       .eq("frozen", false)
       .in("user_id", userIds)
       .gt("sessions_remaining", 0)
-      .gt("expires_at", new Date().toISOString());
+      .gt("expires_at", new Date().toISOString())
+      // Not-yet-started bundles are not spendable — see 0036.
+      .lte("starts_at", new Date().toISOString());
     memOpts = (mems ?? []).map((m: Record<string, unknown>) => {
       const plan = one(m.plan) as { name_ro: string; name_ru: string } | null;
       return {

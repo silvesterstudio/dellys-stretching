@@ -153,7 +153,9 @@ export default async function DashboardPage({
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {memberships.map((m) => {
               const expired = new Date(m.expires_at).getTime() <= now;
-              const usable = !expired && m.sessions_remaining > 0 && !m.frozen;
+              // Bought early, starts later: it must not read as ready to use.
+              const notStarted = new Date(m.starts_at).getTime() > now;
+              const usable = !expired && !notStarted && m.sessions_remaining > 0 && !m.frozen;
               return (
                 <div key={m.id} className="card p-4">
                   <div className="font-medium text-mauve-900">
@@ -171,6 +173,10 @@ export default async function DashboardPage({
                   <div className="mt-1 text-xs text-mauve-400">
                     {m.frozen ? (
                       <span className="text-mauve-500">{dict.admin.member.frozen}</span>
+                    ) : notStarted ? (
+                      <span className="text-amber-600">
+                        {dict.admin.member.startsOn} {formatDate(m.starts_at, locale)}
+                      </span>
                     ) : expired ? (
                       <span className="text-red-500">{dict.dashboard.expired}</span>
                     ) : m.sessions_remaining <= 0 ? (

@@ -13,6 +13,7 @@ export function bookingErrorMessage(raw: string, dict: Dictionary): string {
   if (code.includes("CHILD_REQUIRED")) return b.selectChild;
   if (code.includes("INVALID_CHILD")) return b.selectChild;
   if (code.includes("WRONG_LOCATION")) return b.wrongLocation;
+  if (code.includes("MEMBERSHIP_NOT_STARTED")) return b.membershipNotStarted;
   return dict.common.error;
 }
 
