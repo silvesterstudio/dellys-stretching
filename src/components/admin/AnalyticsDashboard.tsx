@@ -4,7 +4,13 @@ import { useState, useTransition } from "react";
 import type { Locale } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { formatPrice } from "@/lib/format";
-import type { RangePreset, WindowMetrics, KpiMetrics } from "@/lib/admin-analytics";
+import type {
+  RangePreset,
+  WindowMetrics,
+  KpiMetrics,
+  ActivitySeries,
+} from "@/lib/admin-analytics";
+import { BarChartCard } from "@/components/admin/BarChartCard";
 import { getMetricsAction } from "@/app/[lang]/admin/dashboard/actions";
 
 const PRESETS: { key: RangePreset; labelKey: keyof Dictionary["admin"]["stats"] }[] = [
@@ -21,6 +27,7 @@ export function AnalyticsDashboard({
   dict,
   kpis,
   initialMetrics,
+  initialSeries,
   initialPreset,
   initialStart,
   initialEnd,
@@ -29,6 +36,7 @@ export function AnalyticsDashboard({
   dict: Dictionary;
   kpis: KpiMetrics;
   initialMetrics: WindowMetrics;
+  initialSeries: ActivitySeries;
   initialPreset: RangePreset;
   initialStart: string;
   initialEnd: string;
@@ -36,6 +44,7 @@ export function AnalyticsDashboard({
   const t = dict.admin.stats;
   const [preset, setPreset] = useState<RangePreset>(initialPreset);
   const [metrics, setMetrics] = useState(initialMetrics);
+  const [series, setSeries] = useState(initialSeries);
   const [startDate, setStartDate] = useState(initialStart);
   const [endDate, setEndDate] = useState(initialEnd);
   const [pending, startTransition] = useTransition();
@@ -46,6 +55,7 @@ export function AnalyticsDashboard({
     startTransition(async () => {
       const res = await getMetricsAction({ preset: p });
       setMetrics(res.metrics);
+      setSeries(res.series);
       setStartDate(res.startDate);
       setEndDate(res.endDate);
     });
@@ -55,6 +65,7 @@ export function AnalyticsDashboard({
     startTransition(async () => {
       const res = await getMetricsAction({ preset: "custom", startDate, endDate });
       setMetrics(res.metrics);
+      setSeries(res.series);
       setStartDate(res.startDate);
       setEndDate(res.endDate);
     });
@@ -201,6 +212,61 @@ export function AnalyticsDashboard({
               <div className="mt-1.5 text-xs leading-snug text-mauve-400">{c.hint}</div>
             </div>
           ))}
+        </div>
+
+        {/* The two charts answer the questions the tiles cannot: WHEN people
+            came, and WHEN the money arrived. Both are drawn from the same
+            window as the tiles above, fetched in the same request, so a total
+            can never disagree with its own bars. */}
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <BarChartCard
+            title={t.chartCheckins}
+            total={String(series.checkinsTotal)}
+            buckets={series.buckets}
+            pick={(b) => b.checkins}
+            color="#e0115f"
+          />
+          <BarChartCard
+            title={t.chartRevenue}
+            total={formatPrice(series.revenueTotal, series.currency, lang)}
+            buckets={series.buckets}
+            pick={(b) => b.revenue}
+            color="#10b981"
+            footer={
+              /* How it was collected. Cash and card are the two the desk
+                 actually uses; the others only appear when they are non-zero,
+                 so the row does not carry four permanent noughts. */
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {(
+                  [
+                    ["cash", t.payCash, "#10b981"],
+                    ["card", t.payCard, "#0ea5e9"],
+                    ["transfer", t.payTransfer, "#8b5cf6"],
+                    ["free", t.payFree, "#9d959c"],
+                  ] as const
+                )
+                  .filter(([k]) => k === "cash" || k === "card" || series.byMethod[k] > 0)
+                  .map(([k, label, dot]) => (
+                    <div
+                      key={k}
+                      className="flex items-center justify-between gap-2 rounded-xl border border-mauve-200/70 bg-mauve-50/50 px-3 py-2"
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span
+                          className="h-2 w-2 shrink-0 rounded-full"
+                          style={{ background: dot }}
+                          aria-hidden
+                        />
+                        <span className="truncate text-xs font-semibold text-mauve-600">{label}</span>
+                      </span>
+                      <span className="shrink-0 text-sm font-bold tabular-nums text-mauve-900">
+                        {formatPrice(series.byMethod[k], series.currency, lang)}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            }
+          />
         </div>
       </section>
     </div>

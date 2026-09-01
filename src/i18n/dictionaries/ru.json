@@ -690,7 +690,13 @@
       "hintSessionsHeld": "Сколько занятий прошло",
       "hintAttendance": "Зафиксированные приходы",
       "hintNewMembers": "Созданные аккаунты",
-      "hintBookings": "Записи онлайн"
+      "hintBookings": "Записи онлайн",
+      "chartCheckins": "Активность входов",
+      "chartRevenue": "Выручка",
+      "payCash": "Наличные",
+      "payCard": "Карта",
+      "payTransfer": "Перевод",
+      "payFree": "Бесплатно"
     },
     "bookingStatus": {
       "pending": "Ожидание",

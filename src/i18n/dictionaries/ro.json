@@ -690,7 +690,13 @@
       "hintSessionsHeld": "Câte clase au avut loc",
       "hintAttendance": "Intrări înregistrate",
       "hintNewMembers": "Conturi create",
-      "hintBookings": "Locuri rezervate online"
+      "hintBookings": "Locuri rezervate online",
+      "chartCheckins": "Activitate intrări",
+      "chartRevenue": "Venituri",
+      "payCash": "Numerar",
+      "payCard": "Card",
+      "payTransfer": "Transfer",
+      "payFree": "Gratuit"
     },
     "bookingStatus": {
       "pending": "În așteptare",

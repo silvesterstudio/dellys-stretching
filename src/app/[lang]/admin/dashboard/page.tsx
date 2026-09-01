@@ -7,6 +7,7 @@ import {
   resolveRange,
   computeKpis,
   computeWindowMetrics,
+  computeActivitySeries,
   computeRenewals,
   computeRecentTransactions,
   computeRecentAudit,
@@ -55,9 +56,10 @@ export default async function AdminDashboardPage({
 
   const initialPreset: RangePreset = "7d";
   const { startISO, endISO, startDate, endDate } = resolveRange({ preset: initialPreset });
-  const [kpis, metrics, renewals, transactions, audit, funnel] = await Promise.all([
+  const [kpis, metrics, series, renewals, transactions, audit, funnel] = await Promise.all([
     computeKpis(new Date(), loc),
     computeWindowMetrics(startISO, endISO, loc),
+    computeActivitySeries(startISO, endISO, loc),
     computeRenewals(new Date(), 7, 2, loc),
     computeRecentTransactions(locale, 20, loc),
     computeRecentAudit(),
@@ -78,6 +80,7 @@ export default async function AdminDashboardPage({
         dict={dict}
         kpis={kpis}
         initialMetrics={metrics}
+        initialSeries={series}
         initialPreset={initialPreset}
         initialStart={startDate}
         initialEnd={endDate}

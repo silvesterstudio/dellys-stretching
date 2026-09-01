@@ -208,6 +208,171 @@ export async function computeWindowMetrics(
   }
 }
 
+// --- Activity over the window, bucketed for the two charts -----------------
+//
+// The reference dashboard draws check-ins and revenue as bars across the day.
+// Both series come from columns that already exist — checkin_logs.created_at and
+// user_memberships.created_at/amount_paid — so nothing here is invented.
+//
+// Buckets adapt to the window: a day or two is drawn hour by hour, anything
+// longer day by day. Twenty-four bars for a year would be meaningless, and 365
+// bars for a day even more so.
+
+export interface SeriesBucket {
+  /** Axis label, already formatted in the studio's timezone. */
+  label: string;
+  checkins: number;
+  revenue: number;
+}
+
+export interface ActivitySeries {
+  buckets: SeriesBucket[];
+  hourly: boolean;
+  checkinsTotal: number;
+  revenueTotal: number;
+  currency: string;
+  /** Revenue split the way the front desk collected it. */
+  byMethod: { cash: number; card: number; transfer: number; free: number };
+}
+
+const EMPTY_SERIES: ActivitySeries = {
+  buckets: [],
+  hourly: true,
+  checkinsTotal: 0,
+  revenueTotal: 0,
+  currency: "MDL",
+  byMethod: { cash: 0, card: 0, transfer: 0, free: 0 },
+};
+
+// Which bucket a timestamp belongs to, in Chisinau wall-clock rather than UTC:
+// a 21:00 sale must land on the 21:00 bar, not on the next day's.
+function chisinauParts(iso: string): { day: string; hour: number } {
+  const d = new Date(iso);
+  const f = new Intl.DateTimeFormat("en-CA", {
+    timeZone: TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    hour12: false,
+  });
+  const parts = Object.fromEntries(f.formatToParts(d).map((x) => [x.type, x.value]));
+  return {
+    day: `${parts.year}-${parts.month}-${parts.day}`,
+    // Intl gives "24" for midnight in some runtimes.
+    hour: Number(parts.hour) % 24,
+  };
+}
+
+export async function computeActivitySeries(
+  startISO: string,
+  endISO: string,
+  locationId?: string | null,
+): Promise<ActivitySeries> {
+  try {
+    const admin = createAdminClient();
+    const spanHours = (new Date(endISO).getTime() - new Date(startISO).getTime()) / 3_600_000;
+    const hourly = spanHours <= 48;
+
+    // Only successful scans: a refused scan is not attendance, and the chart is
+    // read as "how busy were we".
+    let checkQuery = admin
+      .from("checkin_logs")
+      .select("created_at")
+      .eq("result", "ok")
+      .gte("created_at", startISO)
+      .lt("created_at", endISO);
+
+    // Revenue follows the PLAN's studio, exactly as computeWindowMetrics does,
+    // so the chart's total and the KPI tile can never disagree.
+    let soldQuery = admin
+      .from("user_memberships")
+      .select("created_at, amount_paid, payment_method, plan:membership_plans!inner ( price, currency, system_key, location_id )")
+      .gte("created_at", startISO)
+      .lt("created_at", endISO);
+
+    if (locationId) {
+      checkQuery = checkQuery.eq("location_id", locationId);
+      soldQuery = soldQuery.eq("plan.location_id", locationId);
+    }
+
+    const [checks, sold] = await Promise.all([checkQuery, soldQuery]);
+
+    // Build the empty buckets first so quiet hours still draw a zero bar —
+    // a chart with gaps reads as missing data rather than as a quiet morning.
+    const keys: string[] = [];
+    const labels: string[] = [];
+    if (hourly) {
+      for (let h = 0; h < 24; h++) {
+        keys.push(String(h));
+        labels.push(`${String(h).padStart(2, "0")}:00`);
+      }
+    } else {
+      const cur = new Date(startISO);
+      const end = new Date(endISO);
+      while (cur < end) {
+        const { day } = chisinauParts(cur.toISOString());
+        if (!keys.includes(day)) {
+          keys.push(day);
+          labels.push(day.slice(5).replace("-", "."));
+        }
+        cur.setUTCDate(cur.getUTCDate() + 1);
+      }
+    }
+    const bucket = new Map<string, { checkins: number; revenue: number }>();
+    for (const k of keys) bucket.set(k, { checkins: 0, revenue: 0 });
+
+    const keyOf = (iso: string) => {
+      const { day, hour } = chisinauParts(iso);
+      return hourly ? String(hour) : day;
+    };
+
+    let checkinsTotal = 0;
+    for (const row of (checks.data ?? []) as { created_at: string }[]) {
+      const b = bucket.get(keyOf(row.created_at));
+      if (b) {
+        b.checkins += 1;
+        checkinsTotal += 1;
+      }
+    }
+
+    let revenueTotal = 0;
+    let currency = "MDL";
+    const byMethod = { cash: 0, card: 0, transfer: 0, free: 0 };
+    for (const row of (sold.data ?? []) as Record<string, unknown>[]) {
+      const plan = one(row.plan as never) as
+        | { price: number; currency: string; system_key: string | null }
+        | null;
+      // Transfers and imports hang off hidden system plans — not sales.
+      if (plan?.system_key) continue;
+      const paid = row.amount_paid;
+      const amount = paid != null ? Number(paid) || 0 : Number(plan?.price) || 0;
+      if (plan?.currency) currency = plan.currency;
+      revenueTotal += amount;
+      const b = bucket.get(keyOf(row.created_at as string));
+      if (b) b.revenue += amount;
+      const method = String(row.payment_method ?? "cash");
+      if (method in byMethod) byMethod[method as keyof typeof byMethod] += amount;
+      else byMethod.cash += amount;
+    }
+
+    return {
+      buckets: keys.map((k, i) => ({
+        label: labels[i],
+        checkins: bucket.get(k)?.checkins ?? 0,
+        revenue: bucket.get(k)?.revenue ?? 0,
+      })),
+      hourly,
+      checkinsTotal,
+      revenueTotal,
+      currency,
+      byMethod,
+    };
+  } catch {
+    return EMPTY_SERIES;
+  }
+}
+
 export interface RenewalRow {
   userId: string;
   name: string;
