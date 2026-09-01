@@ -17,6 +17,7 @@ import {
   type CheckinLogRow,
 } from "@/components/admin/KioskPanel";
 import { getAdminScope } from "@/lib/locations-server";
+import { PageHead } from "@/components/admin/PageHead";
 
 export const dynamic = "force-dynamic";
 
@@ -176,6 +177,7 @@ export default async function TodayPage({
 
   return (
     <div className="space-y-5">
+      <PageHead title={dict.admin.headToday} subtitle={dict.admin.headTodaySub} />
       <div>
         <LocationBar
           locations={scope.locations}

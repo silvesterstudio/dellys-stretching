@@ -10,7 +10,13 @@ import { ExportMembersButton } from "@/components/admin/ExportMembersButton";
 import { ResetPanel } from "@/components/admin/ResetPanel";
 import { LocationBar } from "@/components/admin/LocationBar";
 import { getAdminScope } from "@/lib/locations-server";
-import type { AdminMemberRow } from "@/app/[lang]/admin/actions";
+import type { AdminMemberRow, MemberListRow } from "@/app/[lang]/admin/actions";
+import { PageHead } from "@/components/admin/PageHead";
+import {
+  deriveMemberStatus,
+  type MembershipLike,
+  type MemberStatus,
+} from "@/lib/member-status";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +42,7 @@ export default async function MembersPage({
 
   let plans: Record<string, unknown>[] = [];
   let reqs: Record<string, unknown>[] = [];
-  let members: AdminMemberRow[] = [];
+  let members: MemberListRow[] = [];
   try {
     const admin = createAdminClient();
 
@@ -68,11 +74,34 @@ export default async function MembersPage({
         )
         .eq("status", "pending")
         .order("created_at", { ascending: true }),
-      memberQuery.order("created_at", { ascending: false }).limit(50),
+      // The roster used to stop at 50, which also made the count above the list
+      // a capped number pretending to be a total. The studios have tens of
+      // members, not thousands; the ceiling is a runaway guard, not a page size.
+      memberQuery.order("created_at", { ascending: false }).limit(1000),
     ]);
     plans = (p.data ?? []) as Record<string, unknown>[];
     reqs = (r.data ?? []) as Record<string, unknown>[];
-    members = (mem.data ?? []) as AdminMemberRow[];
+
+    const base = (mem.data ?? []) as AdminMemberRow[];
+
+    // One query for every membership these people hold, then derive each
+    // member's state in memory. Cheaper and more consistent than a per-member
+    // round trip, and the filter counts come from the same list that is
+    // rendered — so a badge and a count can never disagree.
+    const ids = base.map((m) => m.id);
+    let byUser = new Map<string, MembershipLike[]>();
+    if (ids.length) {
+      const { data: mems } = await admin
+        .from("user_memberships")
+        .select("user_id, frozen, starts_at, expires_at, sessions_remaining")
+        .in("user_id", ids);
+      for (const row of (mems ?? []) as (MembershipLike & { user_id: string })[]) {
+        const list = byUser.get(row.user_id) ?? [];
+        list.push(row);
+        byUser.set(row.user_id, list);
+      }
+    }
+    members = base.map((m) => ({ ...m, ...deriveMemberStatus(byUser.get(m.id) ?? []) }));
   } catch {
     // Missing service key / Supabase blip → render the page empty, not a 500.
   }
@@ -104,8 +133,15 @@ export default async function MembersPage({
     };
   });
 
+  // Counts for the filter, derived from the very list being shown.
+  const counts = { all: members.length } as Record<MemberStatus | "all", number>;
+  for (const st of ["active", "frozen", "pending", "inactive"] as MemberStatus[]) {
+    counts[st] = members.filter((m) => m.status === st).length;
+  }
+
   return (
     <div className="space-y-8">
+      <PageHead title={dict.admin.headMembers} subtitle={dict.admin.headMembersSub} />
       <LocationBar
         locations={scope.locations}
         activeId={scope.activeId}
@@ -122,6 +158,7 @@ export default async function MembersPage({
         dict={dict}
         plans={plans as never}
         initialMembers={members}
+        counts={counts}
       />
       {/* Wipes every studio's members at once — unrestricted admins only. */}
       {profile.location_id === null && <ResetPanel kind="members" dict={dict} />}

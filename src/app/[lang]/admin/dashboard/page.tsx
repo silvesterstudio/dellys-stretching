@@ -22,6 +22,7 @@ import { AuditPanel } from "@/components/admin/AuditPanel";
 import { ResetPanel } from "@/components/admin/ResetPanel";
 import { LocationBar } from "@/components/admin/LocationBar";
 import { getAdminScope } from "@/lib/locations-server";
+import { PageHead } from "@/components/admin/PageHead";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +69,7 @@ export default async function AdminDashboardPage({
 
   return (
     <div className="space-y-8">
+      <PageHead title={dict.admin.headDashboard} subtitle={dict.admin.headDashboardSub} />
       <LocationBar
         locations={scope.locations}
         activeId={scope.activeId}

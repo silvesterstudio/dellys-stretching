@@ -29,9 +29,8 @@ export default async function AdminLayout({
   return (
     <div className="admin-shell container-page safe-x py-8 sm:py-10">
       <LiveRefresh />
-      <h1 className="mb-6 font-display text-3xl font-semibold tracking-tight text-mauve-900">
-        {dict.admin.title}
-      </h1>
+      {/* No heading here any more — each page prints its own via <PageHead>,
+          so a screen says what it is instead of all of them saying the same. */}
       {children}
     </div>
   );

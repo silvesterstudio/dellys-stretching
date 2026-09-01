@@ -617,7 +617,23 @@
       "email": "Email",
       "phone": "Телефон",
       "errEmailTaken": "Аккаунт с таким email уже существует.",
-      "expires": "Истекает"
+      "expires": "Истекает",
+      "filterAll": "Все",
+      "statusActive": "Активные",
+      "statusPending": "Начнётся позже",
+      "statusFrozen": "Заморожен",
+      "statusInactive": "Без активного абонемента",
+      "searchLabel": "Поиск по имени, email или телефону",
+      "noMatches": "Участники не найдены.",
+      "badgeActive": "Активен",
+      "badgePending": "Запланирован",
+      "badgeFrozen": "Заморожен",
+      "badgeInactive": "Неактивен",
+      "sessionsShort": "зан.",
+      "memberDetail": "Карточка участника",
+      "loadFailed": "Не удалось загрузить данные участника.",
+      "retry": "Повторить",
+      "saveFailed": "Не удалось сохранить. Проверьте соединение."
     },
     "currentMemberships": "Активные абонементы",
     "noSessionsToday": "Нет занятий.",
@@ -696,7 +712,8 @@
       "payCash": "Наличные",
       "payCard": "Карта",
       "payTransfer": "Перевод",
-      "payFree": "Бесплатно"
+      "payFree": "Бесплатно",
+      "nowSuffix": "прямо сейчас, не за выбранный период"
     },
     "bookingStatus": {
       "pending": "Ожидание",
@@ -766,7 +783,17 @@
         "class_full": "Группа заполнена",
         "no_membership": "Нет занятий на абонементе"
       }
-    }
+    },
+    "headDashboard": "Панель",
+    "headDashboardSub": "Статистика, активность и выручка",
+    "headMembers": "Участники",
+    "headMembersSub": "Управление участниками и абонементами",
+    "headToday": "Сегодня",
+    "headTodaySub": "Сегодняшние занятия и посещаемость",
+    "headPlans": "Цены",
+    "headPlansSub": "Абонементы, которые продаёт ресепшен",
+    "headTemplates": "Расписание",
+    "headTemplatesSub": "Недельное расписание и созданные занятия"
   },
   "kiosk": {
     "setupTitle": "Настройка планшета",

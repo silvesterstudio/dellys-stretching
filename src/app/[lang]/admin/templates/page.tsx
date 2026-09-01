@@ -10,6 +10,7 @@ import { WeeklyScheduleManager } from "@/components/admin/WeeklyScheduleManager"
 import { ResetPanel } from "@/components/admin/ResetPanel";
 import { LocationBar } from "@/components/admin/LocationBar";
 import { getAdminScope } from "@/lib/locations-server";
+import { PageHead } from "@/components/admin/PageHead";
 
 export const dynamic = "force-dynamic";
 
@@ -101,6 +102,7 @@ export default async function TemplatesPage({
 
   return (
     <div className="space-y-8">
+      <PageHead title={dict.admin.headTemplates} subtitle={dict.admin.headTemplatesSub} />
       <LocationBar
         locations={scope.locations}
         activeId={scope.activeId}

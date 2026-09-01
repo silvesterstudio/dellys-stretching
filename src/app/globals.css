@@ -96,6 +96,69 @@ body {
     @apply transition-all duration-200 hover:border-brand-200 hover:shadow-[0_2px_6px_rgba(20,18,26,0.06),0_16px_40px_-16px_rgba(20,18,26,0.16)];
   }
 
+  /* --- Admin surfaces -----------------------------------------------------
+     The admin was redesigned against a reference the owner chose. These are the
+     pieces that were being written inline in several places; defining them once
+     keeps the admin coherent and leaves the PUBLIC site's look untouched. */
+
+  /* The admin's card. Tighter corner than the public .card (which the landing,
+     header and pricing all rely on) — changing .card would restyle the whole
+     site to fix one screen. */
+  .panel {
+    @apply rounded-xl border border-mauve-200/70 bg-white shadow-[0_1px_3px_rgba(20,18,26,0.04),0_10px_30px_-14px_rgba(20,18,26,0.12)];
+  }
+
+  /* Segmented control. This exact markup already existed twice — LocationBar
+     and the header nav island — so it becomes one definition. */
+  .seg {
+    @apply inline-flex flex-wrap items-center gap-1 rounded-full border border-mauve-200/70 bg-mauve-50 p-1;
+  }
+  .seg-item {
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 py-2 text-sm font-semibold text-mauve-600 transition-colors hover:bg-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400;
+  }
+  .seg-item-on {
+    @apply bg-white text-mauve-900 shadow-[0_1px_2px_rgba(20,18,26,0.08)];
+  }
+
+  /* One big number. Repeated in the stat tiles and both chart headers. */
+  .stat-value {
+    @apply font-display text-[clamp(1.75rem,5vw,2.75rem)] font-bold leading-none tabular-nums text-mauve-900;
+  }
+
+  /* A person's initial. Gives a long list a fixed left edge to scan down. */
+  .avatar {
+    @apply grid h-10 w-10 shrink-0 place-items-center rounded-full bg-mauve-100 font-display text-sm font-bold uppercase text-mauve-500;
+  }
+
+  /* A row inside a divided list card. */
+  .list-row {
+    @apply flex w-full items-center gap-3 px-4 py-3 text-left;
+  }
+
+  /* Label left, value right — the member drawer's grouped blocks. */
+  .kv-group {
+    @apply divide-y divide-mauve-100 overflow-hidden rounded-xl border border-mauve-200/70 bg-mauve-50/50;
+  }
+  .kv-row {
+    @apply flex items-center justify-between gap-3 px-3.5 py-2.5 text-sm;
+  }
+
+  /* Modal. There was no dialog primitive anywhere in the project. */
+  .modal-scrim {
+    @apply fixed inset-0 z-[100] grid place-items-center overflow-y-auto bg-mauve-900/45 p-4 backdrop-blur-[3px];
+  }
+  .modal-panel {
+    @apply my-auto w-full max-w-2xl rounded-2xl border border-mauve-200/70 bg-white shadow-[0_30px_80px_-30px_rgba(40,20,50,0.5)];
+  }
+
+  /* Dropdown menu. Also had no primitive. */
+  .menu-panel {
+    @apply absolute left-0 top-full z-50 mt-2 min-w-[15rem] overflow-hidden rounded-2xl border border-mauve-200/70 bg-white p-1.5 shadow-2xl shadow-mauve-900/10;
+  }
+  .menu-item {
+    @apply flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-mauve-800 transition-colors hover:bg-brand-50 hover:text-brand-700;
+  }
+
   /* Pink icon tile — the small rounded square that holds a discipline/benefit
      glyph in the mockup. */
   .icon-tile {

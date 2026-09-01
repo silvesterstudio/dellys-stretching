@@ -617,7 +617,23 @@
       "email": "Email",
       "phone": "Telefon",
       "errEmailTaken": "Există deja un cont cu acest email.",
-      "expires": "Expiră la"
+      "expires": "Expiră la",
+      "filterAll": "Toți",
+      "statusActive": "Activi",
+      "statusPending": "Începe mai târziu",
+      "statusFrozen": "Înghețat",
+      "statusInactive": "Fără abonament activ",
+      "searchLabel": "Caută după nume, email sau telefon",
+      "noMatches": "Niciun membru găsit.",
+      "badgeActive": "Activ",
+      "badgePending": "Programat",
+      "badgeFrozen": "Înghețat",
+      "badgeInactive": "Inactiv",
+      "sessionsShort": "șed.",
+      "memberDetail": "Fișa membrului",
+      "loadFailed": "Nu s-au putut încărca datele membrului.",
+      "retry": "Încearcă din nou",
+      "saveFailed": "Nu s-a putut salva. Verifică conexiunea."
     },
     "currentMemberships": "Abonamente active",
     "noSessionsToday": "Nicio sesiune.",
@@ -696,7 +712,8 @@
       "payCash": "Numerar",
       "payCard": "Card",
       "payTransfer": "Transfer",
-      "payFree": "Gratuit"
+      "payFree": "Gratuit",
+      "nowSuffix": "chiar acum, nu în perioada aleasă"
     },
     "bookingStatus": {
       "pending": "În așteptare",
@@ -766,7 +783,17 @@
         "class_full": "Clasă completă",
         "no_membership": "Fără ședințe"
       }
-    }
+    },
+    "headDashboard": "Panou",
+    "headDashboardSub": "Statistici, activitate și venituri",
+    "headMembers": "Membri",
+    "headMembersSub": "Gestionează membrii și atribuie abonamente",
+    "headToday": "Astăzi",
+    "headTodaySub": "Clasele de azi și prezența",
+    "headPlans": "Prețuri",
+    "headPlansSub": "Abonamentele pe care le vinde recepția",
+    "headTemplates": "Program",
+    "headTemplatesSub": "Orarul săptămânal și clasele generate"
   },
   "kiosk": {
     "setupTitle": "Configurare tabletă",

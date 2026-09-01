@@ -8,6 +8,7 @@ import { PlansManager, type AdminPlan } from "@/components/admin/PlansManager";
 import { ResetPanel } from "@/components/admin/ResetPanel";
 import { LocationBar } from "@/components/admin/LocationBar";
 import { getAdminScope } from "@/lib/locations-server";
+import { PageHead } from "@/components/admin/PageHead";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,7 @@ export default async function AdminPlansPage({
 
   return (
     <div className="space-y-4">
+      <PageHead title={dict.admin.headPlans} subtitle={dict.admin.headPlansSub} />
       <LocationBar
         locations={scope.locations}
         activeId={scope.activeId}

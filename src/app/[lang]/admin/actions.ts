@@ -1,6 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import {
+  deriveMemberStatus,
+  type MembershipLike,
+} from "@/lib/member-status";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin, requireStaff, requireSuperAdmin } from "@/lib/auth";
@@ -927,9 +931,58 @@ export interface AdminMemberRow {
   created_at: string;
 }
 
+// A roster row with the member's current state attached, so the list can show a
+// badge and the filter can count without a query per person.
+export type MemberListRow = AdminMemberRow & {
+  status: import("@/lib/member-status").MemberStatus;
+  sessionsRemaining: number | null;
+  expiresAt: string | null;
+};
+
 function pickOne<T>(v: T | T[] | null | undefined): T | null {
   if (v == null) return null;
   return Array.isArray(v) ? (v[0] ?? null) : v;
+}
+
+/**
+ * The roster the members screen renders: everybody in this studio, each with
+ * the state derived from their memberships.
+ *
+ * Separate from searchMembersAction (which the walk-in check-in still uses and
+ * which caps at 50) because this list is filtered and counted in the browser —
+ * a capped list would make the counts beside the filter lie.
+ */
+export async function listMembersAction(): Promise<MemberListRow[]> {
+  const actor = await requireStaff();
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    return [];
+  }
+  let req = admin
+    .from("profiles")
+    .select("id, email, full_name, phone, created_at")
+    .in("role", ["client", "reception"]);
+  if (actor.location_id) req = req.eq("location_id", actor.location_id);
+  const { data } = await req.order("created_at", { ascending: false }).limit(1000);
+  const base = (data ?? []) as AdminMemberRow[];
+  if (!base.length) return [];
+
+  const { data: mems } = await admin
+    .from("user_memberships")
+    .select("user_id, frozen, starts_at, expires_at, sessions_remaining")
+    .in(
+      "user_id",
+      base.map((b) => b.id),
+    );
+  const byUser = new Map<string, MembershipLike[]>();
+  for (const row of (mems ?? []) as (MembershipLike & { user_id: string })[]) {
+    const list = byUser.get(row.user_id) ?? [];
+    list.push(row);
+    byUser.set(row.user_id, list);
+  }
+  return base.map((b) => ({ ...b, ...deriveMemberStatus(byUser.get(b.id) ?? []) }));
 }
 
 export async function searchMembersAction(query: string): Promise<AdminMemberRow[]> {

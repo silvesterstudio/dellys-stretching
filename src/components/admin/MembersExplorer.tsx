@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import type { MemberStatus } from "@/lib/member-status";
 import { TIMEZONE, type Locale } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { localized } from "@/lib/i18n-data";
 import { formatDate, formatTime, formatPrice } from "@/lib/format";
 import {
-  searchMembersAction,
+  listMembersAction,
   createMemberAction,
   getMemberDetailAction,
   assignMembershipAction,
@@ -21,6 +22,7 @@ import {
   deleteMembershipAction,
   type AdminMemberRow,
   type AdminMemberDetail,
+  type MemberListRow,
 } from "@/app/[lang]/admin/actions";
 
 type MembershipDetail = AdminMemberDetail["memberships"][number];
@@ -72,28 +74,38 @@ export function MembersExplorer({
   dict,
   plans,
   initialMembers,
+  counts,
 }: {
   lang: Locale;
   dict: Dictionary;
   plans: Plan[];
-  initialMembers: AdminMemberRow[];
+  initialMembers: MemberListRow[];
+  counts: Record<MemberStatus | "all", number>;
 }) {
   const m = dict.admin.member;
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<AdminMemberRow[]>(initialMembers);
+  const [results, setResults] = useState<MemberListRow[]>(initialMembers);
+  // Filtering happens here rather than on the server: the whole roster is
+  // already loaded, so switching tabs is instant and the counts beside each
+  // label always match what the list shows.
+  const [filter, setFilter] = useState<MemberStatus | "all">("all");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [q, setQ] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<AdminMemberDetail | null>(null);
   const [planId, setPlanId] = useState(plans[0]?.id ?? "");
   const selectedPlan = plans.find((p) => p.id === planId) ?? null;
   const [amount, setAmount] = useState<string>(String(plans[0]?.price ?? ""));
   const [method, setMethod] = useState("cash");
-  const [searching, startSearch] = useTransition();
   const [loadingDetail, startDetail] = useTransition();
   const [busy, startAction] = useTransition();
   // Every membership write used to discard its ActionResult, so a refusal
   // (USER_NOT_FOUND, PLAN_INACTIVE, ASSIGN_FAILED…) looked exactly like a
   // success: spinner stops, nothing changes. Surface the code instead.
   const [err, setErr] = useState<string | null>(null);
+  // Set when loading the member sheet itself fails, so the sheet can say so
+  // instead of standing there shimmering.
+  const [detailErr, setDetailErr] = useState(false);
   // Creating an account at the desk. Deliberately email-free — see
   // createMemberAction: the built-in mailer allows 2 messages an hour for the
   // whole project, so registering people through /register stalls after two.
@@ -103,15 +115,32 @@ export function MembersExplorer({
   const [newPhone, setNewPhone] = useState("");
   const [justCreated, setJustCreated] = useState(false);
 
+  // A server action that throws — a staff session that expired mid-shift, a
+  // dropped connection — used to take the whole screen down with it: the
+  // rejection escaped the transition and React fell through to the error
+  // boundary, so clicking a member replaced the admin with "something went
+  // wrong". Every call below goes through this instead.
+  async function guard<T>(work: () => Promise<T>): Promise<T | null> {
+    try {
+      return await work();
+    } catch {
+      setErr("CONNECTION");
+      return null;
+    }
+  }
+
   function createMember(e: React.FormEvent) {
     e.preventDefault();
     startAction(async () => {
       setErr(null);
-      const res = await createMemberAction({
-        fullName: newName,
-        email: newEmail,
-        phone: newPhone || null,
-      });
+      const res = await guard(() =>
+        createMemberAction({
+          fullName: newName,
+          email: newEmail,
+          phone: newPhone || null,
+        }),
+      );
+      if (!res) return;
       if (res.error || !res.userId) {
         setErr(res.error === "EMAIL_TAKEN" ? m.errEmailTaken : (res.error ?? "CREATE_FAILED"));
         return;
@@ -121,21 +150,51 @@ export function MembersExplorer({
       setNewPhone("");
       setCreating(false);
       setJustCreated(true);
-      setResults(await searchMembersAction(""));
+      setResults((await guard(() => listMembersAction())) ?? []);
       setSelectedId(res.userId);
-      setDetail(await getMemberDetailAction(res.userId));
+      setDetail(await guard(() => getMemberDetailAction(res.userId!)));
     });
   }
 
   function runSearch(e: React.FormEvent) {
     e.preventDefault();
-    startSearch(async () => setResults(await searchMembersAction(query)));
+    // Kept for the Enter key; the list already filters as you type.
+    setQ(query);
   }
+
+  const visible = results.filter((r) => {
+    if (filter !== "all" && r.status !== filter) return false;
+    const needle = (q || query).trim().toLowerCase();
+    if (!needle) return true;
+    return (
+      (r.full_name ?? "").toLowerCase().includes(needle) ||
+      r.email.toLowerCase().includes(needle) ||
+      (r.phone ?? "").toLowerCase().includes(needle)
+    );
+  });
+
+  const selected = results.find((r) => r.id === selectedId) ?? null;
+
+  const FILTERS: { key: MemberStatus | "all"; label: string }[] = [
+    { key: "all", label: m.filterAll },
+    { key: "active", label: m.statusActive },
+    { key: "pending", label: m.statusPending },
+    { key: "frozen", label: m.statusFrozen },
+    { key: "inactive", label: m.statusInactive },
+  ];
 
   function open(id: string) {
     setSelectedId(id);
     setDetail(null);
-    startDetail(async () => setDetail(await getMemberDetailAction(id)));
+    setDetailErr(false);
+    setErr(null);
+    startDetail(async () => {
+      try {
+        setDetail(await getMemberDetailAction(id));
+      } catch {
+        setDetailErr(true);
+      }
+    });
   }
 
   function selectPlan(id: string) {
@@ -154,12 +213,18 @@ export function MembersExplorer({
     };
     startAction(async () => {
       setErr(null);
-      const res = await assignMembershipAction(uid, planId, null, payment);
+      const res = await guard(() => assignMembershipAction(uid, planId, null, payment));
+      if (!res) return;
       if (res?.error) {
         setErr(res.error);
         return;
       }
-      setDetail(await getMemberDetailAction(uid));
+      const both = await guard(() =>
+        Promise.all([getMemberDetailAction(uid), listMembersAction()]),
+      );
+      if (!both) return;
+      setDetail(both[0]);
+      setResults(both[1]);
     });
   }
 
@@ -168,20 +233,36 @@ export function MembersExplorer({
     const uid = detail.profile.id;
     startAction(async () => {
       setErr(null);
-      const res = await decideMembershipRequestAction(requestId, approve);
+      const res = await guard(() => decideMembershipRequestAction(requestId, approve));
+      if (!res) return;
       if (res?.error) {
         setErr(res.error);
         return;
       }
-      setDetail(await getMemberDetailAction(uid));
+      const both = await guard(() =>
+        Promise.all([getMemberDetailAction(uid), listMembersAction()]),
+      );
+      if (!both) return;
+      setDetail(both[0]);
+      setResults(both[1]);
     });
   }
 
-  // Re-fetch the selected member after a membership-management action.
+  // Re-fetch the selected member after a membership-management action, and the
+  // roster with it: freezing or topping up a bundle changes the badge in the
+  // list, and a list that disagrees with the sheet that changed it is worse
+  // than a slightly slower save.
   function reload() {
     if (!detail) return;
     const uid = detail.profile.id;
-    startAction(async () => setDetail(await getMemberDetailAction(uid)));
+    startAction(async () => {
+      const both = await guard(() =>
+        Promise.all([getMemberDetailAction(uid), listMembersAction()]),
+      );
+      if (!both) return;
+      setDetail(both[0]);
+      setResults(both[1]);
+    });
   }
 
   function toggleReception(makeReception: boolean) {
@@ -189,418 +270,554 @@ export function MembersExplorer({
     const uid = detail.profile.id;
     startAction(async () => {
       setErr(null);
-      const res = await setStaffRoleAction(uid, makeReception);
+      const res = await guard(() => setStaffRoleAction(uid, makeReception));
+      if (!res) return;
       if (res?.error) {
         setErr(res.error);
         return;
       }
-      setDetail(await getMemberDetailAction(uid));
+      setDetail(await guard(() => getMemberDetailAction(uid)));
     });
   }
+
+  // Escape closes the sheet, and the page behind it stops scrolling while it
+  // is open — a modal you can scroll away from loses the member you opened.
+  useEffect(() => {
+    if (!selectedId) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelectedId(null);
+    };
+    window.addEventListener("keydown", onKey);
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previous;
+    };
+  }, [selectedId]);
 
   const statusLabel = (map: Record<string, string>, key: string) =>
     (map as Record<string, string>)[key] ?? key;
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_1fr]">
-      {/* ---- List ---- */}
-      <div className="space-y-3">
-        <div className="mb-3">
-          {creating ? (
-            <form onSubmit={createMember} className="card space-y-2 p-3.5">
-              <div className="text-sm font-semibold text-mauve-800">{m.newMember}</div>
-              <p className="text-xs text-mauve-400">{m.newMemberHint}</p>
-              <input
-                className="input h-11 w-full px-3 text-base"
-                placeholder={m.fullName}
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                required
+    <div className="space-y-4">
+      {/* Toolbar: what this list is, and the two things you do to it. */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative">
+          <button
+            onClick={() => setFilterOpen((v) => !v)}
+            aria-expanded={filterOpen}
+            aria-haspopup="menu"
+            className="seg-item seg-item-on border border-mauve-200/70"
+          >
+            <span aria-hidden>&#9776;</span>
+            {FILTERS.find((f) => f.key === filter)?.label ?? m.filterAll}
+            <span className="ml-1 tabular-nums text-mauve-400">{counts[filter] ?? 0}</span>
+            <span aria-hidden className="ml-0.5 text-mauve-400">
+              &#9662;
+            </span>
+          </button>
+          {filterOpen && (
+            <>
+              {/* Click-away. A menu that only closes via its own button strands
+                  people who tapped elsewhere expecting it to shut. */}
+              <button
+                aria-hidden
+                tabIndex={-1}
+                onClick={() => setFilterOpen(false)}
+                className="fixed inset-0 z-40 cursor-default"
               />
-              <input
-                className="input h-11 w-full px-3 text-base"
-                type="email"
-                placeholder={m.email}
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                required
-              />
-              <input
-                className="input h-11 w-full px-3 text-base"
-                placeholder={m.phone}
-                value={newPhone}
-                onChange={(e) => setNewPhone(e.target.value)}
-              />
-              <div className="flex gap-2">
-                <button type="submit" disabled={busy} className="btn-primary h-11 flex-1 px-3 text-sm">
-                  {m.createMember}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCreating(false);
-                    setErr(null);
-                  }}
-                  className="btn-secondary h-11 px-4 text-sm"
-                >
-                  {dict.common.cancel}
-                </button>
+              <div className="menu-panel" role="menu">
+                {FILTERS.map((f) => (
+                  <button
+                    key={f.key}
+                    role="menuitem"
+                    onClick={() => {
+                      setFilter(f.key);
+                      setFilterOpen(false);
+                    }}
+                    className={`menu-item ${f.key === filter ? "bg-brand-50 text-brand-700" : ""}`}
+                  >
+                    <span>{f.label}</span>
+                    <span className="tabular-nums text-mauve-400">{counts[f.key] ?? 0}</span>
+                  </button>
+                ))}
               </div>
-            </form>
-          ) : (
-            <button
-              onClick={() => {
-                setCreating(true);
-                setJustCreated(false);
-              }}
-              className="btn-secondary h-11 w-full px-3 text-sm"
-            >
-              + {m.newMember}
-            </button>
+            </>
           )}
         </div>
 
-        {/* How many people are in the list, stated. Scrolling to find out is
-            not a feature. */}
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <span className="inline-flex items-center gap-2 rounded-full border border-mauve-200 bg-white px-3 py-1.5 text-xs font-semibold text-mauve-600">
-            {m.members}
-            <span className="tabular-nums text-mauve-900">{results.length}</span>
-          </span>
-        </div>
-
-        <form onSubmit={runSearch} className="flex gap-2">
+        {/* On a phone the search drops to its own line: sharing one row with the
+            filter and the new-member button squeezed it down to the width of the
+            word "Search". */}
+        <form
+          onSubmit={runSearch}
+          className="order-last flex w-full min-w-0 gap-2 sm:order-none sm:ml-auto sm:w-auto sm:max-w-sm sm:flex-1"
+        >
           <input
-            className="input"
-            placeholder={m.searchPlaceholder}
+            className="input h-11 w-full min-w-0"
+            placeholder={m.searchLabel}
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setQ(e.target.value);
+            }}
+            aria-label={m.searchLabel}
           />
-          <button type="submit" disabled={searching} className="btn-primary">
-            {dict.admin.search.split(" ")[0]}
-          </button>
         </form>
 
-        <div className="space-y-2">
-          {results.length === 0 ? (
-            <p className="text-sm text-mauve-400">{dict.admin.noResults}</p>
-          ) : (
-            results.map((r) => (
-              <button
-                key={r.id}
-                onClick={() => open(r.id)}
-                className={`card card-hover flex w-full items-center gap-3 p-3 text-left ${
-                  selectedId === r.id ? "ring-2 ring-brand-300" : ""
-                }`}
-              >
-                {/* An initial reads faster down a long list than a name does —
-                    it gives the eye a fixed left edge to scan. */}
-                <span
-                  aria-hidden
-                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-mauve-100 font-display text-sm font-bold uppercase text-mauve-500"
-                >
-                  {(r.full_name || r.email || "?").trim().charAt(0)}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-medium text-mauve-900">
-                    {r.full_name || r.email}
-                  </span>
-                  <span className="block truncate text-xs text-mauve-400">
-                    {r.full_name ? r.email : m.noPhone}
-                    {r.phone ? ` · ${r.phone}` : ""}
-                  </span>
-                </span>
-              </button>
-            ))
-          )}
-        </div>
+        <button
+          onClick={() => {
+            setCreating((v) => !v);
+            setJustCreated(false);
+          }}
+          className="btn-secondary h-11 px-4 text-sm"
+        >
+          + {m.newMember}
+        </button>
       </div>
 
-      {/* ---- Detail ---- */}
-      <div>
-        {!selectedId ? (
-          <div className="card grid place-items-center p-12 text-center text-sm text-mauve-400">
-            {m.select}
+      {creating && (
+        <form onSubmit={createMember} className="panel space-y-2 p-4">
+          <div className="text-sm font-semibold text-mauve-800">{m.newMember}</div>
+          <p className="text-xs text-mauve-400">{m.newMemberHint}</p>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <input
+              className="input h-11 w-full px-3 text-base"
+              placeholder={m.fullName}
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              required
+            />
+            <input
+              className="input h-11 w-full px-3 text-base"
+              type="email"
+              placeholder={m.email}
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              required
+            />
+            <input
+              className="input h-11 w-full px-3 text-base"
+              placeholder={m.phone}
+              value={newPhone}
+              onChange={(e) => setNewPhone(e.target.value)}
+            />
           </div>
-        ) : loadingDetail || !detail ? (
-          <div className="card animate-pulse space-y-3 p-6">
-            <div className="h-6 w-1/2 rounded bg-mauve-100" />
-            <div className="h-4 w-2/3 rounded bg-mauve-100" />
-            <div className="h-20 w-full rounded bg-mauve-100" />
+          <div className="flex gap-2">
+            <button type="submit" disabled={busy} className="btn-primary h-11 px-5 text-sm">
+              {m.createMember}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setCreating(false);
+                setErr(null);
+              }}
+              className="btn-secondary h-11 px-4 text-sm"
+            >
+              {dict.common.cancel}
+            </button>
           </div>
+          {/* A refused registration used to fail silently here: the only place
+              errors were shown was the sheet, which is not open while you are
+              typing a new member in. */}
+          {err && (
+            <p className="text-xs font-semibold text-red-600" role="alert">
+              {err === "CONNECTION" ? m.saveFailed : err}
+            </p>
+          )}
+        </form>
+      )}
+
+      {/* One full-width list. The old two-column layout gave the roster a 22rem
+          gutter and the detail a permanent half of the screen even when nothing
+          was selected; the detail is a modal now, so the list gets the room. */}
+      <div className="panel divide-y divide-mauve-100">
+        {visible.length === 0 ? (
+          <p className="p-8 text-center text-sm text-mauve-400">{m.noMatches}</p>
         ) : (
-          <div className={`space-y-5 ${busy ? "opacity-60" : ""}`}>
-            {/* Profile header */}
-            <div className="card p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <h3 className="truncate font-display text-xl font-bold text-mauve-900">
-                    {detail.profile.full_name || detail.profile.email}
-                  </h3>
-                  <div className="mt-1 space-y-0.5 text-sm text-mauve-500">
-                    <div className="truncate">{detail.profile.email}</div>
-                    <div>{detail.profile.phone || m.noPhone}</div>
-                    <div className="text-xs text-mauve-400">
-                      {m.joined} {formatDate(detail.profile.created_at, lang)} ·{" "}
-                      {detail.profile.preferred_lang.toUpperCase()}
-                    </div>
-                  </div>
-                </div>
-                {detail.profile.role === "admin" ? (
-                  <span className="badge-brand">{m.adminRole}</span>
-                ) : detail.profile.role === "reception" ? (
-                  <span className="badge-brand">{m.receptionRole}</span>
-                ) : null}
-              </div>
+          visible.map((r) => (
+            <button key={r.id} onClick={() => open(r.id)} className="list-row hover:bg-mauve-50">
+              <span className="avatar" aria-hidden>
+                {(r.full_name || r.email || "?").trim().charAt(0)}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-semibold text-mauve-900">
+                  {r.full_name || r.email}
+                </span>
+                <span className="block truncate text-xs text-mauve-400">
+                  {/* The name is the row's title, so the email only
+                      repeats underneath when it is not already the title. */}
+                  {[r.full_name ? r.email : null, r.phone].filter(Boolean).join(" \u00b7 ") ||
+                    m.noPhone}
+                </span>
+              </span>
+              <span className="flex shrink-0 items-center gap-2">
+                {r.expiresAt && (
+                  <span className="hidden text-xs tabular-nums text-mauve-400 sm:inline">
+                    {formatDate(r.expiresAt, lang)}
+                  </span>
+                )}
+                <StatusBadge row={r} m={m} />
+              </span>
+            </button>
+          ))
+        )}
+      </div>
 
-              {/* The door credential. An account made at the desk never gets an
-                  email, so this is how the member leaves with something that
-                  works at the tablet. */}
-              {detail.profile.qr_uuid && (
-                <MemberQrPanel
-                  token={detail.profile.qr_uuid}
-                  label={m.memberQr}
-                  showLabel={m.showQr}
-                  hideLabel={m.hideQr}
-                  highlight={justCreated}
-                  note={justCreated ? m.createdNoEmail : null}
-                />
-              )}
-
-              {/* Reception (front-desk staff) toggle — never shown for admins. */}
-              {detail.profile.role !== "admin" && (
-                <div className="mt-4 flex items-center justify-between border-t border-mauve-100 pt-3">
-                  <div className="text-xs text-mauve-500">{m.receptionHint}</div>
-                  {detail.profile.role === "reception" ? (
-                    <button
-                      onClick={() => toggleReception(false)}
-                      disabled={busy}
-                      className="btn-ghost-danger px-3 py-1.5 text-xs"
-                    >
-                      {m.removeReception}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        // Grants desk access AND changes how this person is
-                        // listed — worth one confirmation before clicking.
-                        if (window.confirm(m.receptionHint)) toggleReception(true);
-                      }}
-                      disabled={busy}
-                      className="btn-secondary px-3 py-1.5 text-xs"
-                    >
-                      {m.makeReception}
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* Stats */}
-              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <Stat
-                  label={m.totalSpent}
-                  value={formatPrice(detail.stats.totalSpent, detail.stats.currency, lang)}
-                  accent
-                />
-                <Stat label={m.sessionsAttended} value={detail.stats.sessionsAttended} />
-                <Stat label={m.activeMemberships} value={detail.stats.activeMemberships} />
-                <Stat label={m.upcoming} value={detail.stats.upcoming} />
-              </div>
-            </div>
-
-            {/* Activate membership (sell a plan + record payment) */}
-            <div className="card space-y-3 p-4">
-              <div>
-                <label className="label">{m.activate}</label>
-                <select
-                  className="input"
-                  value={planId}
-                  onChange={(e) => selectPlan(e.target.value)}
-                >
-                  {plans.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {localized(p, "name", lang)} ({dict.audience[p.audience]}) · {p.session_count}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="label">{m.amountPaid}</label>
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      className="input"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                    />
-                    <span className="text-xs text-mauve-400">{selectedPlan?.currency ?? "MDL"}</span>
-                  </div>
-                </div>
-                <div>
-                  <label className="label">{m.paymentMethod}</label>
-                  <select className="input" value={method} onChange={(e) => setMethod(e.target.value)}>
-                    <option value="cash">{m.payCash}</option>
-                    <option value="card">{m.payCard}</option>
-                    <option value="transfer">{m.payTransfer}</option>
-                    <option value="free">{m.payFree}</option>
-                  </select>
-                </div>
-              </div>
-              <button onClick={activate} disabled={busy} className="btn-primary w-full">
-                {dict.admin.assign}
+      {/* ---- Detail, in a modal ---- */}
+      {selectedId && (
+        <div
+          className="modal-scrim"
+          role="dialog"
+          aria-modal="true"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setSelectedId(null);
+          }}
+        >
+          <div className="modal-panel">
+            {/* Sticky header: the sheet is long, and scrolling to the bottom of
+                a member's history used to mean scrolling back up to leave. */}
+            <div className="sticky top-0 z-10 flex items-center gap-3 rounded-t-2xl border-b border-mauve-100 bg-white/95 px-5 py-3.5 backdrop-blur">
+              <span className="avatar" aria-hidden>
+                {(selected?.full_name || selected?.email || "?").trim().charAt(0)}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-display text-lg font-bold text-mauve-900">
+                  {selected?.full_name || selected?.email || m.memberDetail}
+                </span>
+                {selected && (
+                  <span className="block truncate text-xs text-mauve-400">{selected.email}</span>
+                )}
+              </span>
+              {selected && <StatusBadge row={selected} m={m} />}
+              <button
+                onClick={() => setSelectedId(null)}
+                aria-label={dict.common.close}
+                className="btn-secondary h-9 w-9 shrink-0 px-0 py-0 text-lg leading-none"
+              >
+                &times;
               </button>
-              {err && (
-                <p className="mt-2 text-xs font-semibold text-red-600" role="alert">
-                  {dict.common.error} ({err})
-                </p>
-              )}
             </div>
-
-            {/* Transfer an existing (offline) membership */}
-            <TransferForm
-              userId={detail.profile.id}
-              lang={lang}
-              dict={dict}
-              busy={busy}
-              onDone={reload}
-            />
-
-            {/* Staff notes */}
-            <NotesCard
-              key={detail.profile.id}
-              userId={detail.profile.id}
-              initial={detail.profile.notes}
-              dict={dict}
-            />
-
-            {/* Requests */}
-            <Section title={m.requests}>
-              {detail.requests.length === 0 ? (
-                <Empty text={m.noRequests} />
+            <div className="p-5 sm:p-6">
+              {detailErr ? (
+                <div className="card space-y-3 p-6 text-center">
+                  <p className="text-sm font-semibold text-mauve-800">{m.loadFailed}</p>
+                  <button onClick={() => selectedId && open(selectedId)} className="btn-secondary">
+                    {m.retry}
+                  </button>
+                </div>
+              ) : loadingDetail || !detail ? (
+                <div className="card animate-pulse space-y-3 p-6">
+                  <div className="h-6 w-1/2 rounded bg-mauve-100" />
+                  <div className="h-4 w-2/3 rounded bg-mauve-100" />
+                  <div className="h-20 w-full rounded bg-mauve-100" />
+                </div>
               ) : (
-                <div className="space-y-2">
-                  {detail.requests.map((r) => (
-                    <div
-                      key={r.id}
-                      className="card flex flex-wrap items-center justify-between gap-2 p-3"
-                    >
-                      <div className="text-sm">
-                        <span className="font-medium text-mauve-800">
-                          {r.plan ? localized(r.plan, "name", lang) : "—"}
-                        </span>
-                        <span className="ml-2 text-xs text-mauve-400">
-                          {formatDate(r.created_at, lang)}
-                        </span>
+                <div className={`space-y-5 ${busy ? "opacity-60" : ""}`}>
+                  {/* Profile header */}
+                  <div className="card p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="space-y-0.5 text-sm text-mauve-500">
+                          <div>{detail.profile.phone || m.noPhone}</div>
+                          <div className="text-xs text-mauve-400">
+                            {m.joined} {formatDate(detail.profile.created_at, lang)} ·{" "}
+                            {detail.profile.preferred_lang.toUpperCase()}
+                          </div>
+                        </div>
                       </div>
-                      {r.status === "pending" ? (
-                        <div className="flex gap-2">
+                      {detail.profile.role === "admin" ? (
+                        <span className="badge-brand">{m.adminRole}</span>
+                      ) : detail.profile.role === "reception" ? (
+                        <span className="badge-brand">{m.receptionRole}</span>
+                      ) : null}
+                    </div>
+
+                    {/* The door credential. An account made at the desk never gets an
+                        email, so this is how the member leaves with something that
+                        works at the tablet. */}
+                    {detail.profile.qr_uuid && (
+                      <MemberQrPanel
+                        token={detail.profile.qr_uuid}
+                        label={m.memberQr}
+                        showLabel={m.showQr}
+                        hideLabel={m.hideQr}
+                        highlight={justCreated}
+                        note={justCreated ? m.createdNoEmail : null}
+                      />
+                    )}
+
+                    {/* Reception (front-desk staff) toggle — never shown for admins. */}
+                    {detail.profile.role !== "admin" && (
+                      <div className="mt-4 flex items-center justify-between border-t border-mauve-100 pt-3">
+                        <div className="text-xs text-mauve-500">{m.receptionHint}</div>
+                        {detail.profile.role === "reception" ? (
                           <button
-                            onClick={() => decide(r.id, true)}
+                            onClick={() => toggleReception(false)}
                             disabled={busy}
-                            className="btn-primary px-3 py-1.5 text-xs"
+                            className="btn-ghost-danger px-3 py-1.5 text-xs"
                           >
-                            ✓ {dict.admin.approve}
+                            {m.removeReception}
                           </button>
+                        ) : (
                           <button
-                            onClick={() => decide(r.id, false)}
+                            onClick={() => {
+                              // Grants desk access AND changes how this person is
+                              // listed — worth one confirmation before clicking.
+                              if (window.confirm(m.receptionHint)) toggleReception(true);
+                            }}
                             disabled={busy}
                             className="btn-secondary px-3 py-1.5 text-xs"
                           >
-                            {dict.admin.reject}
+                            {m.makeReception}
                           </button>
-                        </div>
-                      ) : (
-                        <span className={REQUEST_BADGE[r.status] ?? "badge-muted"}>
-                          {statusLabel(dict.admin.requestStatus, r.status)}
-                        </span>
-                      )}
+                        )}
+                      </div>
+                    )}
+
+                    {/* Stats */}
+                    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      <Stat
+                        label={m.totalSpent}
+                        value={formatPrice(detail.stats.totalSpent, detail.stats.currency, lang)}
+                        accent
+                      />
+                      <Stat label={m.sessionsAttended} value={detail.stats.sessionsAttended} />
+                      <Stat label={m.activeMemberships} value={detail.stats.activeMemberships} />
+                      <Stat label={m.upcoming} value={detail.stats.upcoming} />
                     </div>
-                  ))}
-                </div>
-              )}
-            </Section>
+                  </div>
 
-            {/* Memberships */}
-            <Section title={m.memberships}>
-              {detail.memberships.length === 0 ? (
-                <Empty text={dict.dashboard.noMemberships} />
-              ) : (
-                <div className="space-y-2">
-                  {detail.memberships.map((mem) => (
-                    <MembershipRow
-                      key={mem.id}
-                      mem={mem}
-                      lang={lang}
-                      dict={dict}
-                      busy={busy}
-                      onChanged={reload}
-                    />
-                  ))}
-                </div>
-              )}
-            </Section>
-
-            {/* Booking history */}
-            <Section title={m.history}>
-              {detail.bookings.length === 0 ? (
-                <Empty text={m.noHistory} />
-              ) : (
-                <div className="space-y-1.5">
-                  {detail.bookings.map((b) => (
-                    <div
-                      key={b.id}
-                      className="flex items-center justify-between gap-3 border-b border-mauve-100 py-2 last:border-0"
-                    >
-                      <div className="flex min-w-0 items-center gap-2">
-                        <span
-                          className="h-2.5 w-2.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: b.session?.class_type?.color || "#cbc4ca" }}
-                        />
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-medium text-mauve-800">
-                            {b.session?.class_type
-                              ? localized(b.session.class_type, "name", lang)
-                              : "—"}
-                            {b.child_name && (
-                              <span className="ml-1.5 text-xs text-mauve-400">· {b.child_name}</span>
-                            )}
-                          </div>
-                          <div className="text-xs text-mauve-400">
-                            {b.session
-                              ? `${formatDate(b.session.starts_at, lang)} · ${formatTime(b.session.starts_at, lang)}`
-                              : formatDate(b.created_at, lang)}
-                          </div>
+                  {/* Activate membership (sell a plan + record payment) */}
+                  <div className="card space-y-3 p-4">
+                    <div>
+                      <label className="label">{m.activate}</label>
+                      <select
+                        className="input"
+                        value={planId}
+                        onChange={(e) => selectPlan(e.target.value)}
+                      >
+                        {plans.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {localized(p, "name", lang)} ({dict.audience[p.audience]}) · {p.session_count}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="label">{m.amountPaid}</label>
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            className="input"
+                            value={amount}
+                            onChange={(e) => setAmount(e.target.value)}
+                          />
+                          <span className="text-xs text-mauve-400">{selectedPlan?.currency ?? "MDL"}</span>
                         </div>
                       </div>
-                      <span className={`shrink-0 ${BOOKING_BADGE[b.status] ?? "badge-muted"}`}>
-                        {statusLabel(dict.admin.bookingStatus, b.status)}
-                      </span>
+                      <div>
+                        <label className="label">{m.paymentMethod}</label>
+                        <select className="input" value={method} onChange={(e) => setMethod(e.target.value)}>
+                          <option value="cash">{m.payCash}</option>
+                          <option value="card">{m.payCard}</option>
+                          <option value="transfer">{m.payTransfer}</option>
+                          <option value="free">{m.payFree}</option>
+                        </select>
+                      </div>
                     </div>
-                  ))}
+                    <button onClick={activate} disabled={busy} className="btn-primary w-full">
+                      {dict.admin.assign}
+                    </button>
+                    {err && (
+                      <p className="mt-2 text-xs font-semibold text-red-600" role="alert">
+                        {dict.common.error} ({err})
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Transfer an existing (offline) membership */}
+                  <TransferForm
+                    userId={detail.profile.id}
+                    lang={lang}
+                    dict={dict}
+                    busy={busy}
+                    onDone={reload}
+                  />
+
+                  {/* Staff notes */}
+                  <NotesCard
+                    key={detail.profile.id}
+                    userId={detail.profile.id}
+                    initial={detail.profile.notes}
+                    dict={dict}
+                  />
+
+                  {/* Requests */}
+                  <Section title={m.requests}>
+                    {detail.requests.length === 0 ? (
+                      <Empty text={m.noRequests} />
+                    ) : (
+                      <div className="space-y-2">
+                        {detail.requests.map((r) => (
+                          <div
+                            key={r.id}
+                            className="card flex flex-wrap items-center justify-between gap-2 p-3"
+                          >
+                            <div className="text-sm">
+                              <span className="font-medium text-mauve-800">
+                                {r.plan ? localized(r.plan, "name", lang) : "—"}
+                              </span>
+                              <span className="ml-2 text-xs text-mauve-400">
+                                {formatDate(r.created_at, lang)}
+                              </span>
+                            </div>
+                            {r.status === "pending" ? (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => decide(r.id, true)}
+                                  disabled={busy}
+                                  className="btn-primary px-3 py-1.5 text-xs"
+                                >
+                                  ✓ {dict.admin.approve}
+                                </button>
+                                <button
+                                  onClick={() => decide(r.id, false)}
+                                  disabled={busy}
+                                  className="btn-secondary px-3 py-1.5 text-xs"
+                                >
+                                  {dict.admin.reject}
+                                </button>
+                              </div>
+                            ) : (
+                              <span className={REQUEST_BADGE[r.status] ?? "badge-muted"}>
+                                {statusLabel(dict.admin.requestStatus, r.status)}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </Section>
+
+                  {/* Memberships */}
+                  <Section title={m.memberships}>
+                    {detail.memberships.length === 0 ? (
+                      <Empty text={dict.dashboard.noMemberships} />
+                    ) : (
+                      <div className="space-y-2">
+                        {detail.memberships.map((mem) => (
+                          <MembershipRow
+                            key={mem.id}
+                            mem={mem}
+                            lang={lang}
+                            dict={dict}
+                            busy={busy}
+                            onChanged={reload}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </Section>
+
+                  {/* Booking history */}
+                  <Section title={m.history}>
+                    {detail.bookings.length === 0 ? (
+                      <Empty text={m.noHistory} />
+                    ) : (
+                      <div className="space-y-1.5">
+                        {detail.bookings.map((b) => (
+                          <div
+                            key={b.id}
+                            className="flex items-center justify-between gap-3 border-b border-mauve-100 py-2 last:border-0"
+                          >
+                            <div className="flex min-w-0 items-center gap-2">
+                              <span
+                                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                                style={{ backgroundColor: b.session?.class_type?.color || "#cbc4ca" }}
+                              />
+                              <div className="min-w-0">
+                                <div className="truncate text-sm font-medium text-mauve-800">
+                                  {b.session?.class_type
+                                    ? localized(b.session.class_type, "name", lang)
+                                    : "—"}
+                                  {b.child_name && (
+                                    <span className="ml-1.5 text-xs text-mauve-400">· {b.child_name}</span>
+                                  )}
+                                </div>
+                                <div className="text-xs text-mauve-400">
+                                  {b.session
+                                    ? `${formatDate(b.session.starts_at, lang)} · ${formatTime(b.session.starts_at, lang)}`
+                                    : formatDate(b.created_at, lang)}
+                                </div>
+                              </div>
+                            </div>
+                            <span className={`shrink-0 ${BOOKING_BADGE[b.status] ?? "badge-muted"}`}>
+                              {statusLabel(dict.admin.bookingStatus, b.status)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </Section>
+
+                  {/* Children */}
+                  {detail.children.length > 0 && (
+                    <Section title={m.children}>
+                      <div className="flex flex-wrap gap-2">
+                        {detail.children.map((c) => (
+                          <span key={c.id} className="badge bg-mauve-100 text-mauve-700">
+                            {c.name}
+                            {c.birth_year ? ` · ${c.birth_year}` : ""}
+                          </span>
+                        ))}
+                      </div>
+                    </Section>
+                  )}
                 </div>
               )}
-            </Section>
-
-            {/* Children */}
-            {detail.children.length > 0 && (
-              <Section title={m.children}>
-                <div className="flex flex-wrap gap-2">
-                  {detail.children.map((c) => (
-                    <span key={c.id} className="badge bg-mauve-100 text-mauve-700">
-                      {c.name}
-                      {c.birth_year ? ` · ${c.birth_year}` : ""}
-                    </span>
-                  ))}
-                </div>
-              </Section>
-            )}
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+// The one-word state of a member, on the row and in the sheet header. Active
+// carries the sessions left, because that is the number reception is asked for.
+const STATUS_BADGE: Record<MemberStatus, string> = {
+  active: "badge-success",
+  frozen: "badge bg-sky-100 text-sky-700",
+  pending: "badge-warning",
+  inactive: "badge-muted",
+};
+
+function StatusBadge({
+  row,
+  m,
+}: {
+  row: MemberListRow;
+  m: Dictionary["admin"]["member"];
+}) {
+  const label: Record<MemberStatus, string> = {
+    active: m.badgeActive,
+    frozen: m.badgeFrozen,
+    pending: m.badgePending,
+    inactive: m.badgeInactive,
+  };
+  return (
+    <span className={`${STATUS_BADGE[row.status]} shrink-0 whitespace-nowrap`}>
+      {label[row.status]}
+      {row.status === "active" && row.sessionsRemaining !== null
+        ? ` \u00b7 ${row.sessionsRemaining} ${m.sessionsShort}`
+        : ""}
+    </span>
   );
 }
 
@@ -748,8 +965,13 @@ function MembershipRow({
 
   async function run(fn: () => Promise<unknown>) {
     setWorking(true);
-    await fn();
-    setWorking(false);
+    try {
+      await fn();
+    } finally {
+      // Without this the row stayed disabled for good on a failed call, and
+      // the rejection took the whole admin down with it.
+      setWorking(false);
+    }
     onChanged();
   }
 
@@ -906,14 +1128,20 @@ function NotesCard({
   const [notes, setNotes] = useState(initial ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [failed, setFailed] = useState(false);
   const dirty = notes !== (initial ?? "");
 
   async function save() {
     setSaving(true);
     setSaved(false);
-    await updateMemberNotesAction(userId, notes);
-    setSaving(false);
-    setSaved(true);
+    try {
+      await updateMemberNotesAction(userId, notes);
+      setSaved(true);
+    } catch {
+      setFailed(true);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -926,9 +1154,15 @@ function NotesCard({
         onChange={(e) => {
           setNotes(e.target.value);
           setSaved(false);
+          setFailed(false);
         }}
       />
       <div className="flex items-center justify-end gap-2">
+        {failed && (
+          <span className="text-xs font-semibold text-red-600" role="alert">
+            {m.saveFailed}
+          </span>
+        )}
         {saved && !dirty && <span className="text-xs text-green-600">{dict.common.save} ✓</span>}
         <button onClick={save} disabled={saving || !dirty} className="btn-secondary text-sm">
           {saving ? "…" : dict.common.save}
@@ -1015,13 +1249,18 @@ function TransferForm({
     if (!canSubmit) return;
     setWorking(true);
     setErr(null);
-    const res = await transferMembershipAction(userId, {
-      audience,
-      sessionsRemaining: effectiveSessions,
-      expiresOn,
-      label: null,
-      startedOn: startDate ? ymd(startDate) : null,
-    });
+    let res: { error: string | null } | null = null;
+    try {
+      res = await transferMembershipAction(userId, {
+        audience,
+        sessionsRemaining: effectiveSessions,
+        expiresOn,
+        label: null,
+        startedOn: startDate ? ymd(startDate) : null,
+      });
+    } catch {
+      res = { error: "CONNECTION" };
+    }
     setWorking(false);
     // A refusal used to close the form and reset the inputs exactly like a
     // success, so the balance was silently never transferred. Keep the form
