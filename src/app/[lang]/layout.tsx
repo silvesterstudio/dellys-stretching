@@ -8,6 +8,7 @@ import { getDictionary } from "@/i18n/get-dictionary";
 import { getCurrentProfile } from "@/lib/auth";
 import { Header } from "@/components/Header";
 import { MetaPixel } from "@/components/MetaPixel";
+import { ConsentBanner } from "@/components/ConsentBanner";
 import { AuthHashRelay } from "@/components/auth/AuthHashRelay";
 
 // Display = Space Grotesk (geometric, modern — from the Dellys mockup). It has
@@ -60,6 +61,7 @@ export default async function LangLayout({
     <html lang={locale} className={`${display.variable} ${sans.variable}`}>
       <body className="font-sans">
         <MetaPixel />
+        <ConsentBanner lang={locale} />
         <AuthHashRelay locale={locale} />
         <Header lang={locale} dict={dict} profile={profile} />
         {/* No global container: the home page manages its own full-width bands;

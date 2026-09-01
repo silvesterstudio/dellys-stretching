@@ -10,7 +10,8 @@
     "logout": "Выход",
     "prices": "Цены",
     "faq": "Вопросы",
-    "disciplines": "Дисциплины"
+    "disciplines": "Дисциплины",
+    "privacy": "Конфиденциальность"
   },
   "common": {
     "loading": "Загрузка...",

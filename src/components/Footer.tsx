@@ -2,6 +2,7 @@ import type { Locale } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { DC } from "@/lib/dc";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { ConsentReset } from "./ConsentBanner";
 import { LogoMark } from "./LogoMark";
 
 export function Footer({ lang, dict }: { lang: Locale; dict: Dictionary }) {
@@ -26,6 +27,8 @@ export function Footer({ lang, dict }: { lang: Locale; dict: Dictionary }) {
     { href: `${base}/landing#discipline`, label: dict.nav.disciplines },
     { href: `${base}/program`, label: dict.nav.schedule },
     { href: `${base}/landing#preturi`, label: dict.nav.prices },
+    // Required to be reachable from every page under Law 195/2024.
+    { href: `${base}/confidentialitate`, label: dict.nav.privacy },
   ];
 
   return (
@@ -95,6 +98,8 @@ export function Footer({ lang, dict }: { lang: Locale; dict: Dictionary }) {
           }}
         >
           <span>© 2026 Dellys. {f.rights}</span>
+          {/* The policy promises the choice can be changed later; this is it. */}
+          <ConsentReset lang={lang} />
           <span>Chișinău, Moldova</span>
         </div>
       </div>

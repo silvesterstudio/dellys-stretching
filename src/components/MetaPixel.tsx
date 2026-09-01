@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Script from "next/script";
 import { usePathname } from "next/navigation";
+import { useConsent } from "@/components/ConsentBanner";
 
 // Facebook / Meta Pixel. The id is public (it ships in the browser either way),
 // so it's fine to hardcode with an env override for other environments.
@@ -31,7 +32,10 @@ function isTrackedPath(pathname: string | null): boolean {
 
 export function MetaPixel() {
   const pathname = usePathname();
-  const tracked = isTrackedPath(pathname);
+  // No consent, no pixel. Until Law 195/2024 this loaded for everyone on every
+  // public page, with no notice and no way to refuse.
+  const consent = useConsent();
+  const tracked = isTrackedPath(pathname) && consent === "granted";
   // The snippet is mounted lazily on the first *public* page, and never
   // unmounted after that (fbq stays loaded for the rest of the visit anyway).
   const [armed, setArmed] = useState(false);
