@@ -260,6 +260,15 @@ export function MembersExplorer({
           )}
         </div>
 
+        {/* How many people are in the list, stated. Scrolling to find out is
+            not a feature. */}
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <span className="inline-flex items-center gap-2 rounded-full border border-mauve-200 bg-white px-3 py-1.5 text-xs font-semibold text-mauve-600">
+            {m.members}
+            <span className="tabular-nums text-mauve-900">{results.length}</span>
+          </span>
+        </div>
+
         <form onSubmit={runSearch} className="flex gap-2">
           <input
             className="input"
@@ -280,17 +289,27 @@ export function MembersExplorer({
               <button
                 key={r.id}
                 onClick={() => open(r.id)}
-                className={`card card-hover block w-full p-3 text-left ${
+                className={`card card-hover flex w-full items-center gap-3 p-3 text-left ${
                   selectedId === r.id ? "ring-2 ring-brand-300" : ""
                 }`}
               >
-                <div className="truncate font-medium text-mauve-900">
-                  {r.full_name || r.email}
-                </div>
-                <div className="truncate text-xs text-mauve-400">
-                  {r.full_name ? r.email : m.noPhone}
-                  {r.phone ? ` · ${r.phone}` : ""}
-                </div>
+                {/* An initial reads faster down a long list than a name does —
+                    it gives the eye a fixed left edge to scan. */}
+                <span
+                  aria-hidden
+                  className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-mauve-100 font-display text-sm font-bold uppercase text-mauve-500"
+                >
+                  {(r.full_name || r.email || "?").trim().charAt(0)}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-medium text-mauve-900">
+                    {r.full_name || r.email}
+                  </span>
+                  <span className="block truncate text-xs text-mauve-400">
+                    {r.full_name ? r.email : m.noPhone}
+                    {r.phone ? ` · ${r.phone}` : ""}
+                  </span>
+                </span>
               </button>
             ))
           )}

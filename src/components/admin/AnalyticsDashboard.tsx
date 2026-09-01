@@ -67,10 +67,10 @@ export function AnalyticsDashboard({
   // tile now states what it counts, and the two blocks are labelled and spaced
   // so they cannot be read as one list.
   const kpiCards = [
-    { label: t.activeMemberships, hint: t.hintActiveMemberships, value: kpis.activeMemberships, accent: true },
-    { label: t.outstandingSessions, hint: t.hintOutstandingSessions, value: kpis.outstandingSessions },
-    { label: t.totalMembers, hint: t.hintTotalMembers, value: kpis.totalMembers },
-    { label: t.todaySessions, hint: t.hintTodaySessions, value: kpis.todaySessions },
+    { label: t.activeMemberships, hint: t.hintActiveMemberships, value: kpis.activeMemberships, accent: true, dot: "bg-brand-500" },
+    { label: t.outstandingSessions, hint: t.hintOutstandingSessions, value: kpis.outstandingSessions, dot: "bg-amber-500" },
+    { label: t.totalMembers, hint: t.hintTotalMembers, value: kpis.totalMembers, dot: "bg-sky-500" },
+    { label: t.todaySessions, hint: t.hintTodaySessions, value: kpis.todaySessions, dot: "bg-emerald-500" },
   ];
 
   const windowCards = [
@@ -79,12 +79,13 @@ export function AnalyticsDashboard({
       hint: t.hintRevenue,
       value: formatPrice(metrics.revenue, metrics.currency, lang),
       highlight: true,
+      dot: "bg-emerald-500",
     },
-    { label: t.membershipsSold, hint: t.hintMembershipsSold, value: metrics.membershipsSold },
-    { label: t.sessionsHeld, hint: t.hintSessionsHeld, value: metrics.sessionsHeld },
-    { label: t.attendance, hint: t.hintAttendance, value: metrics.attendance },
-    { label: t.newMembers, hint: t.hintNewMembers, value: metrics.newMembers },
-    { label: t.bookings, hint: t.hintBookings, value: metrics.bookings },
+    { label: t.membershipsSold, hint: t.hintMembershipsSold, value: metrics.membershipsSold, dot: "bg-brand-500" },
+    { label: t.sessionsHeld, hint: t.hintSessionsHeld, value: metrics.sessionsHeld, dot: "bg-sky-500" },
+    { label: t.attendance, hint: t.hintAttendance, value: metrics.attendance, dot: "bg-violet-500" },
+    { label: t.newMembers, hint: t.hintNewMembers, value: metrics.newMembers, dot: "bg-amber-500" },
+    { label: t.bookings, hint: t.hintBookings, value: metrics.bookings, dot: "bg-mauve-400" },
   ];
 
   // The heading of the second block names the window, so the numbers under it
@@ -104,15 +105,18 @@ export function AnalyticsDashboard({
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {kpiCards.map((c) => (
             <div key={c.label} className="card p-4">
+              <div className="flex items-center gap-2">
+                <span className={`h-2 w-2 shrink-0 rounded-full ${c.dot}`} aria-hidden />
+                <span className="truncate text-sm font-semibold text-mauve-700">{c.label}</span>
+              </div>
               <div
-                className={`font-display text-3xl font-bold leading-none ${
+                className={`mt-2 font-display text-[clamp(1.75rem,5vw,2.5rem)] font-bold leading-none tabular-nums ${
                   c.accent ? "text-brand-600" : "text-mauve-900"
                 }`}
               >
                 {c.value}
               </div>
-              <div className="mt-2 text-sm font-semibold text-mauve-700">{c.label}</div>
-              <div className="mt-0.5 text-xs leading-snug text-mauve-400">{c.hint}</div>
+              <div className="mt-1.5 text-xs leading-snug text-mauve-400">{c.hint}</div>
             </div>
           ))}
         </div>
@@ -183,15 +187,18 @@ export function AnalyticsDashboard({
         >
           {windowCards.map((c) => (
             <div key={c.label} className="card p-5">
+              <div className="flex items-center gap-2">
+                <span className={`h-2 w-2 shrink-0 rounded-full ${c.dot}`} aria-hidden />
+                <span className="truncate text-sm font-semibold text-mauve-700">{c.label}</span>
+              </div>
               <div
-                className={`font-display text-3xl font-bold leading-none ${
+                className={`mt-2 font-display text-[clamp(1.75rem,5vw,2.5rem)] font-bold leading-none tabular-nums ${
                   c.highlight ? "text-brand-600" : "text-mauve-900"
                 }`}
               >
                 {c.value}
               </div>
-              <div className="mt-2 text-sm font-semibold text-mauve-700">{c.label}</div>
-              <div className="mt-0.5 text-xs leading-snug text-mauve-400">{c.hint}</div>
+              <div className="mt-1.5 text-xs leading-snug text-mauve-400">{c.hint}</div>
             </div>
           ))}
         </div>
