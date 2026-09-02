@@ -46,7 +46,13 @@ export function GuestBookingForm({
     const res = await createGuestBooking({ sessionId, fullName, phone, childName, lang });
     setBusy(false);
     if (!res.ok) {
-      setError(res.error === "unavailable" ? r.errorUnavailable : r.errorInvalid);
+      setError(
+        res.error === "closed"
+          ? dict.booking.bookingClosed
+          : res.error === "unavailable"
+            ? r.errorUnavailable
+            : r.errorInvalid,
+      );
       return;
     }
     // Same booking-success conversion as the modal (Meta "Schedule" event),

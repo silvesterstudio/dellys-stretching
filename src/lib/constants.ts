@@ -27,10 +27,18 @@ export const LOCALES = ["ro", "ru"] as const;
 export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = "ro";
 
-// Free-cancellation window: a user may cancel a booking up to this many hours
-// before the session starts. After this, cancelling counts against them and the
-// seat policy is enforced by the admin.
-export const CANCEL_WINDOW_HOURS = 12;
+// The two edges of online self-service, in hours before the class starts.
+//
+// A class only runs with enough people in it, and that call is made a few hours
+// ahead — so a booking that lands minutes before the hour is worth nothing to
+// it, and a late cancellation can empty a class with nobody left to tell.
+//
+// THE DATABASE IS THE AUTHORITY (migration 0037, book_session / cancel_booking).
+// These two constants only let the UI close its buttons at the same moment and
+// say so beforehand; changing them here changes nothing that anybody can
+// bypass. Change the migration in the same breath.
+export const BOOKING_CUTOFF_HOURS = 3;
+export const CANCEL_CUTOFF_HOURS = 5;
 
 // Default class capacity when a class type / template doesn't override it.
 export const DEFAULT_CAPACITY = 11;

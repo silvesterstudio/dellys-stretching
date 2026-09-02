@@ -50,7 +50,8 @@
     "noSessionsWeek": "Nu sunt sesiuni programate pentru acest filtru săptămâna aceasta. Revino curând sau schimbă filtrul.",
     "ended": "Încheiat",
     "locationLabel": "Locație",
-    "changeLocation": "Schimbă sala"
+    "changeLocation": "Schimbă sala",
+    "bookingClosed": "Rezervări închise"
   },
   "weekdays": {
     "0": "Duminică",
@@ -101,7 +102,7 @@
     "noAccount": "Nu ai cont? Înregistrează-te",
     "haveAccount": "Ai deja cont? Autentifică-te",
     "noAccountFound": "Nu există niciun cont cu acest email. Creează-ți unul în câteva secunde.",
-    "rateLimited": "Prea multe cereri de email acum. Așteaptă câteva minute și încearcă din nou.",
+    "rateLimited": "Prea multe emailuri trimise acum. Sună la recepție — îți creează contul pe loc, fără email.",
     "signUpTitle": "Creează-ți contul",
     "signUpSubtitle": "Completează datele și îți trimitem un link de conectare pe email.",
     "signUpCta": "Creează contul",
@@ -132,7 +133,12 @@
     "tooManyOpen": "Ai prea multe rezervări active fără abonament. Vino la recepție.",
     "pastSession": "Această sesiune a început deja.",
     "wrongLocation": "Contul tău este înregistrat la cealaltă locație. Treci pe la recepție ca să poți rezerva aici.",
-    "membershipNotStarted": "Abonamentul începe mai târziu."
+    "membershipNotStarted": "Abonamentul începe mai târziu.",
+    "rulesTitle": "Înainte de a rezerva",
+    "ruleBook": "Rezervi cu cel puțin 3 ore înainte de clasă.",
+    "ruleCancel": "Anulezi cu cel puțin 5 ore înainte de clasă.",
+    "bookingClosed": "Rezervările online se închid cu 3 ore înainte de clasă. Sună la recepție dacă vrei să vii.",
+    "cancelClosed": "Anularea se închide cu 5 ore înainte de clasă. Sună la recepție."
   },
   "reserve": {
     "title": "Rezervă locul tău",
@@ -165,7 +171,7 @@
     "noMemberships": "Nu ai niciun abonament activ.",
     "noBookings": "Nu ai nicio rezervare. Vezi programul.",
     "cancelBooking": "Anulează rezervarea",
-    "cancelTooLate": "Anularea gratuită nu mai este posibilă (sub 12 ore).",
+    "cancelTooLate": "Anularea s-a închis (mai puțin de 5 ore până la clasă).",
     "children": "Copiii mei",
     "pendingRequests": "Cereri în așteptare",
     "requestPendingNote": "Va fi activat după confirmarea la recepție.",

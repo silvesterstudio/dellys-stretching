@@ -13,7 +13,7 @@ export function CancelButton({
 }: {
   bookingId: string;
   dict: Dictionary;
-  withinWindow: boolean; // true => less than the free-cancel window remains
+  withinWindow: boolean; // true => inside the 5h window, cancelling is closed
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -36,9 +36,12 @@ export function CancelButton({
 
   return (
     <div className="text-right">
+      {/* Inside the window the button is dead rather than absent: a control
+          that vanishes reads as a bug, one that explains itself reads as a
+          rule. The database refuses it either way (CANCEL_CLOSED). */}
       <button
         onClick={cancel}
-        disabled={busy}
+        disabled={busy || withinWindow}
         className="btn-ghost-danger px-3 py-1.5 text-sm"
       >
         {busy ? dict.common.loading : dict.dashboard.cancelBooking}

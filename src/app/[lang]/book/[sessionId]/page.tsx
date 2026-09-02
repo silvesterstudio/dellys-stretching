@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import type { Locale } from "@/lib/constants";
+import { BOOKING_CUTOFF_HOURS, type Locale } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { createClient } from "@/lib/supabase/server";
@@ -41,15 +41,25 @@ export default async function BookPage({
 
   const session = await fetchSessionById(sessionId);
 
-  const notBookable =
+  const gone =
     !session ||
     session.status !== "scheduled" ||
     new Date(session.starts_at).getTime() <= Date.now();
 
-  if (notBookable) {
+  // Booking shuts 3h out. Separated from "gone" so the screen says which wall
+  // was hit — "this class already happened" is the wrong thing to tell someone
+  // looking at a class that starts this evening.
+  const closed =
+    !gone &&
+    new Date(session!.starts_at).getTime() - Date.now() <
+      BOOKING_CUTOFF_HOURS * 3600000;
+
+  if (gone || closed) {
     return (
       <div className="mx-auto max-w-md px-4 py-10 text-center">
-        <p className="text-mauve-600">{dict.booking.pastSession}</p>
+        <p className="text-mauve-600">
+          {closed ? dict.booking.bookingClosed : dict.booking.pastSession}
+        </p>
         <Link href={"/program"} className="btn-primary mt-4">
           {dict.common.back}
         </Link>

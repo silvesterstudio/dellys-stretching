@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Locale } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
+import { BookingRules } from "@/components/booking/BookingRules";
 import {
   bookingErrorMessage,
   isTerminalBookingError,
@@ -231,6 +232,11 @@ export function BookingForm({
       ) : (
         <p className="alert-muted mb-3">{dict.booking.noMembershipNote}</p>
       )}
+
+      {/* Both rules, immediately above the button that commits to them. */}
+      <div className="mb-3">
+        <BookingRules dict={dict} />
+      </div>
 
       <button
         onClick={confirm}

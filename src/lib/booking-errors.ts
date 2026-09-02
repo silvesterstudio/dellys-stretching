@@ -14,6 +14,7 @@ export function bookingErrorMessage(raw: string, dict: Dictionary): string {
   if (code.includes("INVALID_CHILD")) return b.selectChild;
   if (code.includes("WRONG_LOCATION")) return b.wrongLocation;
   if (code.includes("MEMBERSHIP_NOT_STARTED")) return b.membershipNotStarted;
+  if (code.includes("BOOKING_CLOSED")) return b.bookingClosed;
   return dict.common.error;
 }
 
@@ -27,7 +28,9 @@ export function isTerminalBookingError(raw: string): boolean {
     code.includes("SESSION_CANCELLED") ||
     code.includes("PAST_SESSION") ||
     code.includes("SESSION_NOT_FOUND") ||
-    code.includes("ALREADY_BOOKED")
+    code.includes("ALREADY_BOOKED") ||
+    // The 3-hour cutoff will not lift by pressing Confirm again.
+    code.includes("BOOKING_CLOSED")
   );
 }
 
@@ -39,6 +42,7 @@ export function isAlreadyBooked(raw: string): boolean {
 export function cancelBookingErrorMessage(raw: string, dict: Dictionary): string {
   const code = raw.toUpperCase();
   if (code.includes("PAST_SESSION")) return dict.booking.pastSession;
+  if (code.includes("CANCEL_CLOSED")) return dict.booking.cancelClosed;
   if (code.includes("NOT_CANCELLABLE")) return dict.dashboard.cancelNotAllowed;
   return dict.common.error;
 }

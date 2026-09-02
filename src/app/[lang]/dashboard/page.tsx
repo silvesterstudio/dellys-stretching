@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import type { Locale } from "@/lib/constants";
-import { CANCEL_WINDOW_HOURS } from "@/lib/constants";
+import { CANCEL_CUTOFF_HOURS } from "@/lib/constants";
 import { isLocale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { createClient } from "@/lib/supabase/server";
@@ -241,7 +241,7 @@ export default async function DashboardPage({
           <div className="space-y-2">
             {upcoming.map((b) => {
               const start = new Date(b.session!.starts_at).getTime();
-              const withinWindow = start - now < CANCEL_WINDOW_HOURS * 3600000;
+              const withinWindow = start - now < CANCEL_CUTOFF_HOURS * 3600000;
               return (
                 <div
                   key={b.id}

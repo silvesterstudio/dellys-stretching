@@ -6,6 +6,7 @@ import type { Dictionary } from "@/i18n/get-dictionary";
 import { DC } from "@/lib/dc";
 import { createGuestBooking } from "@/app/[lang]/reserve/[sessionId]/actions";
 import { trackPixel } from "@/components/MetaPixel";
+import { BookingRules } from "@/components/booking/BookingRules";
 
 // Country codes we serve, each with its national-number length + an example.
 const COUNTRIES = [
@@ -93,7 +94,13 @@ export function GuestBookingModal({
     });
     setBusy(false);
     if (!res.ok) {
-      setError(res.error === "unavailable" ? r.errorUnavailable : r.errorInvalid);
+      setError(
+        res.error === "closed"
+          ? dict.booking.bookingClosed
+          : res.error === "unavailable"
+            ? r.errorUnavailable
+            : r.errorInvalid,
+      );
       return;
     }
     // Ad-conversion signal — fires exactly once, right after the booking
@@ -243,6 +250,10 @@ export function GuestBookingModal({
                 />
               </div>
             </div>
+            {/* The same two rules the member screen shows. A guest seat is a
+                real seat, counted the same way, so it is held to the same
+                hours — and saying so here is cheaper than a phone call. */}
+            <BookingRules dict={dict} />
             <button
               type="submit"
               disabled={

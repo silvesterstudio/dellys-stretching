@@ -5,7 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { SessionWithType } from "@/lib/queries";
-import { TIMEZONE, type Locale } from "@/lib/constants";
+import { BOOKING_CUTOFF_HOURS, TIMEZONE, type Locale } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { formatTime } from "@/lib/format";
 import { dayKey } from "@/lib/week";
@@ -500,7 +500,12 @@ function Slot({
 }) {
   const left = Math.max(0, s.capacity - s.booked_count);
   const full = left <= 0;
-  const isPast = now !== null && new Date(s.starts_at).getTime() <= now;
+  const startsAt = new Date(s.starts_at).getTime();
+  const isPast = now !== null && startsAt <= now;
+  // Online booking shuts 3h out. Showing a live button that the database will
+  // refuse sends people through two screens to be told no.
+  const closed =
+    now !== null && !isPast && startsAt - now < BOOKING_CUTOFF_HOURS * 3600000;
   const name = localized(s.class_type, "name", lang);
   const grp = s.class_type.audience === "child" ? dict.audience.child : dict.audience.adult;
   const time = formatTime(s.starts_at, lang);
@@ -547,6 +552,10 @@ function Slot({
       ) : full ? (
         <div style={{ ...btnBase, background: "#F3F2F5", color: "#AEACB4", cursor: "not-allowed" }}>
           {dict.common.full}
+        </div>
+      ) : closed ? (
+        <div style={{ ...btnBase, background: "#F7F6F8", color: "#B4B2BB", cursor: "default" }}>
+          {dict.schedule.bookingClosed}
         </div>
       ) : loggedIn ? (
         <Link

@@ -2,11 +2,11 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import type { Locale } from "@/lib/constants";
+import { BOOKING_CUTOFF_HOURS, type Locale } from "@/lib/constants";
 
 export type GuestBookingResult =
   | { ok: true }
-  | { ok: false; error: "invalid" | "unavailable" | "server" };
+  | { ok: false; error: "invalid" | "unavailable" | "server" | "closed" };
 
 // Public, no-auth "first reservation" funnel. Captures a lead (full name +
 // phone + which class) so the studio can message the person to confirm. The
@@ -61,6 +61,13 @@ export async function createGuestBooking(input: {
   };
   if (s.status !== "scheduled" || new Date(s.starts_at).getTime() <= Date.now()) {
     return { ok: false, error: "unavailable" };
+  }
+  // A guest seat is a real seat — it holds capacity and counts towards the
+  // five people a class needs — so it closes on the same 3-hour edge as a
+  // member's. Checked here, not only in the browser: this action is reachable
+  // without the page.
+  if (new Date(s.starts_at).getTime() - Date.now() < BOOKING_CUTOFF_HOURS * 3600000) {
+    return { ok: false, error: "closed" };
   }
   const ct = Array.isArray(s.class_type) ? s.class_type[0] : s.class_type;
   const className = ct ? (lang === "ru" ? ct.name_ru : ct.name_ro) : null;

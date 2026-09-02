@@ -46,6 +46,15 @@ const body = {
   mailer_templates_magic_link_content: tmpl,
   mailer_subjects_confirmation: "Conectează-te la Dellys · Вход в Dellys",
   mailer_templates_confirmation_content: tmpl,
+  // THE POINT OF THIS SCRIPT. Supabase's built-in mailer is capped at 2 emails
+  // per hour for the WHOLE project, which is why registering a third member in
+  // an afternoon fails with "email rate limit exceeded". The cap is only
+  // liftable once mail leaves through a provider of our own — so it is set in
+  // the same call that installs the provider, never before.
+  //
+  // 30/hour, not more: Resend's free tier allows 100 a day, and /register is
+  // the only thing here that sends. Raise it if the desk ever needs to.
+  rate_limit_email_sent: 30,
 };
 
 const r = await fetch(`https://api.supabase.com/v1/projects/${REF}/config/auth`, {
@@ -61,5 +70,6 @@ if (!r.ok) {
 }
 const c = JSON.parse(text);
 console.log("✓ SMTP host   :", c.smtp_host, "| sender:", c.smtp_admin_email);
+console.log("✓ emails/hour :", c.rate_limit_email_sent, "(was 2 — the account-creation limit)");
 console.log("✓ link template:", (c.mailer_templates_magic_link_content || "").includes("ConfirmationURL"));
 console.log("• uri_allow_list (untouched):", c.uri_allow_list);
