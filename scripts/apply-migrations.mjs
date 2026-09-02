@@ -2,11 +2,13 @@
 // Needs a Supabase personal access token (https://supabase.com/dashboard/account/tokens).
 //
 // Usage (PowerShell):
-//   $env:SB_TOKEN="sbp_xxx"; node scripts/apply-migrations.mjs
+//   $env:SB_TOKEN="sbp_xxx"; node scripts/apply-migrations.mjs 0037_booking_windows.sql
 // Usage (bash):
-//   SB_TOKEN=sbp_xxx node scripts/apply-migrations.mjs
+//   SB_TOKEN=sbp_xxx node scripts/apply-migrations.mjs 0037_booking_windows.sql
 //
-// Applies only the migrations listed in FILES below, in order. Idempotent.
+// Applies the migrations NAMED ON THE COMMAND LINE, in the order given (or the
+// FILES list below when none are named). Idempotent — every migration in this
+// project is written as create-or-replace.
 import fs from "node:fs";
 import path from "node:path";
 
@@ -17,7 +19,9 @@ if (!TOKEN) {
   process.exit(1);
 }
 
-const FILES = ["0008_freeze_and_signup.sql"];
+const FILES = process.argv.slice(2).length
+  ? process.argv.slice(2)
+  : ["0008_freeze_and_signup.sql"];
 const migDir = path.join(process.cwd(), "supabase", "migrations");
 const H = { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" };
 
@@ -37,8 +41,10 @@ for (const f of FILES) {
   console.log(res.ok ? `✓ applied ${f}` : `✗ ${f}: ${res.status} ${res.body.slice(0, 300)}`);
 }
 
-// Sanity check — confirm the 0008 changes are live in the DB.
-const check = await runSql(
+// Sanity check for 0008 specifically. Other migrations bring their own tests
+// (scripts/test-*.mjs) — this one predates them.
+if (FILES.includes("0008_freeze_and_signup.sql")) {
+  const check = await runSql(
   `select
      exists(select 1 from information_schema.columns
             where table_name='user_memberships' and column_name='frozen') as frozen_col,
@@ -46,5 +52,6 @@ const check = await runSql(
        ilike '%full_name%' as signup_name,
      pg_get_functiondef('public.book_session(uuid,uuid)'::regprocedure)
        ilike '%not frozen%' as book_frozen;`,
-);
-console.log("verify:", check.body);
+  );
+  console.log("verify:", check.body);
+}
