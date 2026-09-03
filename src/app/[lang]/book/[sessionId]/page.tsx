@@ -46,7 +46,7 @@ export default async function BookPage({
     session.status !== "scheduled" ||
     new Date(session.starts_at).getTime() <= Date.now();
 
-  // Booking shuts 3h out. Separated from "gone" so the screen says which wall
+  // Booking shuts 2h out. Separated from "gone" so the screen says which wall
   // was hit — "this class already happened" is the wrong thing to tell someone
   // looking at a class that starts this evening.
   const closed =

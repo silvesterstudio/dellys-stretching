@@ -29,7 +29,7 @@ export function isTerminalBookingError(raw: string): boolean {
     code.includes("PAST_SESSION") ||
     code.includes("SESSION_NOT_FOUND") ||
     code.includes("ALREADY_BOOKED") ||
-    // The 3-hour cutoff will not lift by pressing Confirm again.
+    // The booking cutoff will not lift by pressing Confirm again.
     code.includes("BOOKING_CLOSED")
   );
 }

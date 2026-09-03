@@ -1,12 +1,12 @@
 // The two edges of online self-service, against the live database.
 //
-//   * book_session   refuses inside 3 hours (BOOKING_CLOSED) and allows outside
+//   * book_session   refuses inside 2 hours (BOOKING_CLOSED) and allows outside
 //   * cancel_booking refuses inside 5 hours (CANCEL_CLOSED) and allows outside
 //   * neither edge disturbs the rules that were already there
 //   * the front desk is not caught by either (staff cancel stays open, and the
 //     admin's own add/remove path never goes through these functions)
 //
-// Needs migration 0037 applied. Creates throwaway accounts and sessions under
+// Needs migrations 0037 and 0038 applied. Creates throwaway accounts and sessions under
 // @example.invalid and sweeps them, whatever happens.
 //
 //   node scripts/test-booking-windows.mjs
@@ -112,20 +112,28 @@ async function main() {
       amount_paid: 0,
     });
 
-    console.log("-- booking: the 3-hour edge --");
+    console.log("-- booking: the 2-hour edge --");
 
-    const soon = await mkSession(2);
+    const soon = await mkSession(1);
     const soonRes = await member.client.rpc("book_session", { p_session_id: soon });
-    log(code(soonRes.error).includes("BOOKING_CLOSED"), "2h out is refused", code(soonRes.error));
+    log(code(soonRes.error).includes("BOOKING_CLOSED"), "1h out is refused", code(soonRes.error));
 
-    const edge = await mkSession(2.9);
+    const edge = await mkSession(1.9);
     const edgeRes = await member.client.rpc("book_session", { p_session_id: edge });
     log(
       code(edgeRes.error).includes("BOOKING_CLOSED"),
-      "2h54m out is still refused",
+      "1h54m out is still refused",
       code(edgeRes.error),
     );
 
+    // 2h30m: the window used to be three hours, so this is exactly what the
+    // change opened up. If somebody ever puts the 3 back, this is what fails.
+    const justOutside = await mkSession(2.5);
+    const justRes = await member.client.rpc("book_session", { p_session_id: justOutside });
+    log(!justRes.error && !!justRes.data, "2h30m out now goes through", justRes.error?.message ?? "");
+
+    // Comfortably outside the booking window and comfortably inside the
+    // cancelling one, so the next block has something to fail to cancel.
     const later = await mkSession(4);
     const laterRes = await member.client.rpc("book_session", { p_session_id: later });
     log(!laterRes.error && !!laterRes.data, "4h out goes through", laterRes.error?.message ?? "");
@@ -193,13 +201,13 @@ async function main() {
 
     // The admin's own "add somebody to this class" path writes the row directly
     // through the service role, so a walk-in at the door is unaffected.
-    const doorway = await mkSession(2);
+    const doorway = await mkSession(1);
     const walkIn = await db
       .from("bookings")
       .insert({ session_id: doorway, user_id: member.id, status: "booked" })
       .select("id")
       .single();
-    log(!walkIn.error, "the desk can still add somebody to a class in 2h", walkIn.error?.message ?? "");
+    log(!walkIn.error, "the desk can still add somebody to a class in 1h", walkIn.error?.message ?? "");
 
     console.log();
     console.log("-- the older rules still hold --");

@@ -502,7 +502,7 @@ function Slot({
   const full = left <= 0;
   const startsAt = new Date(s.starts_at).getTime();
   const isPast = now !== null && startsAt <= now;
-  // Online booking shuts 3h out. Showing a live button that the database will
+  // Online booking shuts 2h out. Showing a live button that the database will
   // refuse sends people through two screens to be told no.
   const closed =
     now !== null && !isPast && startsAt - now < BOOKING_CUTOFF_HOURS * 3600000;

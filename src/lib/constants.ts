@@ -33,11 +33,12 @@ export const DEFAULT_LOCALE: Locale = "ro";
 // ahead — so a booking that lands minutes before the hour is worth nothing to
 // it, and a late cancellation can empty a class with nobody left to tell.
 //
-// THE DATABASE IS THE AUTHORITY (migration 0037, book_session / cancel_booking).
+// THE DATABASE IS THE AUTHORITY (book_session / cancel_booking — 0037, and
+// 0038 for the booking figure).
 // These two constants only let the UI close its buttons at the same moment and
 // say so beforehand; changing them here changes nothing that anybody can
 // bypass. Change the migration in the same breath.
-export const BOOKING_CUTOFF_HOURS = 3;
+export const BOOKING_CUTOFF_HOURS = 2;
 export const CANCEL_CUTOFF_HOURS = 5;
 
 // Default class capacity when a class type / template doesn't override it.

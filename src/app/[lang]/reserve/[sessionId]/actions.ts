@@ -63,7 +63,7 @@ export async function createGuestBooking(input: {
     return { ok: false, error: "unavailable" };
   }
   // A guest seat is a real seat — it holds capacity and counts towards the
-  // five people a class needs — so it closes on the same 3-hour edge as a
+  // five people a class needs — so it closes on the same 2-hour edge as a
   // member's. Checked here, not only in the browser: this action is reachable
   // without the page.
   if (new Date(s.starts_at).getTime() - Date.now() < BOOKING_CUTOFF_HOURS * 3600000) {
