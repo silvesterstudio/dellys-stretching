@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import type { Locale } from "@/lib/constants";
 import { SITE_URL } from "@/lib/constants";
 import { isLocale, localePath, languageAlternates } from "@/i18n/config";
@@ -71,6 +72,14 @@ export default async function ChooseLocationPage({
   const c = dict.home.choose;
 
   const locations = await fetchLocations();
+
+  // With a single studio open there is nothing to choose: send the visitor
+  // straight to its programme instead of showing a one-card chooser. Re-activate
+  // a second gym in `locations` and this page becomes the picker again on its
+  // own — nothing here needs editing back.
+  if (locations.length === 1) {
+    redirect(localePath(locale, "/program"));
+  }
 
   return (
     <div style={{ fontFamily: DC.sans, color: DC.ink, background: "#fff", minHeight: "70vh" }}>

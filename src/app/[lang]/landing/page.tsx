@@ -7,6 +7,8 @@ import { getDictionary } from "@/i18n/get-dictionary";
 import { getWeekRange } from "@/lib/week";
 import { fetchSessions } from "@/lib/queries";
 import { getCurrentUserId } from "@/lib/auth";
+import { fetchLocations } from "@/lib/locations-server";
+import { localizedAddress } from "@/lib/locations";
 import { ScheduleGrid } from "@/components/schedule/ScheduleGrid";
 import { PricingTeaser } from "@/components/PricingTeaser";
 import { Footer } from "@/components/Footer";
@@ -167,11 +169,20 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
   const range = getWeekRange(0);
   const nextWeek = getWeekRange(1);
   const days = [...range.days, ...nextWeek.days].map((d) => d.toISOString());
-  const [sessions, userId] = await Promise.all([
+  const [sessions, userId, locations] = await Promise.all([
     fetchSessions(range.start, nextWeek.end),
     getCurrentUserId(),
+    fetchLocations(),
   ]);
   const loggedIn = !!userId;
+
+  // The last benefit pitches "two studios in Chișinău". With a single gym open
+  // that is simply untrue, so it is dropped until a second studio is active
+  // again — see 0040_archive_botanica.sql.
+  const MULTI_STUDIO_BENEFIT = 3;
+  const benefits = h.offer.benefits
+    .map((b, i) => ({ ...b, icon: BEN_ICONS[i] }))
+    .filter((_, i) => locations.length > 1 || i !== MULTI_STUDIO_BENEFIT);
 
   const jsonLd = [
     {
@@ -183,7 +194,10 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
       image: `${SITE_URL}/dellys-logo.webp`,
       address: {
         "@type": "PostalAddress",
-        streetAddress: "str. Trandafirilor 20",
+        // Follows whichever studio is open, so archiving one cannot leave
+        // Google pointing at a closed address.
+        streetAddress: (locations[0] ? localizedAddress(locations[0], "ro") : "bd. Moscova 6, et. 3, Chișinău")
+          .replace(/,\s*Chișinău$/, ""),
         addressLocality: "Chișinău",
         addressCountry: "MD",
       },
@@ -383,7 +397,7 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
               </a>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 22 }}>
-              {h.offer.benefits.map((b, i) => (
+              {benefits.map((b) => (
                 <div key={b.t}>
                   <div
                     style={{
@@ -398,7 +412,7 @@ export default async function LandingPage({ params }: { params: Promise<{ lang: 
                       boxShadow: "0 4px 14px -6px rgba(20,18,26,.2)",
                     }}
                   >
-                    {BEN_ICONS[i]}
+                    {b.icon}
                   </div>
                   <h4 style={{ margin: "13px 0 0", fontSize: 16, fontWeight: 700, color: DC.ink }}>{b.t}</h4>
                   <p style={{ margin: "5px 0 0", fontSize: 13.5, lineHeight: 1.5, color: DC.muted }}>{b.d}</p>
