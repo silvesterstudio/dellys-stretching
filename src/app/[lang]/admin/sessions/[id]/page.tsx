@@ -79,11 +79,19 @@ export default async function RosterPage({
 
   // No-login guest reservations for this session (name + phone) — these hold a
   // seat but aren't real accounts, so they live in guest_bookings, not bookings.
+  //
+  // `seat_released` filters out the ones already standing below as a booking
+  // row. Almost everyone here reserves through the public form and is then given
+  // a booking at the door, checked in the same second — so without this the desk
+  // saw each of them twice, once as their own reservation and once as the row
+  // the check-in created, and could not tell how many people were in the room.
+  // A lead only keeps its own line while nobody has claimed its seat.
   const { data: guestRaw } = await supabase
     .from("guest_bookings")
     .select("id, full_name, child_name, phone, class_name, starts_at, status, claimed_by, created_at")
     .eq("session_id", id)
     .neq("status", "cancelled")
+    .eq("seat_released", false)
     .order("created_at", { ascending: true });
   const guestLeads = (guestRaw ?? []) as GuestLead[];
 

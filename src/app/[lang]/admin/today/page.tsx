@@ -87,12 +87,17 @@ export default async function TodayPage({
     // Open guest-booking leads (funnel captures) — newest first, still active.
     // A lead belongs to the studio whose class it was for; leads with no session
     // attached aren't tied to a gym, so they stay visible to everyone.
+    //
+    // `seat_released` drops the ones that already became a booking at the door.
+    // They are not open leads — nobody needs to ring them back — and leaving
+    // them in buried the handful that genuinely still need calling.
     const { data: leadRows } = await admin
       .from("guest_bookings")
       .select(
         "id, full_name, child_name, phone, class_name, starts_at, status, claimed_by, created_at, session:sessions ( location_id )",
       )
       .in("status", ["new", "contacted"])
+      .eq("seat_released", false)
       .order("created_at", { ascending: false })
       .limit(50);
     leads = ((leadRows ?? []) as Record<string, unknown>[])
