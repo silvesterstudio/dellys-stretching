@@ -213,6 +213,7 @@ export interface Database {
           claimed_by: string | null;
           starts_at: string | null;
           note: string | null;
+          seat_released: boolean;
           created_at: string;
         };
         Insert: {
@@ -228,6 +229,7 @@ export interface Database {
           claimed_by?: string | null;
           starts_at?: string | null;
           note?: string | null;
+          seat_released?: boolean;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["guest_bookings"]["Insert"]>;

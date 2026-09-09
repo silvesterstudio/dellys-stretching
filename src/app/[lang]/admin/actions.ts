@@ -68,11 +68,14 @@ export async function setGuestBookingStatusAction(
   } catch {
     return { error: "NO_SERVICE_KEY" };
   }
-  // Read the current row first so cancelling a still-active lead releases the
-  // seat it was holding (and we never double-release an already-cancelled one).
+  // Read the current row first so cancelling a lead that is still holding a seat
+  // gives it back. `seat_released` is the guard, not the status: the seat may
+  // already have been handed over to this person's own real booking (see
+  // 0041_guest_seat_handover.sql), and releasing it twice would undercount the
+  // class and let it oversell.
   const { data: current } = await service
     .from("guest_bookings")
-    .select("status, session_id")
+    .select("status, session_id, seat_released")
     .eq("id", id)
     .maybeSingle();
 
@@ -82,13 +85,18 @@ export async function setGuestBookingStatusAction(
     .eq("id", id);
   if (error) return { error: error.message };
 
-  if (
-    status === "cancelled" &&
-    current &&
-    current.status !== "cancelled" &&
-    current.session_id
-  ) {
-    await service.rpc("release_guest_seat", { p_session_id: current.session_id });
+  if (status === "cancelled" && current && !current.seat_released && current.session_id) {
+    // Claim the release first: only the update that actually flips the flag may
+    // decrement, so two clicks in a row cannot free the same seat twice.
+    const { data: claimed } = await service
+      .from("guest_bookings")
+      .update({ seat_released: true })
+      .eq("id", id)
+      .eq("seat_released", false)
+      .select("id");
+    if (claimed && claimed.length > 0) {
+      await service.rpc("release_guest_seat", { p_session_id: current.session_id });
+    }
   }
 
   await logAudit(actor, "guest_booking.status", "guest_booking", id, { status });
