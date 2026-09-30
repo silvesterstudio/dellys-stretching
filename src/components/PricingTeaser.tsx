@@ -24,12 +24,9 @@ export function PricingTeaser({ dict }: { dict: Dictionary }) {
     { name: `12 ${p.sessions}`, meta: p.perMonth, price: 950 },
     { name: p.unlimited, meta: p.perMonth, price: 1500 },
   ];
-  // Kids are priced by how many days a week they train, not by age group —
-  // both age groups train on the same fixed days.
-  const kids: Plan[] = [
-    { name: p.kids2days, meta: p.kids2daysWhen, price: 700 },
-    { name: p.kids3days, meta: p.kids3daysWhen, price: 700 },
-  ];
+  // Kids have a single plan, 2 days a week — both age groups train on the same
+  // fixed days. (The 3-days plan was retired in 0044_retire_kids_3_days_plan.sql.)
+  const kids: Plan[] = [{ name: p.kids2days, meta: p.kids2daysWhen, price: 700 }];
 
   const groups: { key: "adult" | "child"; label: string }[] = [
     { key: "adult", label: dict.schedule.filterAdults },
@@ -86,8 +83,9 @@ export function PricingTeaser({ dict }: { dict: Dictionary }) {
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))",
           gap: 22,
-          // Two kids cards read better narrower and centered.
-          maxWidth: group === "child" ? 720 : undefined,
+          // A lone kids card reads better at card width, centered, than stretched
+          // across the whole row.
+          maxWidth: group === "child" ? 340 : undefined,
           margin: "0 auto",
         }}
       >

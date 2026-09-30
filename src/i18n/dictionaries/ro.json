@@ -381,9 +381,7 @@
       "single": "vizită unică",
       "note": "Îți poți rezerva un abonament din contul tău, după ce îți creezi cont.",
       "kids2days": "2 zile pe săptămână",
-      "kids2daysWhen": "Marți și Joi",
-      "kids3days": "3 zile pe săptămână",
-      "kids3daysWhen": "Luni, Miercuri și Vineri"
+      "kids2daysWhen": "Marți și Joi"
     },
     "faq": {
       "eyebrow": "Întrebări",
