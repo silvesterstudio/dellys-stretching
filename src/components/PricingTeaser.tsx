@@ -10,25 +10,24 @@ type Plan = { name: string; meta: string; price: number };
 // studio's standard packages. There are no buy buttons — a member reserves a
 // plan from their account after signing up.
 //
-// These figures ARE the standard prices now — what used to run as the summer
-// 2026 promotion was kept, so there is no struck-through "before" price and no
-// promo badge. They match membership_plans (see 0023_summer_prices_2026.sql;
-// the 16-ședințe / 2-luni bundle was retired in 0039_retire_16_session_plan.sql).
+// These are the standard prices — no struck-through "before" price, no promo
+// badge. They must match membership_plans: last set in 0043_price_update_sept_2026.sql
+// (the 16-ședințe / 2-luni bundle was retired in 0039_retire_16_session_plan.sql).
 export function PricingTeaser({ dict }: { dict: Dictionary }) {
   const p = dict.home.price;
   const [group, setGroup] = useState<"adult" | "child">("adult");
 
   const adults: Plan[] = [
     { name: p.oneSession, meta: p.single, price: 150 },
-    { name: `4 ${p.sessions}`, meta: p.perMonth, price: 450 },
-    { name: `8 ${p.sessions}`, meta: p.perMonth, price: 700 },
-    { name: `12 ${p.sessions}`, meta: p.perMonth, price: 850 },
-    { name: p.unlimited, meta: p.perMonth, price: 1300 },
+    { name: `4 ${p.sessions}`, meta: p.perMonth, price: 500 },
+    { name: `8 ${p.sessions}`, meta: p.perMonth, price: 800 },
+    { name: `12 ${p.sessions}`, meta: p.perMonth, price: 950 },
+    { name: p.unlimited, meta: p.perMonth, price: 1500 },
   ];
   // Kids are priced by how many days a week they train, not by age group —
   // both age groups train on the same fixed days.
   const kids: Plan[] = [
-    { name: p.kids2days, meta: p.kids2daysWhen, price: 550 },
+    { name: p.kids2days, meta: p.kids2daysWhen, price: 700 },
     { name: p.kids3days, meta: p.kids3daysWhen, price: 700 },
   ];
 
