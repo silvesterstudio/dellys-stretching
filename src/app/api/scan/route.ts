@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { normalizeKioskToken } from "@/lib/kiosk-token";
 import type { KioskScanResult } from "@/lib/types";
 
 // The kiosk is a fixed tablet at a studio entrance. It POSTs the scanned QR
@@ -72,6 +73,18 @@ function readPicks(body: Body): Pick[] {
   return out;
 }
 
+// A tablet whose token is refused is a door that turns every member away, and
+// until now it failed silently — nothing on the server said it was happening.
+// The token itself never goes in the log, only enough of it to tell which tablet.
+function noteRefusedDevice(result: { code?: string }, token: string, ip: string) {
+  if (result.code !== "device_unknown") return;
+  console.warn("kiosk: scan refused, unknown device token", {
+    hint: token.slice(0, 4),
+    length: token.length,
+    ip,
+  });
+}
+
 function fail(code: string, status: number) {
   return NextResponse.json({ ok: false, code }, { status });
 }
@@ -90,7 +103,7 @@ export async function POST(request: NextRequest) {
 
   const qr = typeof body.qr_uuid === "string" ? body.qr_uuid.trim() : "";
   const deviceToken =
-    typeof body.device_token === "string" ? body.device_token.trim() : "";
+    typeof body.device_token === "string" ? normalizeKioskToken(body.device_token) : "";
   if (!qr || !deviceToken) return fail("bad_request", 400);
 
   let admin;
@@ -121,6 +134,7 @@ export async function POST(request: NextRequest) {
       return fail("server_error", 500);
     }
     const result = data as unknown as KioskScanResult;
+    noteRefusedDevice(result, deviceToken, ip);
 
     // A list of choices is NOT a check-in, and must never be mistaken for one.
     //
@@ -160,6 +174,7 @@ export async function POST(request: NextRequest) {
       return fail("server_error", 500);
     }
     const one = data as unknown as KioskScanResult;
+    noteRefusedDevice(one, deviceToken, ip);
     (one.ok ? admitted : refused).push(one);
   }
 

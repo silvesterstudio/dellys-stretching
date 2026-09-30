@@ -5,6 +5,7 @@ import type { Locale } from "@/lib/constants";
 import { TIMEZONE } from "@/lib/constants";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { KioskOption, KioskScanResult } from "@/lib/types";
+import { normalizeKioskToken } from "@/lib/kiosk-token";
 
 type KioskDict = Dictionary["kiosk"];
 
@@ -31,6 +32,37 @@ function errKey(code: string, dict: KioskDict): ErrKey {
 // The tablet remembers which device it is, so the token only has to be entered
 // once (or passed once as ?token=... when the admin sets the tablet up).
 const TOKEN_KEY = "dellys_kiosk_token";
+
+// How often a running tablet re-confirms its token is still good. Short enough
+// that a retired or replaced device is noticed within minutes, long enough to be
+// free. It is also what makes a bad token fix itself instead of waiting for a
+// member to be turned away at the door.
+const RECHECK_MS = 5 * 60 * 1000;
+
+type DeviceCheck =
+  | { state: "ok"; locationName: string }
+  // The server looked the token up and there is no live device behind it. Only
+  // this — never a timeout, never a 5xx — is allowed to make the tablet give the
+  // token up, because a flaky connection must not wipe a working tablet.
+  | { state: "invalid" }
+  | { state: "unreachable" };
+
+async function checkDevice(token: string): Promise<DeviceCheck> {
+  try {
+    const res = await fetch("/api/kiosk/device", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ device_token: token }),
+      cache: "no-store",
+    });
+    if (res.status === 403) return { state: "invalid" };
+    const data = (await res.json()) as { ok?: boolean; locationName?: string };
+    if (res.ok && data.ok) return { state: "ok", locationName: data.locationName ?? "" };
+    return { state: "unreachable" };
+  } catch {
+    return { state: "unreachable" };
+  }
+}
 
 // How long each outcome stays on screen before returning to the camera.
 const HOLD_OK_MS = 3500;
@@ -140,6 +172,9 @@ export function KioskScanner({
   const [locationName, setLocationName] = useState("");
   const [token, setToken] = useState<string | null>(null);
   const [tokenInput, setTokenInput] = useState("");
+  // Why the setup screen is showing, when it is not simply a first-time setup.
+  const [setupError, setSetupError] = useState<string | null>(null);
+  const [setupBusy, setSetupBusy] = useState(false);
   const [ready, setReady] = useState(false); // token resolved from storage/URL
   const [view, setView] = useState<View>({ kind: "waiting" });
   const [cameraReady, setCameraReady] = useState(false);
@@ -177,13 +212,23 @@ export function KioskScanner({
       const url = new URL(window.location.href);
       const fromUrl = url.searchParams.get("token");
       if (fromUrl) {
-        value = fromUrl.trim();
+        value = normalizeKioskToken(fromUrl);
         localStorage.setItem(TOKEN_KEY, value);
         url.searchParams.delete("token");
         window.history.replaceState({}, "", url.toString());
       } else {
-        value = localStorage.getItem(TOKEN_KEY);
+        const stored = localStorage.getItem(TOKEN_KEY);
+        value = stored === null ? null : normalizeKioskToken(stored);
+        // A token saved by an older build may differ from its clean form only by
+        // a capital letter or a trailing space — which is enough to be refused
+        // at every scan. Rewriting it here repairs tablets already in the field
+        // the moment they load this build, with nobody touching them.
+        if (stored !== null && value !== stored) localStorage.setItem(TOKEN_KEY, value ?? "");
       }
+      // Ask the browser not to evict the token under storage pressure. Safari and
+      // Chrome may clear a site's storage that has seen no taps for days — which
+      // is exactly what a wall-mounted tablet looks like.
+      void navigator.storage?.persist?.();
     } catch {
       /* private mode / storage disabled — fall back to manual entry */
     }
@@ -195,27 +240,42 @@ export function KioskScanner({
     chimeRef.current = new Chime();
   }, []);
 
-  // Confirm the token is live and learn which studio this tablet belongs to.
+  // Give a dead token up and go back to setup, saying why. The tablet must never
+  // sit on a token the server has refused: that is a door that turns every member
+  // away while looking perfectly healthy.
+  const dropToken = useCallback(
+    (message: string) => {
+      try {
+        localStorage.removeItem(TOKEN_KEY);
+      } catch {
+        /* ignore */
+      }
+      setLocationName("");
+      setTokenInput("");
+      setSetupError(message);
+      setToken(null);
+    },
+    [],
+  );
+
+  // Confirm the token is live, learn which studio this tablet belongs to, and do
+  // it again every few minutes. A definite "no" sends the tablet back to setup.
+  const revalidate = useCallback(
+    async (current: string) => {
+      const res = await checkDevice(current);
+      if (res.state === "ok") setLocationName(res.locationName);
+      else if (res.state === "invalid") dropToken(dict.setupRejected);
+      // "unreachable": offline — the name is decoration, scanning reports the truth.
+    },
+    [dict, dropToken],
+  );
+
   useEffect(() => {
     if (!token) return;
-    let cancelled = false;
-    void (async () => {
-      try {
-        const res = await fetch("/api/kiosk/device", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ device_token: token }),
-        });
-        const data = (await res.json()) as { ok?: boolean; locationName?: string };
-        if (!cancelled && res.ok && data.ok) setLocationName(data.locationName ?? "");
-      } catch {
-        /* offline — the name is decoration, scanning still reports the truth */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [token]);
+    void revalidate(token);
+    const id = setInterval(() => void revalidate(token), RECHECK_MS);
+    return () => clearInterval(id);
+  }, [token, revalidate]);
 
   // Alternate the standby hint between Romanian and Russian.
   useEffect(() => {
@@ -362,13 +422,17 @@ export function KioskScanner({
           finish({ kind: "result", result: data }, true);
         } else {
           const code = errKey(data.code ?? "server_error", dict);
+          // The server says this tablet is not recognised. Do not just show it
+          // and carry on: check at once, and if the token really is dead the
+          // tablet drops to setup instead of refusing the next fifty members.
+          if (code === "device_unknown") void revalidate(deviceToken);
           finish({ kind: "result", result: { ...data, ok: false, code } }, false);
         }
       } catch {
         finish({ kind: "error", code: "connection" }, false);
       }
     },
-    [dict, finish, startChoosing],
+    [dict, finish, startChoosing, revalidate],
   );
 
   // Confirmed. Same endpoint, now naming every seat they ticked — a parent with
@@ -394,13 +458,14 @@ export function KioskScanner({
           finish({ kind: "result", result: data }, true);
         } else {
           const code = errKey(data.code ?? "server_error", dict);
+          if (code === "device_unknown") void revalidate(token);
           finish({ kind: "result", result: { ...data, ok: false, code } }, false);
         }
       } catch {
         finish({ kind: "error", code: "connection" }, false);
       }
     },
-    [dict, finish, token],
+    [dict, finish, token, revalidate],
   );
 
   // --- scanner ------------------------------------------------------------
@@ -527,15 +592,24 @@ export function KioskScanner({
           <p className="mt-2 text-sm text-mauve-500">{dict.setupHint}</p>
           <form
             className="mt-6 space-y-3"
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
-              const v = tokenInput.trim();
-              if (!v) return;
+              const v = normalizeKioskToken(tokenInput);
+              if (!v || setupBusy) return;
+              // Check it BEFORE keeping it. Saving whatever was typed is how a
+              // tablet ends up looking set up while refusing every member.
+              setSetupBusy(true);
+              setSetupError(null);
+              const res = await checkDevice(v);
+              setSetupBusy(false);
+              if (res.state === "invalid") return setSetupError(dict.setupInvalid);
+              if (res.state === "unreachable") return setSetupError(dict.setupOffline);
               try {
                 localStorage.setItem(TOKEN_KEY, v);
               } catch {
                 /* ignore */
               }
+              setLocationName(res.locationName);
               setToken(v);
             }}
           >
@@ -548,10 +622,19 @@ export function KioskScanner({
               value={tokenInput}
               onChange={(e) => setTokenInput(e.target.value)}
               autoComplete="off"
+              // iPad keyboards capitalise the first letter of a text field and
+              // "correct" what they think is a typo. The code is lowercase hex.
+              autoCapitalize="off"
+              autoCorrect="off"
               spellCheck={false}
             />
-            <button type="submit" className="btn-primary w-full">
-              {dict.setupSave}
+            {setupError && (
+              <p role="alert" className="text-sm font-medium text-red-600">
+                {setupError}
+              </p>
+            )}
+            <button type="submit" className="btn-primary w-full" disabled={setupBusy}>
+              {setupBusy ? dict.setupChecking : dict.setupSave}
             </button>
           </form>
         </div>

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { normalizeKioskToken } from "@/lib/kiosk-token";
 
 // Lets a provisioned tablet show which studio it is bound to, so staff can tell
 // at a glance that the right kiosk is running at the right door. Returns only
@@ -12,7 +13,7 @@ export async function POST(request: NextRequest) {
   let token = "";
   try {
     const body = (await request.json()) as { device_token?: unknown };
-    token = typeof body.device_token === "string" ? body.device_token.trim() : "";
+    token = typeof body.device_token === "string" ? normalizeKioskToken(body.device_token) : "";
   } catch {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
@@ -31,7 +32,11 @@ export async function POST(request: NextRequest) {
     .eq("token", token)
     .maybeSingle();
 
+  // A definite "no": the tablet treats this (and only this) as proof its token is
+  // dead and goes back to setup. Anything else — a timeout, a 500 — is not proof,
+  // and must never make a working tablet throw its token away.
   if (!data || !data.active) {
+    console.warn("kiosk: device check refused", { hint: token.slice(0, 4), length: token.length });
     return NextResponse.json({ ok: false }, { status: 403 });
   }
   const loc = data.location as unknown as { name: string } | { name: string }[] | null;
