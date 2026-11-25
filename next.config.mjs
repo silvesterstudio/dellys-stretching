@@ -9,7 +9,8 @@ const nextConfig = {
   async rewrites() {
     // Use the Impuls app for both the class pages and their supporting assets.
     const sharedRoutes = [
-      "/classes/:path*",
+      "/classes",
+      "/classes/:path+",
       "/cont",
       "/check-in",
       "/login",
