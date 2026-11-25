@@ -1,139 +1,42 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { LOCALES, DEFAULT_LOCALE } from "@/lib/constants";
-import { isSupabaseConfigured, AUTH_COOKIE_OPTIONS } from "@/lib/supabase/config";
 
-function hasLocalePrefix(pathname: string): boolean {
-  return LOCALES.some(
-    (l) => pathname === `/${l}` || pathname.startsWith(`/${l}/`),
-  );
-}
+const movedSections = new Set([
+  "admin", "book", "confidentialitate", "dashboard", "login", "memberships",
+  "program", "register", "reserve", "staff", "welcome",
+]);
 
-function preferredLocale(req: NextRequest): string {
-  const cookie = req.cookies.get("NEXT_LOCALE")?.value;
-  if (cookie && (LOCALES as readonly string[]).includes(cookie)) return cookie;
-  const accept = req.headers.get("accept-language")?.toLowerCase() ?? "";
-  if (accept.startsWith("ru") || accept.includes(",ru")) return "ru";
-  return DEFAULT_LOCALE;
-}
+export function middleware(request: NextRequest) {
+  const { pathname, searchParams } = request.nextUrl;
+  if (pathname === "/api/kiosk/version" || pathname === "/kiosk") return NextResponse.next();
 
-export async function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
-
-  // 0. Two things deliberately live outside the localized site:
-  //    * /api/*  — a redirect to /ro/api/... would drop the POST body, so every
-  //                kiosk scan would fail.
-  //    * /kiosk  — the front-door tablet has its own root layout (no header, no
-  //                pixel) and picks its language from ?lang.
-  //    Neither needs an auth-session refresh either, so return immediately.
-  if (pathname.startsWith("/api/") || pathname === "/kiosk" || pathname.startsWith("/kiosk/")) {
-    return NextResponse.next({ request: req });
+  if (pathname.startsWith("/api/") || !["GET", "HEAD"].includes(request.method)) {
+    return NextResponse.json({
+      error: "Dellys has moved to Impuls Sport",
+      url: "https://impulssport.md/classes",
+    }, { status: 410 });
   }
 
-  // 1. Locale routing.
-  //
-  // The locale lives on disk as the [lang] segment but is kept OUT of the URL:
-  // dellys.md/program, not dellys.md/ro/program. The language is a choice, not a
-  // place — switching it must not send the visitor somewhere else.
-  //
-  //   /ro/<path>  -> 308 to /<path>. Romanian is the default, so its prefix is
-  //                  pure noise; every link ever shared still resolves.
-  //   /ru/<path>  -> served as-is. Russian keeps real, crawlable URLs so it stays
-  //                  in search results — a cookie-only language is invisible to
-  //                  Googlebot, which carries no cookies.
-  //   /<path>     -> REWRITTEN (URL unchanged) to /<locale>/<path>, the locale
-  //                  coming from the NEXT_LOCALE cookie, else Accept-Language,
-  //                  else Romanian.
-  //
-  // Auth callbacks are exempt from the /ro redirect: magic links already sitting
-  // in inboxes point at /ro/auth/..., and those carry tokens worth not bouncing.
-  if (pathname === "/ro" || pathname.startsWith("/ro/")) {
-    const rest = pathname.slice(3);
-    if (!rest.startsWith("/auth")) {
-      const url = req.nextUrl.clone();
-      url.pathname = rest || "/";
-      const moved = NextResponse.redirect(url, 308);
-      moved.cookies.set("NEXT_LOCALE", "ro", { path: "/", maxAge: 31536000 });
-      return moved;
-    }
+  const segments = pathname.split("/").filter(Boolean);
+  const prefix = segments[0] === "ro" || segments[0] === "ru" ? segments.shift() : null;
+  const russian = prefix === "ru" || (!prefix && (
+    request.cookies.get("NEXT_LOCALE")?.value === "ru"
+    || request.headers.get("accept-language")?.toLowerCase().startsWith("ru")
+  ));
+  const target = new URL("https://impulssport.md/classes" + (russian ? "/ru" : ""));
+  if (segments[0] === "auth") {
+    target.pathname += "/login";
+  } else if (movedSections.has(segments[0])) {
+    target.pathname += "/" + segments.join("/");
   }
-
-  // The rewrite target, if any. Held as a value rather than returned here: the
-  // session refresh below must still run, and it rebuilds the response.
-  const rewriteTo = hasLocalePrefix(pathname)
-    ? null
-    : (() => {
-        const url = req.nextUrl.clone();
-        url.pathname = `/${preferredLocale(req)}${pathname === "/" ? "" : pathname}`;
-        return url;
-      })();
-
-  const build = () =>
-    rewriteTo
-      ? NextResponse.rewrite(rewriteTo, { request: req })
-      : NextResponse.next({ request: req });
-
-  // 2. Refresh the Supabase auth session and propagate cookies.
-  let response = build();
-
-  // Skip the auth round-trip entirely when Supabase isn't configured, so a
-  // missing/placeholder host can't make every request hang.
-  if (!isSupabaseConfigured()) {
-    return response;
+  for (const key of ["loc", "session"]) {
+    const value = searchParams.get(key);
+    if (value && /^[a-z0-9_-]{1,64}$/i.test(value)) target.searchParams.set(key, value);
   }
-
-  // Perf: anonymous visitors (most ad-landing traffic) carry no Supabase auth
-  // cookie, so there's nothing to refresh — skip the network round-trip and
-  // serve them without ever touching Supabase.
-  const hasAuthCookie = req.cookies
-    .getAll()
-    .some((c) => c.name.startsWith("sb-") && c.name.includes("auth-token"));
-  if (!hasAuthCookie) {
-    return response;
-  }
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookieOptions: AUTH_COOKIE_OPTIONS,
-      cookies: {
-        getAll() {
-          return req.cookies.getAll();
-        },
-        setAll(
-          cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[],
-        ) {
-          cookiesToSet.forEach(({ name, value }) =>
-            req.cookies.set(name, value),
-          );
-          response = build();
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options),
-          );
-        },
-      },
-    },
-  );
-
-  // Touch the session so it refreshes if needed. Guarded: a Supabase outage
-  // must not turn every request into a 500 — just serve the request as-is.
-  try {
-    await supabase.auth.getUser();
-  } catch {
-    // ignore — degrade to the unrefreshed session
-  }
-
-  return response;
+  return NextResponse.redirect(target, 307);
 }
 
 export const config = {
-  // Run on everything except static assets and Next internals.
-  //
-  // The extension list must cover every asset type served from /public, not
-  // just images: anything not listed here gets locale-redirected to
-  // /ro/<file> and 404s. That is what happened to the QR scanner worker.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|js|mjs|css|map|json|txt|xml|webmanifest|woff|woff2|ttf|otf|mp4|webm)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|js|mjs|css|map|json|txt|xml|webmanifest|woff|woff2|ttf|otf|mp4|webm)$).*)",
   ],
 };

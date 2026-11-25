@@ -20,7 +20,8 @@ const sans = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "Dellys · Check-in",
+  title: "Impuls Sport · Check-in",
+  referrer: "no-referrer",
   robots: { index: false, follow: false },
 };
 
