@@ -7,7 +7,7 @@ const classSections = new Set([
 ]);
 
 const sharedPaths = new Set([
-  "/cont", "/check-in", "/auth/callback", "/auth/confirm", "/reset-password",
+  "/admin", "/admin/check-in", "/cont", "/check-in", "/auth/callback", "/auth/confirm", "/reset-password",
   "/api/auth/setup", "/api/me", "/api/dashboard", "/api/kiosk/version", "/api/kiosk/device", "/api/scan",
 ]);
 

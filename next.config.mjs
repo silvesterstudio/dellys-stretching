@@ -11,6 +11,8 @@ const nextConfig = {
     const sharedRoutes = [
       "/classes",
       "/classes/:path+",
+      "/admin",
+      "/admin/check-in",
       "/cont",
       "/check-in",
       "/login",
