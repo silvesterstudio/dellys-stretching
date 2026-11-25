@@ -18,6 +18,8 @@ const nextConfig = {
       "/auth/confirm",
       "/reset-password",
       "/api/auth/setup",
+      "/api/me",
+      "/api/dashboard",
       "/_next/static/:path*",
       "/_next/image",
       "/class-media/:path*",

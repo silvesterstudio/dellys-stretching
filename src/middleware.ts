@@ -8,7 +8,7 @@ const classSections = new Set([
 
 const sharedPaths = new Set([
   "/cont", "/check-in", "/auth/callback", "/auth/confirm", "/reset-password",
-  "/api/auth/setup", "/api/kiosk/version", "/api/kiosk/device", "/api/scan",
+  "/api/auth/setup", "/api/me", "/api/dashboard", "/api/kiosk/version", "/api/kiosk/device", "/api/scan",
 ]);
 
 const checkInPaths = new Set(["/check-in", "/check-in?service=group", "/check-in?service=gym"]);
